@@ -1,5 +1,5 @@
 <!--===========================================================================
-  This is the build file for the Pentaho Big Data Project
+  This is the build file for the Pentaho Mongo Plugin to PDI
   
   This build file will use the subfloor.xml file as the default build
   process and should only override the tasks that need to differ from
@@ -76,14 +76,14 @@
           </fileset>
 	    </copy>
 	    <copy todir="${stage.dir}/${ivy.artifact.id}">
-	      <fileset file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
+	      <fileset file="${dist.dir}/${package.basename}.jar" />
 	    </copy>
 	  </target>
 
 	
 	<target name="install-plugin" depends="jar,package" description="Build the plugin and extract it into ${kettle.dist.dir}/plugins">
 		<!-- Install the plugin -->
-		<delete dir="${kettle.dist.dir}/plugins/pentaho-mongo"/>
+		<delete dir="${kettle.dist.dir}/plugins/${package.id}"/>
 		<unzip dest="${kettle.dist.dir}/plugins">
 			<fileset file="${dist.dir}/${package.basename}.zip"/>
 		</unzip>
