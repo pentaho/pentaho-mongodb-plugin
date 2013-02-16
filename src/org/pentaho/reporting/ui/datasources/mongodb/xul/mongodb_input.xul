@@ -1,0 +1,126 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
+<dialog xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+	xmlns:pen="http://www.pentaho.org/2008/xul" resizable="true" id="mongodb_dialog"
+	title="${dialog-title}" height="470" width="600" buttonalign="right"
+	buttonlabelaccept="Ok" buttonlabelcancel="Cancel" buttonlabelextra1="${preview}"
+	ondialogaccept="handler.onAccept()" ondialogcancel="handler.onCancel()"
+	buttons="accept,extra1,cancel" onload="handler.init()">
+
+	<vbox flex="1" id="root">
+		<!-- PDI UI element 
+		<hbox> <spacer flex="1"/> <label value="${step-name}"/> <textbox id="stepName" 
+			flex="2"/> 
+		</hbox> 
+		-->
+		<hbox>
+			<tabbox id="tabBox" selectedIndex="0" flex="1">
+				<tabs id="tabs">
+					<tab label="${configure-connection}" id="tab1" />
+					<tab label="${query}" id="tab2" />
+					<tab label="${fields}" id="tab3" />
+				</tabs>
+				<tabpanels id="tabpanels">
+					<tabpanel>
+						<grid flex="1">
+							<columns>
+								<column/>
+								<column/>
+								<column/>
+							</columns>
+							<rows>
+								<row >
+									<label value="${host-name}" />
+									<textbox id="hostName" width="350"/>
+								</row>
+								<row>
+									<label value="${port}" />
+									<textbox id="port" width="350"/>
+								</row>
+								<row>
+									<label value="${database}" />
+									<menulist editable="true" id="database" width="350">
+										<menupopup>
+										</menupopup>
+									</menulist>
+									<button label="${get-dbs}" id="getDbs" onclick="handler.getDatabaseNamesFromMongo()"/>
+								</row>
+								<row>
+									<label value="${collection}" />
+									<menulist editable="true" id="collection"  width="350">
+										<menupopup>
+										</menupopup>
+									</menulist>
+									<button label="${get-collections}" id="getCollections" onclick="handler.getCollectionNamesFromMongo()"/>
+								</row>
+								<row>
+									<label value="${auth-user}" />
+									<textbox id="authUser" width="350"/>
+								</row>
+								<row>
+									<label value="${auth-password}" />
+									<textbox id="authPassword" width="350"/>
+								</row>
+								<row>
+									<label value="${connection-timeout}" />
+									<textbox id="connectionTimeout" width="350"/>
+								</row>
+								<row>
+								
+									<label value="${socket-timeout}" />
+									<textbox id="socketTimeout" width="350"/>
+								</row>
+								<row>
+									<label value="${read-preference}" />
+									<menulist editable="true" id="readPreference" width="350">
+										<menupopup>
+										</menupopup>
+									</menulist>
+								</row>
+							</rows>
+						</grid>						
+
+					</tabpanel>
+					<tabpanel>
+						<vbox>
+							<label value="${query-expression}" />
+							<textbox id="jsonQuery" height="200" flex="1" multiline="true" />
+							<vbox>
+								<hbox>
+									<!-- <label /> -->
+									<checkbox id="isAggPipeline" label="${is-agg-pipeline}" />
+								</hbox>
+								<hbox>
+									<label value="${fields-expression}" />
+									<textbox id="fieldsQuery" flex="1" />
+								</hbox>
+							</vbox>
+						</vbox>
+					</tabpanel>
+					<tabpanel>
+						<vbox>
+							<tree flex="1" editable="true" seltype="cell" height="200"
+								enableColumnDrag="true" id="fieldsTable" autocreatenewrows="true">
+								<treecols id="column_list">
+									<treecol id="name_col" label="${column-name}" pen:binding="fieldName" editable="true" />
+									<treecol id="path_col" label="${column-path}" pen:binding="fieldPath" editable="true" />
+									<treecol id="type_col" label="${column-type}" pen:binding="kettleType" editable="true"/>
+									<treecol id="index_col" label="${column-indexed-values}" pen:binding="indexedValues" editable="true"/>
+									<treecol id="sample_array_col" label="${column-sample-array}" pen:binding="arrayIndexInfo"	editable="false"/>
+									<treecol id="sample_occurences_col" label="${column-sample-occurences}" pen:binding="occurenceFraction" editable="false"/>
+									<treecol id="sample_disparate_types_col" label="${column-sample-disparate-types}" pen:binding="isDisparateTypes" editable="false"/>
+								</treecols>
+								<treechildren id="main_treechildren">
+								</treechildren>
+							</tree>
+							<hbox>
+								<button label="${get-fields}" id="getFields" onclick="handler.getDocumentFieldsFromMongo()"/>
+							</hbox>
+						</vbox>
+					</tabpanel>
+				</tabpanels>
+			</tabbox>
+		</hbox>
+	</vbox>
+</dialog>

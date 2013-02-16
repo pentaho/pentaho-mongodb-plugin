@@ -39,6 +39,8 @@
       changing="true" />
     <dependency org="pentaho" name="pentaho-xul-swt" rev="${dependency.pentaho-xul.revision}" transitive="false" conf="default->default"
       changing="true" />
+    <dependency org="pentaho" name="pentaho-xul-swing" rev="${dependency.pentaho-xul.revision}" transitive="false" conf="default->default"
+      changing="true" />
 
     <dependency org="org.mongodb" name="mongo-java-driver" rev="${dependency.mongo-driver.revision}" transitive="false" conf="default->default"  changing="false"/>
 
