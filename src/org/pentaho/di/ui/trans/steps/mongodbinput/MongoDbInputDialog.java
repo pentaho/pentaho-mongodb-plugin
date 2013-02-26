@@ -563,7 +563,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     props.setLook(wlJsonQuery);
     FormData fdlJsonQuery = new FormData();
     fdlJsonQuery.left = new FormAttachment(0, 0);
-    fdlJsonQuery.right = new FormAttachment(middle, -margin);
+    fdlJsonQuery.right = new FormAttachment(100, -margin);
     fdlJsonQuery.top = new FormAttachment(0, margin);
     wlJsonQuery.setLayoutData(fdlJsonQuery);
 
