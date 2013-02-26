@@ -58,7 +58,7 @@ import org.w3c.dom.Node;
  * @author matt
  * @since 4.2.0-M1
  */
-@Step(id = "MongoDbInput", image = "mongodb-input.png", name = "MongoDb Input", description = "Reads from a Mongo DB collection", categoryDescription = "Big Data")
+@Step(id = "MongoDbInput", image = "mongodb-input.png", name = "MongoDB Input", description = "Reads from a Mongo DB collection", categoryDescription = "Big Data")
 public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface {
   protected static Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes,
   // needed by
