@@ -333,7 +333,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
    */
   public void setReadPreference(String preference) {
     String prevVal = this.m_readPreference;
-    m_readPreference = preference;
+    m_readPreference = Const.isEmpty(preference) ? "primary": preference;
     
     firePropertyChange("m_readPreference", prevVal, preference);
   }
@@ -360,7 +360,8 @@ public class MongoDbModel extends XulEventSourceAdapter {
     saveMeta(mongo);
   }
   
-  private void saveMeta(MongoDbInputMeta meta){
+  public void saveMeta(MongoDbInputMeta meta){
+    meta.setOutputJson(false);
     meta.setJsonQuery(jsonQuery);
     meta.setAuthenticationPassword(this.authenticationPassword);
     meta.setAuthenticationUser(this.authenticationUser);

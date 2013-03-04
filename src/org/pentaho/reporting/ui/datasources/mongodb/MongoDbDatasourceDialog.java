@@ -3,7 +3,6 @@
  */
 package org.pentaho.reporting.ui.datasources.mongodb;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ResourceBundle;
 import java.util.Vector;
 
@@ -11,6 +10,7 @@ import org.pentaho.di.core.Const;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
+import org.pentaho.di.ui.swing.preview.PreviewRowsSwingDialog;
 import org.pentaho.di.ui.trans.step.BaseStepGenericXulDialog;
 import org.pentaho.reporting.ui.datasources.mongodb.models.MongoDbModel;
 import org.pentaho.ui.xul.XulException;
@@ -29,6 +29,8 @@ import org.pentaho.ui.xul.swing.SwingXulRunner;
 public class MongoDbDatasourceDialog extends BaseStepGenericXulDialog {
   
   private MongoDbModel model;
+  private int maxPreviewRows;
+  
   private Binding databaseBinding;
   private Binding collectionBinding;
   private Binding fieldsBinding;
@@ -38,13 +40,7 @@ public class MongoDbDatasourceDialog extends BaseStepGenericXulDialog {
   public MongoDbDatasourceDialog(Object parent, BaseStepMeta baseStepMeta, TransMeta transMeta, String stepname ) {
 
     super("org/pentaho/reporting/ui/datasources/mongodb/xul/mongodb_input.xul", parent, baseStepMeta, transMeta, stepname);
-    
-    try {
-      initializeXul();
-    } catch (Exception e) {
-      log.logError("Error initializing ("+stepname+") step dialog", e);
-      throw new IllegalStateException("Cannot load dialog due to error in initialization", e);
-    }
+
   }
 
   public XulSettingsManager getSettingsManager() {
@@ -78,6 +74,9 @@ public class MongoDbDatasourceDialog extends BaseStepGenericXulDialog {
       bf.createBinding( this, "fieldValuesChanged", "fieldsTable", "onedit");
 
       bf.setBindingType(Binding.Type.BI_DIRECTIONAL);
+      
+      maxPreviewRows = 100;
+      bf.createBinding( this, "maxPreviewRows", "maxPreviewRows", "value", BindingConvertor.integer2String()).fireSourceChanged();
 
       bf.createBinding( model, "hostnames", "hostName", "value").fireSourceChanged();
       bf.createBinding( model, "port", "port", "value").fireSourceChanged();
@@ -140,10 +139,25 @@ public class MongoDbDatasourceDialog extends BaseStepGenericXulDialog {
     dispose();
 
   }
+  
+  public void preview(){
+    MongoDbInputMeta meta = new MongoDbInputMeta();
+    model.saveMeta(meta);
+    PreviewRowsSwingDialog dlg = new PreviewRowsSwingDialog(parent, meta, getMaxPreviewRows());
+    dlg.open();
+  }
 
   @Override
   protected Class<?> getClassForMessages() {
     return this.getClass();
+  }
+
+  public int getMaxPreviewRows() {
+    return maxPreviewRows;
+  }
+
+  public void setMaxPreviewRows(int maxPreviewRows) {
+    this.maxPreviewRows = maxPreviewRows;
   }
 
   @Override
