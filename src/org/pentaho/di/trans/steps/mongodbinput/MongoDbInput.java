@@ -163,6 +163,16 @@ public class MongoDbInput extends BaseStep implements StepInterface {
       String collection = environmentSubstitute(meta.getCollection());
 
       try {
+        if (Const.isEmpty(db)) {
+          throw new Exception(BaseMessages.getString(PKG,
+              "MongoInput.ErrorMessage.NoDBSpecified"));
+        }
+
+        if (Const.isEmpty(collection)) {
+          throw new Exception(BaseMessages.getString(PKG,
+              "MongoInput.ErrorMessage.NoCollectionSpecified"));
+        }
+
         data.mongo = MongoDbInputData.initConnection(meta, this);
         data.db = data.mongo.getDB(db);
 
