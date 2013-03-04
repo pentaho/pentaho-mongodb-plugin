@@ -302,6 +302,16 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
 
       try {
 
+        if (Const.isEmpty(db)) {
+          throw new Exception(BaseMessages.getString(PKG,
+              "MongoDbOutput.Messages.Error.NoDBSpecified"));
+        }
+
+        if (Const.isEmpty(collection)) {
+          throw new Exception(BaseMessages.getString(PKG,
+              "MongoDbOutput.Messages.Error.NoCollectionSpecified"));
+        }
+
         m_data.setConnection(MongoDbOutputData.connect(m_meta, this));
         m_data.setDB(m_data.getConnection().getDB(db));
 
