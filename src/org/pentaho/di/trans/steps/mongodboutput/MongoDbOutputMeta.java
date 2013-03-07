@@ -58,7 +58,7 @@ import org.w3c.dom.Node;
  * 
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  */
-@Step(id = "MongoDbOutput", image = "MongoDB.png", name = "MongoDb Output", description = "Writes to a Mongo DB collection", categoryDescription = "Big Data")
+@Step(id = "MongoDbOutput", image = "MongoDB.png", name = "MongoDB Output", description = "Writes to a Mongo DB collection", categoryDescription = "Big Data")
 public class MongoDbOutputMeta extends BaseStepMeta implements
     StepMetaInterface {
 

@@ -1,9 +1,16 @@
 package org.pentaho.reporting.ui.datasources.mongodb;
 
+import org.junit.Test;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 
 public class MongoDbDatasourceDialogTest {
+  
+  @Test
+  public void dummyTest() {
+    // Have to have at least one test method to run, otherwise JUnit packs a sad.
+    // Main method contains the tests.
+  }
 
   public static void main(String[] args) {
 
