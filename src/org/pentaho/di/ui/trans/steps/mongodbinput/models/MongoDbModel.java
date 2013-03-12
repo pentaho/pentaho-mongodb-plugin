@@ -16,7 +16,7 @@
  * Copyright 2009 Pentaho Corporation.  All rights reserved.
  */
 
-package org.pentaho.reporting.ui.datasources.mongodb.models;
+package org.pentaho.di.ui.trans.steps.mongodbinput.models;
 
 import java.util.ArrayList;
 import java.util.Collection;

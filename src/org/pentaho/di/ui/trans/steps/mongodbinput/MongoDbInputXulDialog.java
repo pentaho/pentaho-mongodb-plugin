@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.pentaho.reporting.ui.datasources.mongodb;
+package org.pentaho.di.ui.trans.steps.mongodbinput;
 
 import java.util.ResourceBundle;
 import java.util.Vector;
@@ -12,7 +12,7 @@ import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.di.ui.swing.preview.PreviewRowsSwingDialog;
 import org.pentaho.di.ui.trans.step.BaseStepGenericXulDialog;
-import org.pentaho.reporting.ui.datasources.mongodb.models.MongoDbModel;
+import org.pentaho.di.ui.trans.steps.mongodbinput.models.MongoDbModel;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulSettingsManager;
 import org.pentaho.ui.xul.binding.Binding;
@@ -26,7 +26,7 @@ import org.pentaho.ui.xul.swing.SwingXulRunner;
  * @date 01/28/2013
  *
  */
-public class MongoDbDatasourceDialog extends BaseStepGenericXulDialog {
+public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
   
   private MongoDbModel model;
   private int maxPreviewRows;
@@ -37,9 +37,9 @@ public class MongoDbDatasourceDialog extends BaseStepGenericXulDialog {
   
   protected static BindingConvertor<String, Boolean> emptyStringBinding = new IsEmptyStringToBooleanConvertor();
 
-  public MongoDbDatasourceDialog(Object parent, BaseStepMeta baseStepMeta, TransMeta transMeta, String stepname ) {
+  public MongoDbInputXulDialog(Object parent, BaseStepMeta baseStepMeta, TransMeta transMeta, String stepname ) {
 
-    super("org/pentaho/reporting/ui/datasources/mongodb/xul/mongodb_input.xul", parent, baseStepMeta, transMeta, stepname);
+    super("org/pentaho/di/ui/trans/steps/mongodbinput/xul/mongodb_input.xul", parent, baseStepMeta, transMeta, stepname);
 
   }
 
