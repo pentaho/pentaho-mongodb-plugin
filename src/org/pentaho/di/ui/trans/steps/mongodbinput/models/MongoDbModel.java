@@ -16,7 +16,7 @@
  * Copyright 2009 Pentaho Corporation.  All rights reserved.
  */
 
-package org.pentaho.reporting.ui.datasources.mongodb.models;
+package org.pentaho.di.ui.trans.steps.mongodbinput.models;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -333,7 +333,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
    */
   public void setReadPreference(String preference) {
     String prevVal = this.m_readPreference;
-    m_readPreference = preference;
+    m_readPreference = Const.isEmpty(preference) ? "primary": preference;
     
     firePropertyChange("m_readPreference", prevVal, preference);
   }
@@ -353,14 +353,18 @@ public class MongoDbModel extends XulEventSourceAdapter {
   }
 
   public void setFields(List<MongoDocumentField> fields) {
+    List<MongoDocumentField> prevVal = this.fields;
     this.fields = fields;
+
+    firePropertyChange("fields", prevVal, fields);
   }
 
   public void save() {
     saveMeta(mongo);
   }
   
-  private void saveMeta(MongoDbInputMeta meta){
+  public void saveMeta(MongoDbInputMeta meta){
+    meta.setOutputJson(false);
     meta.setJsonQuery(jsonQuery);
     meta.setAuthenticationPassword(this.authenticationPassword);
     meta.setAuthenticationUser(this.authenticationUser);
@@ -499,7 +503,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
         if (!result) {
             // TODO: Deal with error here ....
         } else {
-          this.fields = MongoDocumentField.convertList(meta.getMongoFields());
+          setFields(MongoDocumentField.convertList(meta.getMongoFields()));
         }
       } catch (KettleException e) {
         // TODO: log and rethrow exception so UI has a chance to deal with it...
