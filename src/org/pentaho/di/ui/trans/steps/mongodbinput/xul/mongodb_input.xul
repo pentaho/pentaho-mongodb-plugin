@@ -123,7 +123,7 @@
 			</tabbox>
 		</hbox>
 
-		<!-- ====================== PREVIEW ========================= -->
+		<!-- ====================== PREVIEW ========================= 
 
 		<hbox align="CENTER"> 
 			<spacer flex="1"/>
@@ -131,6 +131,6 @@
 			<textbox id="maxPreviewRows" />
 			<button label="${preview}" id="getPreview" onclick="handler.preview()"/>
 		</hbox> 
-		
+		-->
 	</vbox>
 </dialog>

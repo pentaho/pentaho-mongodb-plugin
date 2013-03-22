@@ -353,7 +353,10 @@ public class MongoDbModel extends XulEventSourceAdapter {
   }
 
   public void setFields(List<MongoDocumentField> fields) {
+    List<MongoDocumentField> prevVal = this.fields;
     this.fields = fields;
+
+    firePropertyChange("fields", prevVal, fields);
   }
 
   public void save() {
@@ -500,7 +503,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
         if (!result) {
             // TODO: Deal with error here ....
         } else {
-          this.fields = MongoDocumentField.convertList(meta.getMongoFields());
+          setFields(MongoDocumentField.convertList(meta.getMongoFields()));
         }
       } catch (KettleException e) {
         // TODO: log and rethrow exception so UI has a chance to deal with it...

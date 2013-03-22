@@ -3,6 +3,10 @@
  */
 package org.pentaho.di.ui.trans.steps.mongodbinput;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Vector;
 
@@ -13,6 +17,7 @@ import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.di.ui.swing.preview.PreviewRowsSwingDialog;
 import org.pentaho.di.ui.trans.step.BaseStepGenericXulDialog;
 import org.pentaho.di.ui.trans.steps.mongodbinput.models.MongoDbModel;
+import org.pentaho.di.ui.trans.steps.mongodbinput.models.MongoDocumentField;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulSettingsManager;
 import org.pentaho.ui.xul.binding.Binding;
@@ -72,11 +77,14 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
       collectionBinding.fireSourceChanged();
       
       bf.createBinding( this, "fieldValuesChanged", "fieldsTable", "onedit");
+      
+      // this controls enabling the external preview function ...
+      bf.createBinding( model, "fields", this, "dialogState");
 
       bf.setBindingType(Binding.Type.BI_DIRECTIONAL);
       
       maxPreviewRows = 100;
-      bf.createBinding( this, "maxPreviewRows", "maxPreviewRows", "value", BindingConvertor.integer2String()).fireSourceChanged();
+      //bf.createBinding( this, "maxPreviewRows", "maxPreviewRows", "value", BindingConvertor.integer2String()).fireSourceChanged();
 
       bf.createBinding( model, "hostnames", "hostName", "value").fireSourceChanged();
       bf.createBinding( model, "port", "port", "value").fireSourceChanged();
@@ -104,12 +112,22 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
     }
   }
   
+  public void setDialogState(List<MongoDocumentField> fields)
+  {
+
+    firePropertyChange("fields", null, fields.size());
+    
+  }
+  
   public String getFieldValuesChanged(){
     try {
+      
       if (fieldsBinding != null){
         
         fieldsBinding.fireSourceChanged();
       }
+      firePropertyChange("fields", null, model.getFields().size());
+
     } catch (Exception e) {
 
       log.logError("Error updating fields.", e);
@@ -123,7 +141,7 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
     initializeXul(new SwingXulLoader(), new SwingBindingFactory(), new SwingXulRunner(), parent);
       
   }
-
+  
   @Override
   public void onAccept() {
     model.save();
