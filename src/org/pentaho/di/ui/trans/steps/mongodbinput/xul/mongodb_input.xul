@@ -3,10 +3,10 @@
 
 <dialog xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
 	xmlns:pen="http://www.pentaho.org/2008/xul" resizable="true" id="mongodb_dialog"
-	title="${dialog-title}" height="470" width="600" buttonalign="right"
-	buttonlabelaccept="Ok" buttonlabelcancel="Cancel" buttonlabelextra1="${preview}"
-	ondialogaccept="handler.onAccept()" ondialogcancel="handler.onCancel()"
-	buttons="accept,extra1,cancel" onload="handler.init()">
+	title="${dialog-title}" height="470" width="650" buttonalign="right"
+	buttonlabelaccept="Ok" buttonlabelcancel="Cancel" 
+	ondialogaccept="handler.onAccept()" ondialogcancel="handler.onCancel()" 
+	buttons="accept,cancel" onload="handler.init()">
 
 	<vbox flex="1" id="root">
 		<!-- PDI UI element 
@@ -122,5 +122,15 @@
 				</tabpanels>
 			</tabbox>
 		</hbox>
+
+		<!-- ====================== PREVIEW ========================= 
+
+		<hbox align="CENTER"> 
+			<spacer flex="1"/>
+			<label value="${max-preview-rows}"/> 
+			<textbox id="maxPreviewRows" />
+			<button label="${preview}" id="getPreview" onclick="handler.preview()"/>
+		</hbox> 
+		-->
 	</vbox>
 </dialog>
