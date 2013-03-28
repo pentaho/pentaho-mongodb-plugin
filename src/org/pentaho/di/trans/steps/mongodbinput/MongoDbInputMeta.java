@@ -81,12 +81,12 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
 
   private boolean m_outputJson = true;
 
-  private String m_connectTimeout = ""; // default - never time out
+  private String m_connectTimeout = ""; // default - never time out //$NON-NLS-1$
 
-  private String m_socketTimeout = ""; // default - never time out
+  private String m_socketTimeout = ""; // default - never time out //$NON-NLS-1$
 
   /** primary, primaryPreferred, secondary, secondaryPreferred, nearest */
-  private String m_readPreference = "primary";
+  private String m_readPreference = "primary"; //$NON-NLS-1$
 
   private List<MongoDbInputData.MongoField> m_fields;
 
@@ -115,8 +115,8 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
 
   private void readData(Node stepnode) throws KettleXMLException {
     try {
-      hostname = XMLHandler.getTagValue(stepnode, "hostname"); //$NON-NLS-1$ //$NON-NLS-2$
-      port = XMLHandler.getTagValue(stepnode, "port"); //$NON-NLS-1$ //$NON-NLS-2$
+      hostname = XMLHandler.getTagValue(stepnode, "hostname"); //$NON-NLS-1$ 
+      port = XMLHandler.getTagValue(stepnode, "port"); //$NON-NLS-1$ 
       dbName = XMLHandler.getTagValue(stepnode, "db_name"); //$NON-NLS-1$
       fields = XMLHandler.getTagValue(stepnode, "fields_name"); //$NON-NLS-1$
       collection = XMLHandler.getTagValue(stepnode, "collection"); //$NON-NLS-1$
@@ -132,34 +132,34 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
       m_readPreference = XMLHandler.getTagValue(stepnode, "read_preference"); //$NON-NLS-1$
 
       m_outputJson = true; // default to true for backwards compatibility
-      String outputJson = XMLHandler.getTagValue(stepnode, "output_json");
+      String outputJson = XMLHandler.getTagValue(stepnode, "output_json"); //$NON-NLS-1$
       if (!Const.isEmpty(outputJson)) {
-        m_outputJson = outputJson.equalsIgnoreCase("Y");
+        m_outputJson = outputJson.equalsIgnoreCase("Y"); //$NON-NLS-1$
       }
 
       String queryIsPipe = XMLHandler
-          .getTagValue(stepnode, "query_is_pipeline");
+          .getTagValue(stepnode, "query_is_pipeline"); //$NON-NLS-1$
       if (!Const.isEmpty(queryIsPipe)) {
-        m_aggPipeline = queryIsPipe.equalsIgnoreCase("Y");
+        m_aggPipeline = queryIsPipe.equalsIgnoreCase("Y"); //$NON-NLS-1$
       }
 
-      Node fields = XMLHandler.getSubNode(stepnode, "mongo_fields");
-      if (fields != null && XMLHandler.countNodes(fields, "mongo_field") > 0) {
-        int nrfields = XMLHandler.countNodes(fields, "mongo_field");
+      Node fields = XMLHandler.getSubNode(stepnode, "mongo_fields"); //$NON-NLS-1$
+      if (fields != null && XMLHandler.countNodes(fields, "mongo_field") > 0) { //$NON-NLS-1$
+        int nrfields = XMLHandler.countNodes(fields, "mongo_field"); //$NON-NLS-1$
 
         m_fields = new ArrayList<MongoDbInputData.MongoField>();
         for (int i = 0; i < nrfields; i++) {
-          Node fieldNode = XMLHandler.getSubNodeByNr(fields, "mongo_field", i);
+          Node fieldNode = XMLHandler.getSubNodeByNr(fields, "mongo_field", i); //$NON-NLS-1$
 
           MongoDbInputData.MongoField newField = new MongoDbInputData.MongoField();
           newField.m_fieldName = XMLHandler
-              .getTagValue(fieldNode, "field_name");
+              .getTagValue(fieldNode, "field_name"); //$NON-NLS-1$
           newField.m_fieldPath = XMLHandler
-              .getTagValue(fieldNode, "field_path");
+              .getTagValue(fieldNode, "field_path"); //$NON-NLS-1$
           newField.m_kettleType = XMLHandler.getTagValue(fieldNode,
-              "field_type");
+              "field_type"); //$NON-NLS-1$
           String indexedVals = XMLHandler
-              .getTagValue(fieldNode, "indexed_vals");
+              .getTagValue(fieldNode, "indexed_vals"); //$NON-NLS-1$
           if (indexedVals != null && indexedVals.length() > 0) {
             newField.m_indexedVals = MongoDbInputData
                 .indexedValsList(indexedVals);
@@ -182,6 +182,7 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
     jsonFieldName = "json"; //$NON-NLS-1$
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void getFields(RowMetaInterface rowMeta, String origin,
       RowMetaInterface[] info, StepMeta nextStep, VariableSpace space)
@@ -220,43 +221,43 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
         .append("    ").append(XMLHandler.addTagValue("json_field_name", jsonFieldName)); //$NON-NLS-1$ //$NON-NLS-2$
     retval
         .append("    ").append(XMLHandler.addTagValue("json_query", jsonQuery)); //$NON-NLS-1$ //$NON-NLS-2$
-    retval.append("    ").append(
-        XMLHandler.addTagValue("auth_user", authenticationUser));
-    retval.append("    ").append(
-        XMLHandler.addTagValue("auth_password",
+    retval.append("    ").append( //$NON-NLS-1$
+        XMLHandler.addTagValue("auth_user", authenticationUser)); //$NON-NLS-1$
+    retval.append("    ").append( //$NON-NLS-1$
+        XMLHandler.addTagValue("auth_password", //$NON-NLS-1$
             Encr.encryptPasswordIfNotUsingVariables(authenticationPassword)));
-    retval.append("    ").append(
-        XMLHandler.addTagValue("connect_timeout", m_connectTimeout));
-    retval.append("    ").append(
-        XMLHandler.addTagValue("socket_timeout", m_socketTimeout));
-    retval.append("    ").append(
-        XMLHandler.addTagValue("read_preference", m_readPreference));
-    retval.append("    ").append(
-        XMLHandler.addTagValue("output_json", m_outputJson));
-    retval.append("    ").append(
-        XMLHandler.addTagValue("query_is_pipeline", m_aggPipeline));
+    retval.append("    ").append( //$NON-NLS-1$
+        XMLHandler.addTagValue("connect_timeout", m_connectTimeout)); //$NON-NLS-1$
+    retval.append("    ").append( //$NON-NLS-1$
+        XMLHandler.addTagValue("socket_timeout", m_socketTimeout)); //$NON-NLS-1$
+    retval.append("    ").append( //$NON-NLS-1$
+        XMLHandler.addTagValue("read_preference", m_readPreference)); //$NON-NLS-1$
+    retval.append("    ").append( //$NON-NLS-1$
+        XMLHandler.addTagValue("output_json", m_outputJson)); //$NON-NLS-1$
+    retval.append("    ").append( //$NON-NLS-1$
+        XMLHandler.addTagValue("query_is_pipeline", m_aggPipeline)); //$NON-NLS-1$
 
     if (m_fields != null && m_fields.size() > 0) {
-      retval.append("\n    ").append(XMLHandler.openTag("mongo_fields"));
+      retval.append("\n    ").append(XMLHandler.openTag("mongo_fields")); //$NON-NLS-1$ //$NON-NLS-2$
 
       for (MongoDbInputData.MongoField f : m_fields) {
-        retval.append("\n      ").append(XMLHandler.openTag("mongo_field"));
+        retval.append("\n      ").append(XMLHandler.openTag("mongo_field")); //$NON-NLS-1$ //$NON-NLS-2$
 
-        retval.append("\n        ").append(
-            XMLHandler.addTagValue("field_name", f.m_fieldName));
-        retval.append("\n        ").append(
-            XMLHandler.addTagValue("field_path", f.m_fieldPath));
-        retval.append("\n        ").append(
-            XMLHandler.addTagValue("field_type", f.m_kettleType));
+        retval.append("\n        ").append( //$NON-NLS-1$
+            XMLHandler.addTagValue("field_name", f.m_fieldName)); //$NON-NLS-1$
+        retval.append("\n        ").append( //$NON-NLS-1$
+            XMLHandler.addTagValue("field_path", f.m_fieldPath)); //$NON-NLS-1$
+        retval.append("\n        ").append( //$NON-NLS-1$
+            XMLHandler.addTagValue("field_type", f.m_kettleType)); //$NON-NLS-1$
         if (f.m_indexedVals != null && f.m_indexedVals.size() > 0) {
-          retval.append("\n        ").append(
-              XMLHandler.addTagValue("indexed_vals",
+          retval.append("\n        ").append( //$NON-NLS-1$
+              XMLHandler.addTagValue("indexed_vals", //$NON-NLS-1$
                   MongoDbInputData.indexedValsList(f.m_indexedVals)));
         }
-        retval.append("\n      ").append(XMLHandler.closeTag("mongo_field"));
+        retval.append("\n      ").append(XMLHandler.closeTag("mongo_field")); //$NON-NLS-1$ //$NON-NLS-2$
       }
 
-      retval.append("\n    ").append(XMLHandler.closeTag("mongo_fields"));
+      retval.append("\n    ").append(XMLHandler.closeTag("mongo_fields")); //$NON-NLS-1$ //$NON-NLS-2$
     }
 
     return retval.toString();
@@ -274,17 +275,17 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
       jsonFieldName = rep.getStepAttributeString(id_step, "json_field_name"); //$NON-NLS-1$
       jsonQuery = rep.getStepAttributeString(id_step, "json_query"); //$NON-NLS-1$
 
-      authenticationUser = rep.getStepAttributeString(id_step, "auth_user");
+      authenticationUser = rep.getStepAttributeString(id_step, "auth_user"); //$NON-NLS-1$
       authenticationPassword = Encr.decryptPasswordOptionallyEncrypted(rep
-          .getStepAttributeString(id_step, "auth_password"));
-      m_connectTimeout = rep.getStepAttributeString(id_step, "connect_timeout");
-      m_socketTimeout = rep.getStepAttributeString(id_step, "socket_timeout");
-      m_readPreference = rep.getStepAttributeString(id_step, "read_preference");
+          .getStepAttributeString(id_step, "auth_password")); //$NON-NLS-1$
+      m_connectTimeout = rep.getStepAttributeString(id_step, "connect_timeout"); //$NON-NLS-1$
+      m_socketTimeout = rep.getStepAttributeString(id_step, "socket_timeout"); //$NON-NLS-1$
+      m_readPreference = rep.getStepAttributeString(id_step, "read_preference"); //$NON-NLS-1$
 
-      m_outputJson = rep.getStepAttributeBoolean(id_step, 0, "output_json");
-      m_aggPipeline = rep.getStepAttributeBoolean(id_step, "query_is_pipeline");
+      m_outputJson = rep.getStepAttributeBoolean(id_step, 0, "output_json"); //$NON-NLS-1$
+      m_aggPipeline = rep.getStepAttributeBoolean(id_step, "query_is_pipeline"); //$NON-NLS-1$
 
-      int nrfields = rep.countNrStepAttributes(id_step, "field_name");
+      int nrfields = rep.countNrStepAttributes(id_step, "field_name"); //$NON-NLS-1$
       if (nrfields > 0) {
         m_fields = new ArrayList<MongoDbInputData.MongoField>();
 
@@ -292,13 +293,13 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
           MongoDbInputData.MongoField newField = new MongoDbInputData.MongoField();
 
           newField.m_fieldName = rep.getStepAttributeString(id_step, i,
-              "field_name");
+              "field_name"); //$NON-NLS-1$
           newField.m_fieldPath = rep.getStepAttributeString(id_step, i,
-              "field_path");
+              "field_path"); //$NON-NLS-1$
           newField.m_kettleType = rep.getStepAttributeString(id_step, i,
-              "field_type");
+              "field_type"); //$NON-NLS-1$
           String indexedVals = rep.getStepAttributeString(id_step, i,
-              "indexed_vals");
+              "indexed_vals"); //$NON-NLS-1$
           if (indexedVals != null && indexedVals.length() > 0) {
             newField.m_indexedVals = MongoDbInputData
                 .indexedValsList(indexedVals);
@@ -326,9 +327,9 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
           "json_field_name", jsonFieldName); //$NON-NLS-1$
       rep.saveStepAttribute(id_transformation, id_step, "json_query", jsonQuery); //$NON-NLS-1$
 
-      rep.saveStepAttribute(id_transformation, id_step, "auth_user",
+      rep.saveStepAttribute(id_transformation, id_step, "auth_user", //$NON-NLS-1$
           authenticationUser);
-      rep.saveStepAttribute(id_transformation, id_step, "auth_password",
+      rep.saveStepAttribute(id_transformation, id_step, "auth_password", //$NON-NLS-1$
           Encr.encryptPasswordIfNotUsingVariables(authenticationPassword));
       rep.saveStepAttribute(id_transformation, id_step,
           "connect_timeout", m_connectTimeout); //$NON-NLS-1$
@@ -336,27 +337,27 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
           "socket_timeout", m_socketTimeout); //$NON-NLS-1$
       rep.saveStepAttribute(id_transformation, id_step,
           "read_preference", m_readPreference); //$NON-NLS-1$
-      rep.saveStepAttribute(id_transformation, id_step, 0, "output_json",
+      rep.saveStepAttribute(id_transformation, id_step, 0, "output_json", //$NON-NLS-1$
           m_outputJson);
-      rep.saveStepAttribute(id_transformation, id_step, 0, "query_is_pipeline",
+      rep.saveStepAttribute(id_transformation, id_step, 0, "query_is_pipeline", //$NON-NLS-1$
           m_aggPipeline);
 
       if (m_fields != null && m_fields.size() > 0) {
         for (int i = 0; i < m_fields.size(); i++) {
           MongoDbInputData.MongoField f = m_fields.get(i);
 
-          rep.saveStepAttribute(id_transformation, id_step, i, "field_name",
+          rep.saveStepAttribute(id_transformation, id_step, i, "field_name", //$NON-NLS-1$
               f.m_fieldName);
-          rep.saveStepAttribute(id_transformation, id_step, i, "field_path",
+          rep.saveStepAttribute(id_transformation, id_step, i, "field_path", //$NON-NLS-1$
               f.m_fieldPath);
-          rep.saveStepAttribute(id_transformation, id_step, i, "field_type",
+          rep.saveStepAttribute(id_transformation, id_step, i, "field_type", //$NON-NLS-1$
               f.m_kettleType);
           if (f.m_indexedVals != null && f.m_indexedVals.size() > 0) {
             String indexedVals = MongoDbInputData
                 .indexedValsList(f.m_indexedVals);
 
             rep.saveStepAttribute(id_transformation, id_step, i,
-                "indexed_vals", indexedVals);
+                "indexed_vals", indexedVals); //$NON-NLS-1$
           }
         }
       }
