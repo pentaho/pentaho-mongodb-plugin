@@ -1313,13 +1313,15 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       numDocsToSample = 100; // default
     }
 
+    DBCursor cursor = null;
+    MongoClient mongo = null;
     String db = vars.environmentSubstitute(meta.getDbName());
     String collection = vars.environmentSubstitute(meta.getCollection());
 
     List<MongoField> discoveredFields = new ArrayList<MongoField>();
     Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
     try {
-      MongoClient mongo = initConnection(meta, vars);
+      mongo = initConnection(meta, vars);
       DB database = mongo.getDB(db);
 
       String realUser = vars
@@ -1339,7 +1341,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       String query = vars.environmentSubstitute(meta.getJsonQuery());
       String fields = vars.environmentSubstitute(meta.getFieldsName());
 
-      DBCursor cursor = null;
+      cursor = null;
       Iterator<DBObject> pipeSample = null;
 
       if (meta.getQueryIsPipeline()) {
@@ -1374,6 +1376,14 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       }
     } catch (Exception e) {
       throw new KettleException(e);
+    } finally {
+      if (cursor != null) {
+        cursor.close();
+      }
+
+      if (mongo != null) {
+        mongo.close();
+      }
     }
 
     return false;
