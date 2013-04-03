@@ -211,19 +211,20 @@ public class MongoDbOutputData extends BaseStepData implements
         } catch (NumberFormatException n) {
           throw new KettleException(n);
         }
+      }
 
-        if (!Const.isEmpty(writeConcern)) {
-          // try parsing as a number first
-          try {
-            int wc = Integer.parseInt(writeConcern);
-            concern = new WriteConcern(wc, wt, false, journaled);
-          } catch (NumberFormatException n) {
-            // assume its a valid string - e.g. "majority" or a list of tags
-            concern = new WriteConcern(writeConcern, wt, false, journaled);
-          }
-        } else {
-          concern = new WriteConcern(1, wt, false, journaled);
+      if (!Const.isEmpty(writeConcern)) {
+        // try parsing as a number first
+        try {
+          int wc = Integer.parseInt(writeConcern);
+          concern = new WriteConcern(wc, wt, false, journaled);
+        } catch (NumberFormatException n) {
+          // assume its a valid string - e.g. "majority" or a custom
+          // getLastError label associated with a tag set
+          concern = new WriteConcern(writeConcern, wt, false, journaled);
         }
+      } else {
+        concern = new WriteConcern(1, wt, false, journaled);
       }
     }
     optsBuilder.writeConcern(concern);
