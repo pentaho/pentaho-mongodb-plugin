@@ -60,10 +60,7 @@ import org.w3c.dom.Node;
  */
 @Step(id = "MongoDbInput", image = "mongodb-input.png", name = "MongoDB Input", description = "Reads from a Mongo DB collection", categoryDescription = "Big Data")
 public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface {
-  protected static Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes,
-  // needed by
-  // Translator2!!
-  // $NON-NLS-1$
+  protected static Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes
 
   private String hostname;
   private String port;
@@ -88,7 +85,16 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
   /** primary, primaryPreferred, secondary, secondaryPreferred, nearest */
   private String m_readPreference = "primary"; //$NON-NLS-1$
 
+  /**
+   * whether to discover and use all replica set members (if not already
+   * specified in the hosts field)
+   */
+  private boolean m_useAllReplicaSetMembers;
+
   private List<MongoDbInputData.MongoField> m_fields;
+
+  /** optional tag sets to use with read preference settings */
+  private List<String> m_readPrefTagSets;
 
   public MongoDbInputMeta() {
     super(); // allocate BaseStepMeta
@@ -102,6 +108,23 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
     return m_fields;
   }
 
+  public void setReadPrefTagSets(List<String> tagSets) {
+    m_readPrefTagSets = tagSets;
+  }
+
+  public List<String> getReadPrefTagSets() {
+    return m_readPrefTagSets;
+  }
+
+  public void setUseAllReplicaSetMembers(boolean u) {
+    m_useAllReplicaSetMembers = u;
+  }
+
+  public boolean getUseAllReplicaSetMembers() {
+    return m_useAllReplicaSetMembers;
+  }
+
+  @Override
   public void loadXML(Node stepnode, List<DatabaseMeta> databases,
       Map<String, Counter> counters) throws KettleXMLException {
     readData(stepnode);
@@ -137,19 +160,29 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
         m_outputJson = outputJson.equalsIgnoreCase("Y"); //$NON-NLS-1$
       }
 
+      m_useAllReplicaSetMembers = false; // default to false for backwards
+                                         // compatibility
+      String useAll = XMLHandler.getTagValue(stepnode,
+          "use_all_replica_members"); //$NON-NLS-1$
+      if (!Const.isEmpty(useAll)) {
+        m_useAllReplicaSetMembers = useAll.equalsIgnoreCase("Y"); //$NON-NLS-1$
+      }
+
       String queryIsPipe = XMLHandler
           .getTagValue(stepnode, "query_is_pipeline"); //$NON-NLS-1$
       if (!Const.isEmpty(queryIsPipe)) {
         m_aggPipeline = queryIsPipe.equalsIgnoreCase("Y"); //$NON-NLS-1$
       }
 
-      Node fields = XMLHandler.getSubNode(stepnode, "mongo_fields"); //$NON-NLS-1$
-      if (fields != null && XMLHandler.countNodes(fields, "mongo_field") > 0) { //$NON-NLS-1$
-        int nrfields = XMLHandler.countNodes(fields, "mongo_field"); //$NON-NLS-1$
+      Node mongo_fields = XMLHandler.getSubNode(stepnode, "mongo_fields"); //$NON-NLS-1$
+      if (mongo_fields != null
+          && XMLHandler.countNodes(mongo_fields, "mongo_field") > 0) { //$NON-NLS-1$
+        int nrfields = XMLHandler.countNodes(mongo_fields, "mongo_field"); //$NON-NLS-1$
 
         m_fields = new ArrayList<MongoDbInputData.MongoField>();
         for (int i = 0; i < nrfields; i++) {
-          Node fieldNode = XMLHandler.getSubNodeByNr(fields, "mongo_field", i); //$NON-NLS-1$
+          Node fieldNode = XMLHandler.getSubNodeByNr(mongo_fields,
+              "mongo_field", i); //$NON-NLS-1$
 
           MongoDbInputData.MongoField newField = new MongoDbInputData.MongoField();
           newField.m_fieldName = XMLHandler
@@ -166,6 +199,16 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
           }
 
           m_fields.add(newField);
+        }
+      }
+
+      String tags = XMLHandler.getTagValue(stepnode, "tag_sets"); //$NON-NLS-1$
+      if (!Const.isEmpty(tags)) {
+        m_readPrefTagSets = new ArrayList<String>();
+
+        String[] parts = tags.split("#@#"); //$NON-NLS-1$
+        for (String p : parts) {
+          m_readPrefTagSets.add(p.trim());
         }
       }
     } catch (Exception e) {
@@ -207,12 +250,37 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
     }
   }
 
+  protected String tagSetsToString() {
+    if (m_readPrefTagSets != null && m_readPrefTagSets.size() > 0) {
+      StringBuilder builder = new StringBuilder();
+      for (int i = 0; i < m_readPrefTagSets.size(); i++) {
+        String s = m_readPrefTagSets.get(i);
+        s = s.trim();
+        if (!s.startsWith("{")) { //$NON-NLS-1$
+          s = "{" + s; //$NON-NLS-1$
+        }
+        if (!s.endsWith("}")) { //$NON-NLS-1$
+          s += "}"; //$NON-NLS-1$
+        }
+
+        builder.append(s);
+        if (i != m_readPrefTagSets.size() - 1) {
+          builder.append(s).append("#@#"); //$NON-NLS-1$
+        }
+      }
+      return builder.toString();
+    }
+    return null;
+  }
+
   @Override
   public String getXML() {
     StringBuffer retval = new StringBuffer(300);
 
     retval.append("    ").append(XMLHandler.addTagValue("hostname", hostname)); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append("    ").append(XMLHandler.addTagValue("port", port)); //$NON-NLS-1$ //$NON-NLS-2$
+    retval
+        .append("    ").append(XMLHandler.addTagValue("use_all_replica_members", m_useAllReplicaSetMembers)); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append("    ").append(XMLHandler.addTagValue("db_name", dbName)); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append("    ").append(XMLHandler.addTagValue("fields_name", fields)); //$NON-NLS-1$ //$NON-NLS-2$
     retval
@@ -260,15 +328,23 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
       retval.append("\n    ").append(XMLHandler.closeTag("mongo_fields")); //$NON-NLS-1$ //$NON-NLS-2$
     }
 
+    String tags = tagSetsToString();
+    if (!Const.isEmpty(tags)) {
+      retval.append("    ").append(XMLHandler.addTagValue("tag_sets", tags)); //$NON-NLS-1$ //$NON-NLS-2$
+    }
+
     return retval.toString();
   }
 
+  @Override
   public void readRep(Repository rep, ObjectId id_step,
       List<DatabaseMeta> databases, Map<String, Counter> counters)
       throws KettleException {
     try {
       hostname = rep.getStepAttributeString(id_step, "hostname"); //$NON-NLS-1$
       port = rep.getStepAttributeString(id_step, "port"); //$NON-NLS-1$
+      m_useAllReplicaSetMembers = rep.getStepAttributeBoolean(id_step, 0,
+          "use_all_replica_members"); //$NON-NLS-1$
       dbName = rep.getStepAttributeString(id_step, "db_name"); //$NON-NLS-1$
       fields = rep.getStepAttributeString(id_step, "fields_name"); //$NON-NLS-1$
       collection = rep.getStepAttributeString(id_step, "collection"); //$NON-NLS-1$
@@ -308,17 +384,30 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
           m_fields.add(newField);
         }
       }
+
+      String tags = rep.getStepAttributeString(id_step, "tag_sets"); //$NON-NLS-1$
+      if (!Const.isEmpty(tags)) {
+        m_readPrefTagSets = new ArrayList<String>();
+
+        String[] parts = tags.split("?@?"); //$NON-NLS-1$
+        for (String p : parts) {
+          m_readPrefTagSets.add(p.trim());
+        }
+      }
     } catch (Exception e) {
       throw new KettleException(BaseMessages.getString(PKG,
           "MongoDbInputMeta.Exception.UnexpectedErrorWhileReadingStepInfo"), e); //$NON-NLS-1$
     }
   }
 
+  @Override
   public void saveRep(Repository rep, ObjectId id_transformation,
       ObjectId id_step) throws KettleException {
     try {
       rep.saveStepAttribute(id_transformation, id_step, "hostname", hostname); //$NON-NLS-1$
       rep.saveStepAttribute(id_transformation, id_step, "port", port); //$NON-NLS-1$
+      rep.saveStepAttribute(id_transformation, id_step,
+          "use_all_replica_members", m_useAllReplicaSetMembers); //$NON-NLS-1$
       rep.saveStepAttribute(id_transformation, id_step, "db_name", dbName); //$NON-NLS-1$
       rep.saveStepAttribute(id_transformation, id_step, "fields_name", fields); //$NON-NLS-1$
       rep.saveStepAttribute(id_transformation, id_step,
@@ -361,6 +450,11 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
           }
         }
       }
+
+      String tags = tagSetsToString();
+      if (!Const.isEmpty(tags)) {
+        rep.saveStepAttribute(id_transformation, id_step, "tag_sets", tags); //$NON-NLS-1$
+      }
     } catch (KettleException e) {
       throw new KettleException(BaseMessages.getString(PKG,
           "MongoDbInputMeta.Exception.UnableToSaveStepInfo") + id_step, e); //$NON-NLS-1$
@@ -376,6 +470,7 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
     return new MongoDbInputData();
   }
 
+  @Override
   public void check(List<CheckResultInterface> remarks, TransMeta transMeta,
       StepMeta stepMeta, RowMetaInterface prev, String[] input,
       String[] output, RowMetaInterface info) {

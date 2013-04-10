@@ -43,6 +43,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import com.mongodb.CommandResult;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
+import com.mongodb.ServerAddress;
 import com.mongodb.WriteResult;
 
 /**
@@ -285,6 +286,14 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       }
     }
 
+    if (cmd != null) {
+      ServerAddress s = cmd.getServerUsed();
+      if (s != null) {
+        logBasic(BaseMessages.getString(PKG,
+            "MongoDbOutput.Messages.WroteBatchToServer", s.toString())); //$NON-NLS-1$
+      }
+    }
+
     m_batch.clear();
   }
 
@@ -304,15 +313,15 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
 
         if (Const.isEmpty(db)) {
           throw new Exception(BaseMessages.getString(PKG,
-              "MongoDbOutput.Messages.Error.NoDBSpecified"));
+              "MongoDbOutput.Messages.Error.NoDBSpecified")); //$NON-NLS-1$
         }
 
         if (Const.isEmpty(collection)) {
           throw new Exception(BaseMessages.getString(PKG,
-              "MongoDbOutput.Messages.Error.NoCollectionSpecified"));
+              "MongoDbOutput.Messages.Error.NoCollectionSpecified")); //$NON-NLS-1$
         }
 
-        m_data.setConnection(MongoDbOutputData.connect(m_meta, this));
+        m_data.setConnection(MongoDbOutputData.connect(m_meta, this, log));
         m_data.setDB(m_data.getConnection().getDB(db));
 
         String realUser = environmentSubstitute(m_meta.getUsername());

@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.steps.mongodboutput;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -43,6 +42,7 @@ import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
+import org.pentaho.mongo.MongoUtils;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
@@ -51,11 +51,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoException;
-import com.mongodb.ReadPreference;
-import com.mongodb.ServerAddress;
-import com.mongodb.WriteConcern;
 import com.mongodb.util.JSON;
 
 /**
@@ -69,6 +65,11 @@ public class MongoDbOutputData extends BaseStepData implements
   private static Class<?> PKG = MongoDbOutputMeta.class;
 
   public static final int MONGO_DEFAULT_PORT = 27017;
+
+  public static final String LOCAL_DB = "local"; //$NON-NLS-1$
+  public static final String REPL_SET_COLLECTION = "system.replset"; //$NON-NLS-1$
+  public static final String REPL_SET_SETTINGS = "settings"; //$NON-NLS-1$
+  public static final String REPL_SET_LAST_ERROR_MODES = "getLastErrorModes"; //$NON-NLS-1$
 
   /** Enum for the type of the top level object of the document structure */
   public static enum MongoTopLevel {
@@ -136,172 +137,35 @@ public class MongoDbOutputData extends BaseStepData implements
   }
 
   /**
-   * Utility method to configure Mongo connection options based on parameters
-   * supplied in the meta data
-   * 
-   * @param optsBuilder an options builder
-   * @param meta the step meta data
-   * @param vars variables to use
-   * @throws KettleException if a problem occurs
-   */
-  public static void configureConnectionOptions(
-      MongoClientOptions.Builder optsBuilder, MongoDbOutputMeta meta,
-      VariableSpace vars) throws KettleException {
-
-    // connection timeout
-    if (!Const.isEmpty(meta.getConnectTimeout())) {
-      String connS = meta.getConnectTimeout();
-      connS = vars.environmentSubstitute(connS);
-      try {
-        int connTimeout = Integer.parseInt(connS);
-        if (connTimeout > 0) {
-          optsBuilder.connectTimeout(connTimeout);
-        }
-      } catch (NumberFormatException n) {
-        throw new KettleException(n);
-      }
-    }
-
-    // socket timeout
-    if (!Const.isEmpty(meta.getSocketTimeout())) {
-      String sockS = meta.getSocketTimeout();
-      sockS = vars.environmentSubstitute(sockS);
-      try {
-        int sockTimeout = Integer.parseInt(sockS);
-        if (sockTimeout > 0) {
-          optsBuilder.socketTimeout(sockTimeout);
-        }
-      } catch (NumberFormatException n) {
-        throw new KettleException(n);
-      }
-    }
-
-    // read preference
-    if (!Const.isEmpty(meta.getReadPreference())) {
-      String rp = meta.getReadPreference();
-      rp = vars.environmentSubstitute(rp);
-
-      if (rp.equalsIgnoreCase("Primary")) { //$NON-NLS-1$
-        optsBuilder.readPreference(ReadPreference.primary());
-      } else if (rp.equalsIgnoreCase("Primary preferred")) { //$NON-NLS-1$
-        optsBuilder.readPreference(ReadPreference.primaryPreferred());
-      } else if (rp.equalsIgnoreCase("Secondary")) { //$NON-NLS-1$
-        optsBuilder.readPreference(ReadPreference.secondary());
-      } else if (rp.equalsIgnoreCase("Secondary preferred")) { //$NON-NLS-1$
-        optsBuilder.readPreference(ReadPreference.secondaryPreferred());
-      } else if (rp.equalsIgnoreCase("Nearest")) { //$NON-NLS-1$
-        optsBuilder.readPreference(ReadPreference.nearest());
-      }
-    }
-
-    // write concern
-    String writeConcern = meta.getWriteConcern();
-    String wTimeout = meta.getWTimeout();
-    boolean journaled = meta.getJournal();
-    WriteConcern concern = null;
-
-    if (Const.isEmpty(writeConcern) && Const.isEmpty(wTimeout) && !journaled) {
-      concern = new WriteConcern(); // all defaults - timeout 0, journal =
-                                    // false, w = 1
-    } else {
-      int wt = 0;
-      if (!Const.isEmpty(wTimeout)) {
-        try {
-          wt = Integer.parseInt(wTimeout);
-        } catch (NumberFormatException n) {
-          throw new KettleException(n);
-        }
-      }
-
-      if (!Const.isEmpty(writeConcern)) {
-        // try parsing as a number first
-        try {
-          int wc = Integer.parseInt(writeConcern);
-          concern = new WriteConcern(wc, wt, false, journaled);
-        } catch (NumberFormatException n) {
-          // assume its a valid string - e.g. "majority" or a custom
-          // getLastError label associated with a tag set
-          concern = new WriteConcern(writeConcern, wt, false, journaled);
-        }
-      } else {
-        concern = new WriteConcern(1, wt, false, journaled);
-      }
-    }
-    optsBuilder.writeConcern(concern);
-  }
-
-  /**
    * Create a connection to a Mongo server based on parameters supplied in the
    * step meta data
    * 
    * @param meta the step meta data
    * @param vars variables to use
+   * @param log for logging
    * @return a configured MongoClient object
    * @throws KettleException if a problem occurs
    */
-  public static MongoClient connect(MongoDbOutputMeta meta, VariableSpace vars)
-      throws KettleException {
+  public static MongoClient connect(MongoDbOutputMeta meta, VariableSpace vars,
+      LogChannelInterface log) throws KettleException {
 
-    String hostsPorts = meta.getHostnames();
-    String singlePort = meta.getPort();
-    hostsPorts = vars.environmentSubstitute(hostsPorts);
-    singlePort = vars.environmentSubstitute(singlePort);
-    int singlePortI = -1;
+    return MongoUtils.initConnection(meta, vars, log);
+  }
 
-    try {
-      singlePortI = Integer.parseInt(singlePort);
-    } catch (NumberFormatException n) {
-      // don't complain
-    }
+  /**
+   * Connect to mongo and retrieve any custom getLastError modes defined in the
+   * local.system.replset collection
+   * 
+   * @param meta the MongoDbOutputMeta containing settings to use
+   * @param vars environment variables
+   * @param log for logging
+   * @return a list containing any custom getLastError modes
+   * @throws KettleException if a connection or authentication error occurs
+   */
+  public static List<String> getLastErrorModes(MongoDbOutputMeta meta,
+      VariableSpace vars, LogChannelInterface log) throws KettleException {
 
-    if (Const.isEmpty(hostsPorts)) {
-      throw new KettleException(BaseMessages.getString(PKG,
-          "MongoDbOutput.Messages.Error.EmptyHostsString")); //$NON-NLS-1$
-    }
-
-    List<ServerAddress> repSet = new ArrayList<ServerAddress>();
-
-    String[] parts = hostsPorts.trim().split(","); //$NON-NLS-1$
-    for (String part : parts) {
-      // host:port?
-      int port = singlePortI != -1 ? singlePortI : MONGO_DEFAULT_PORT;
-      String[] hp = part.split(":"); //$NON-NLS-1$
-      if (hp.length > 2) {
-        throw new KettleException(BaseMessages.getString(PKG,
-            "MongoDbOutput.Messages.Error.MalformedHost", part)); //$NON-NLS-1$
-      }
-
-      String host = hp[0];
-      if (hp.length == 2) {
-        // non-default port
-        try {
-          port = Integer.parseInt(hp[1].trim());
-        } catch (NumberFormatException n) {
-          throw new KettleException(BaseMessages.getString(PKG,
-              "MongoDbOutput.Messages.Error.UnableToParsePortNumber", hp[1])); //$NON-NLS-1$
-        }
-      }
-
-      try {
-        ServerAddress s = new ServerAddress(host, port);
-        repSet.add(s);
-      } catch (UnknownHostException u) {
-        throw new KettleException(u);
-      }
-    }
-
-    MongoClientOptions.Builder mongoOptsBuilder = new MongoClientOptions.Builder();
-    if (meta != null) {
-      configureConnectionOptions(mongoOptsBuilder, meta, vars);
-    }
-    MongoClientOptions opts = mongoOptsBuilder.build();
-    try {
-      return (repSet.size() > 1 ? new MongoClient(repSet, opts) : (repSet
-          .size() == 1 ? new MongoClient(repSet.get(0), opts)
-          : new MongoClient(new ServerAddress("localhost"), opts))); //$NON-NLS-1$
-    } catch (UnknownHostException u) {
-      throw new KettleException(u);
-    }
+    return MongoUtils.getLastErrorModes(meta, vars, log);
   }
 
   /**

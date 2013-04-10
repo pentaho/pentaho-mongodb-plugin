@@ -23,7 +23,6 @@
 package org.pentaho.di.trans.steps.mongodbinput;
 
 import java.math.BigDecimal;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,6 +40,7 @@ import org.bson.types.Symbol;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
@@ -49,6 +49,7 @@ import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
+import org.pentaho.mongo.MongoUtils;
 
 import com.mongodb.AggregationOutput;
 import com.mongodb.BasicDBList;
@@ -58,9 +59,6 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.ReadPreference;
-import com.mongodb.ServerAddress;
 import com.mongodb.util.JSON;
 
 /**
@@ -92,13 +90,13 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   public static class MongoField implements Comparable<MongoField> {
 
     /** The name the the field will take in the outputted kettle stream */
-    public String m_fieldName = "";
+    public String m_fieldName = ""; //$NON-NLS-1$
 
     /** The path to the field in the Mongo object */
-    public String m_fieldPath = "";
+    public String m_fieldPath = ""; //$NON-NLS-1$
 
     /** The kettle type for this field */
-    public String m_kettleType = "";
+    public String m_kettleType = ""; //$NON-NLS-1$
 
     /** User-defined indexed values for String types */
     public List<String> m_indexedVals;
@@ -120,7 +118,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
      * documents. Note that numerator might be larger than denominator if this
      * path is encountered multiple times in an array within one document.
      */
-    public transient String m_occurenceFraction = "";
+    public transient String m_occurenceFraction = ""; //$NON-NLS-1$
 
     private transient Object m_mongoType;
 
@@ -160,7 +158,8 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
      */
     public void init(int outputIndex) throws KettleException {
       if (Const.isEmpty(m_fieldPath)) {
-        throw new KettleException("No path set!");
+        throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
+            "MongoDbOutput.Messages.MongoField.Error.NoPathSet")); //$NON-NLS-1$
       }
 
       if (m_pathParts != null) {
@@ -169,15 +168,15 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
       String fieldPath = cleansePath(m_fieldPath);
 
-      String[] temp = fieldPath.split("\\.");
+      String[] temp = fieldPath.split("\\."); //$NON-NLS-1$
       m_pathParts = new ArrayList<String>();
       for (String part : temp) {
         m_pathParts.add(part);
       }
 
-      if (m_pathParts.get(0).equals("$")) {
+      if (m_pathParts.get(0).equals("$")) { //$NON-NLS-1$
         m_pathParts.remove(0); // root record indicator
-      } else if (m_pathParts.get(0).startsWith("$[")) {
+      } else if (m_pathParts.get(0).startsWith("$[")) { //$NON-NLS-1$
 
         // strip leading $ off of array
         String r = m_pathParts.get(0).substring(1, m_pathParts.get(0).length());
@@ -238,9 +237,9 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         } else if (fieldValue instanceof Date) {
           fieldValue = new Boolean(((Date) fieldValue).getTime() != 0);
         } else {
-          fieldValue = new Boolean(fieldValue.toString().equalsIgnoreCase("Y")
-              || fieldValue.toString().equalsIgnoreCase("T")
-              || fieldValue.toString().equalsIgnoreCase("1"));
+          fieldValue = new Boolean(fieldValue.toString().equalsIgnoreCase("Y") //$NON-NLS-1$
+              || fieldValue.toString().equalsIgnoreCase("T") //$NON-NLS-1$
+              || fieldValue.toString().equalsIgnoreCase("1")); //$NON-NLS-1$
         }
         return m_tempValueMeta.getBoolean(fieldValue);
       case ValueMetaInterface.TYPE_DATE:
@@ -250,7 +249,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
           // nothing to do
         } else {
           throw new KettleException(BaseMessages.getString(
-              MongoDbInputMeta.PKG, "MongoDbInput.ErrorMessage.DateConversion",
+              MongoDbInputMeta.PKG, "MongoDbInput.ErrorMessage.DateConversion", //$NON-NLS-1$
               fieldValue.toString()));
         }
         return m_tempValueMeta.getDate(fieldValue);
@@ -300,7 +299,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
       if (m_tempParts.size() == 0) {
         throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
-            "MongoDbInput.ErrorMessage.MalformedPathRecord"));
+            "MongoDbInput.ErrorMessage.MalformedPathRecord")); //$NON-NLS-1$
       }
 
       String part = m_tempParts.remove(0);
@@ -362,7 +361,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
       if (m_tempParts.size() == 0) {
         throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
-            "MongoDbInput.ErrorMessage.MalformedPathArray"));
+            "MongoDbInput.ErrorMessage.MalformedPathArray")); //$NON-NLS-1$
       }
 
       String part = m_tempParts.remove(0);
@@ -378,7 +377,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         arrayI = Integer.parseInt(index.trim());
       } catch (NumberFormatException e) {
         throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
-            "MongoDbInput.ErrorMessage.UnableToParseArrayIndex", index));
+            "MongoDbInput.ErrorMessage.UnableToParseArrayIndex", index)); //$NON-NLS-1$
       }
 
       if (part.indexOf(']') < part.length() - 1) {
@@ -449,7 +448,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     public void init() throws KettleException {
       if (Const.isEmpty(m_expansionPath)) {
         throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
-            "MongoDbInput.ErrorMessage.NoPathSet"));
+            "MongoDbInput.ErrorMessage.NoPathSet")); //$NON-NLS-1$
       }
       if (m_pathParts != null) {
         return;
@@ -457,15 +456,15 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
       String expansionPath = cleansePath(m_expansionPath);
 
-      String[] temp = expansionPath.split("\\.");
+      String[] temp = expansionPath.split("\\."); //$NON-NLS-1$
       m_pathParts = new ArrayList<String>();
       for (String part : temp) {
         m_pathParts.add(part);
       }
 
-      if (m_pathParts.get(0).equals("$")) {
+      if (m_pathParts.get(0).equals("$")) { //$NON-NLS-1$
         m_pathParts.remove(0); // root record indicator
-      } else if (m_pathParts.get(0).startsWith("$[")) {
+      } else if (m_pathParts.get(0).startsWith("$[")) { //$NON-NLS-1$
 
         // strip leading $ off of array
         String r = m_pathParts.get(0).substring(1, m_pathParts.get(0).length());
@@ -518,7 +517,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
       if (m_tempParts.size() == 0) {
         throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
-            "MongoDbInput.ErrorMessage.MalformedPathRecord"));
+            "MongoDbInput.ErrorMessage.MalformedPathRecord")); //$NON-NLS-1$
       }
 
       String part = m_tempParts.remove(0);
@@ -565,7 +564,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
       if (m_tempParts.size() == 0) {
         throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
-            "MongoDbInput.ErrorMessage.MalformedPathArray"));
+            "MongoDbInput.ErrorMessage.MalformedPathArray")); //$NON-NLS-1$
       }
 
       String part = m_tempParts.remove(0);
@@ -583,7 +582,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         m_tempParts.add(0, part);
       }
 
-      if (index.equals("*")) {
+      if (index.equals("*")) { //$NON-NLS-1$
         // start the expansion - we delegate conversion to our subfields
         Object[][] result = new Object[mongoList.size()][m_outputRowMeta.size()
             + RowDataUtil.OVER_ALLOCATE_SIZE];
@@ -617,7 +616,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         } catch (NumberFormatException e) {
           throw new KettleException(BaseMessages.getString(
               MongoDbInputMeta.PKG,
-              "MongoDbInput.ErrorMessage.UnableToParseArrayIndex", index));
+              "MongoDbInput.ErrorMessage.UnableToParseArrayIndex", index)); //$NON-NLS-1$
         }
 
         if (arrayI >= mongoList.size() || arrayI < 0) {
@@ -664,15 +663,15 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     for (MongoField f : normalFields) {
       String path = f.m_fieldPath;
 
-      if (path != null && path.lastIndexOf("[*]") >= 0) {
+      if (path != null && path.lastIndexOf("[*]") >= 0) { //$NON-NLS-1$
 
-        if (path.indexOf("[*]") != path.lastIndexOf("[*]")) {
+        if (path.indexOf("[*]") != path.lastIndexOf("[*]")) { //$NON-NLS-1$ //$NON-NLS-2$
           throw new KettleException(BaseMessages.getString(
               MongoDbInputMeta.PKG,
-              "MongoInput.ErrorMessage.PathContainsMultipleExpansions", path));
+              "MongoInput.ErrorMessage.PathContainsMultipleExpansions", path)); //$NON-NLS-1$
         }
 
-        String pathPart = path.substring(0, path.lastIndexOf("[*]") + 3);
+        String pathPart = path.substring(0, path.lastIndexOf("[*]") + 3); //$NON-NLS-1$
 
         if (expansion == null) {
           expansion = pathPart;
@@ -680,7 +679,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
           if (!expansion.equals(pathPart)) {
             throw new KettleException(BaseMessages.getString(
                 MongoDbInputMeta.PKG,
-                "MongoDbInput.ErrorMessage.MutipleDifferentExpansions"));
+                "MongoDbInput.ErrorMessage.MutipleDifferentExpansions")); //$NON-NLS-1$
           }
         }
 
@@ -704,11 +703,11 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         subField.m_fieldName = ef.m_fieldName;
         String path = ef.m_fieldPath;
         if (path.charAt(path.length() - 2) == '*') {
-          path = "dummy"; // pulling a primitive out of the array (path
+          path = "dummy"; // pulling a primitive out of the array (path //$NON-NLS-1$
                           // doesn't matter)
         } else {
-          path = path.substring(path.lastIndexOf("[*]") + 3, path.length());
-          path = "$" + path;
+          path = path.substring(path.lastIndexOf("[*]") + 3, path.length()); //$NON-NLS-1$
+          path = "$" + path; //$NON-NLS-1$
         }
 
         subField.m_fieldPath = path;
@@ -760,12 +759,12 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
    * user-specified paths. May return more than one Kettle row if an array is
    * being expanded/unwound
    * 
-   * @param mongo the mongo document
+   * @param mongoObj the mongo document
    * @param space variables to use
    * @return populated Kettle row(s)
    * @throws KettleException if a problem occurs
    */
-  public Object[][] mongoDocumentToKettle(DBObject mongo, VariableSpace space)
+  public Object[][] mongoDocumentToKettle(DBObject mongoObj, VariableSpace space)
       throws KettleException {
 
     Object[][] result = null;
@@ -773,12 +772,12 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     if (m_expansionHandler != null) {
       m_expansionHandler.reset(space);
 
-      if (mongo instanceof BasicDBObject) {
-        result = m_expansionHandler.convertToKettleValue((BasicDBObject) mongo,
-            space);
+      if (mongoObj instanceof BasicDBObject) {
+        result = m_expansionHandler.convertToKettleValue(
+            (BasicDBObject) mongoObj, space);
       } else {
-        result = m_expansionHandler.convertToKettleValue((BasicDBList) mongo,
-            space);
+        result = m_expansionHandler.convertToKettleValue(
+            (BasicDBList) mongoObj, space);
       }
     } else {
       result = new Object[1][];
@@ -791,10 +790,10 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       value = null;
       f.reset(space);
 
-      if (mongo instanceof BasicDBObject) {
-        value = f.convertToKettleValue((BasicDBObject) mongo);
-      } else if (mongo instanceof BasicDBList) {
-        value = f.convertToKettleValue((BasicDBList) mongo);
+      if (mongoObj instanceof BasicDBObject) {
+        value = f.convertToKettleValue((BasicDBObject) mongoObj);
+      } else if (mongoObj instanceof BasicDBList) {
+        value = f.convertToKettleValue((BasicDBList) mongoObj);
       }
 
       normalData[f.m_outputIndex] = value;
@@ -816,138 +815,19 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   }
 
   /**
-   * Utility method to configure connection options based on parameters set in
-   * the step meta data.
-   * 
-   * @param optsBuilder an options builder instance
-   * @param meta MongoDbInputMeta
-   * @param vars variables to use
-   * @throws KettleException if a problem occurs
-   */
-  public static void configureConnectionOptions(
-      MongoClientOptions.Builder optsBuilder, MongoDbInputMeta meta,
-      VariableSpace vars) throws KettleException {
-
-    // connection timeout
-    if (!Const.isEmpty(meta.getConnectTimeout())) {
-      String connS = meta.getConnectTimeout();
-      connS = vars.environmentSubstitute(connS);
-      try {
-        int connTimeout = Integer.parseInt(connS);
-        if (connTimeout > 0) {
-          optsBuilder.connectTimeout(connTimeout);
-        }
-      } catch (NumberFormatException n) {
-        throw new KettleException(n);
-      }
-    }
-
-    // socket timeout
-    if (!Const.isEmpty(meta.getSocketTimeout())) {
-      String sockS = meta.getSocketTimeout();
-      sockS = vars.environmentSubstitute(sockS);
-      try {
-        int sockTimeout = Integer.parseInt(sockS);
-        if (sockTimeout > 0) {
-          optsBuilder.socketTimeout(sockTimeout);
-        }
-      } catch (NumberFormatException n) {
-        throw new KettleException(n);
-      }
-    }
-
-    // read preference
-    if (!Const.isEmpty(meta.getReadPreference())) {
-      String rp = meta.getReadPreference();
-      rp = vars.environmentSubstitute(rp);
-
-      if (rp.equalsIgnoreCase("Primary")) {
-        optsBuilder.readPreference(ReadPreference.primary());
-      } else if (rp.equalsIgnoreCase("Primary preferred")) {
-        optsBuilder.readPreference(ReadPreference.primaryPreferred());
-      } else if (rp.equalsIgnoreCase("Secondary")) {
-        optsBuilder.readPreference(ReadPreference.secondary());
-      } else if (rp.equalsIgnoreCase("Secondary preferred")) {
-        optsBuilder.readPreference(ReadPreference.secondaryPreferred());
-      } else if (rp.equalsIgnoreCase("Nearest")) {
-        optsBuilder.readPreference(ReadPreference.nearest());
-      }
-    }
-  }
-
-  /**
    * Utility method to return a connection to a Mongo database based on
    * parameters provided by the user in the step meta data
    * 
    * @param meta MongoDbInputMeta
    * @param vars variables to use
+   * @param log for logging
    * @return a configured MongoClient object
    * @throws KettleException if a problem occurs
    */
   public static MongoClient initConnection(MongoDbInputMeta meta,
-      VariableSpace vars) throws KettleException {
+      VariableSpace vars, LogChannelInterface log) throws KettleException {
 
-    String hostsPorts = meta.getHostnames();
-    String singlePort = meta.getPort();
-    hostsPorts = vars.environmentSubstitute(hostsPorts);
-    singlePort = vars.environmentSubstitute(singlePort);
-    int singlePortI = -1;
-
-    try {
-      singlePortI = Integer.parseInt(singlePort);
-    } catch (NumberFormatException n) {
-      // don't complain
-    }
-
-    if (Const.isEmpty(hostsPorts)) {
-      throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
-          "MongoDbInput.ErrorMessage.EmptyHostsString"));
-    }
-
-    List<ServerAddress> repSet = new ArrayList<ServerAddress>();
-
-    String[] parts = hostsPorts.trim().split(",");
-    for (String part : parts) {
-      // host:port?
-      int port = singlePortI != -1 ? singlePortI : MONGO_DEFAULT_PORT;
-      String[] hp = part.split(":");
-      if (hp.length > 2) {
-        throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
-            "MongoDbInput.ErrorMessage.MalformedHostsSpec", part));
-      }
-
-      String host = hp[0];
-      if (hp.length == 2) {
-        // non-default port
-        try {
-          port = Integer.parseInt(hp[1].trim());
-        } catch (NumberFormatException n) {
-          throw new KettleException(BaseMessages.getString(
-              MongoDbInputMeta.PKG,
-              "MongoDbInput.ErrorMessage.UnableToParsePortNumber", hp[1]));
-        }
-      }
-
-      try {
-        ServerAddress s = new ServerAddress(host, port);
-        repSet.add(s);
-      } catch (UnknownHostException u) {
-        throw new KettleException(u);
-      }
-    }
-
-    MongoClientOptions.Builder mongoOptsBuilder = new MongoClientOptions.Builder();
-    if (meta != null) {
-      configureConnectionOptions(mongoOptsBuilder, meta, vars);
-    }
-    MongoClientOptions opts = mongoOptsBuilder.build();
-    try {
-      return (repSet.size() > 1 ? new MongoClient(repSet, opts) : (repSet
-          .size() == 1 ? new MongoClient(repSet.get(0), opts)
-          : new MongoClient(new ServerAddress("localhost"), opts)));
-    } catch (UnknownHostException u) {
-      throw new KettleException(u);
-    }
+    return MongoUtils.initConnection(meta, vars, log);
   }
 
   /**
@@ -960,13 +840,13 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   public static String cleansePath(String path) {
     // look for variables and convert any "." to "_"
 
-    int index = path.indexOf("${");
+    int index = path.indexOf("${"); //$NON-NLS-1$
 
     int endIndex = 0;
     String tempStr = path;
     while (index >= 0) {
       index += 2;
-      endIndex += tempStr.indexOf("}");
+      endIndex += tempStr.indexOf("}"); //$NON-NLS-1$
       if (endIndex > 0 && endIndex > index + 1) {
         String key = path.substring(index, endIndex);
 
@@ -982,7 +862,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         break;
       }
 
-      index = tempStr.indexOf("${");
+      index = tempStr.indexOf("${"); //$NON-NLS-1$
 
       if (index > 0) {
         index += endIndex;
@@ -1052,10 +932,10 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       String innerPart = temp.substring(temp.indexOf('[') + 1,
           temp.indexOf(']'));
 
-      if (!innerPart.equals("-")) {
+      if (!innerPart.equals("-")) { //$NON-NLS-1$
         // terminal primitive specific index
         updated.append(temp); // finished
-        temp = "";
+        temp = ""; //$NON-NLS-1$
         break;
       } else {
         updated.append(firstPart);
@@ -1068,11 +948,11 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
           tempComp = tempComp.substring(tempComp.indexOf(']') + 1,
               tempComp.length());
         } else {
-          temp = "";
+          temp = ""; //$NON-NLS-1$
         }
 
-        String[] compParts = innerComp.split(":");
-        String replace = "[" + compParts[0] + "]";
+        String[] compParts = innerComp.split(":"); //$NON-NLS-1$
+        String replace = "[" + compParts[0] + "]"; //$NON-NLS-1$ //$NON-NLS-2$
         updated.append(replace);
 
       }
@@ -1093,10 +973,10 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       return;
     }
 
-    if (m.m_fieldName.split("\\[").length != update.split("\\[").length) {
+    if (m.m_fieldName.split("\\[").length != update.split("\\[").length) { //$NON-NLS-1$ //$NON-NLS-2$
       throw new IllegalArgumentException(
-          "Field path and update path do not seem to contain "
-              + "the same number of array parts!");
+          "Field path and update path do not seem to contain " //$NON-NLS-1$
+              + "the same number of array parts!"); //$NON-NLS-1$
     }
 
     String temp = m.m_fieldName;
@@ -1111,7 +991,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       if (innerPart.indexOf(':') < 0) {
         // terminal primitive specific index
         updated.append(temp); // finished
-        temp = "";
+        temp = ""; //$NON-NLS-1$
         break;
       } else {
         updated.append(firstPart);
@@ -1124,20 +1004,20 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
           tempComp = tempComp.substring(tempComp.indexOf(']') + 1,
               tempComp.length());
         } else {
-          temp = "";
+          temp = ""; //$NON-NLS-1$
         }
 
-        String[] origParts = innerPart.split(":");
-        String[] compParts = innerComp.split(":");
+        String[] origParts = innerPart.split(":"); //$NON-NLS-1$
+        String[] compParts = innerComp.split(":"); //$NON-NLS-1$
         int origMax = Integer.parseInt(origParts[1]);
         int compMax = Integer.parseInt(compParts[1]);
 
         if (compMax > origMax) {
           // updated the max index seen for this path
-          String newRange = "[" + origParts[0] + ":" + compMax + "]";
+          String newRange = "[" + origParts[0] + ":" + compMax + "]"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
           updated.append(newRange);
         } else {
-          String oldRange = "[" + innerPart + "]";
+          String oldRange = "[" + innerPart + "]"; //$NON-NLS-1$ //$NON-NLS-2$
           updated.append(oldRange);
         }
       }
@@ -1152,8 +1032,8 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   }
 
   protected static void docToFields(DBObject doc, Map<String, MongoField> lookup) {
-    String root = "$";
-    String name = "$";
+    String root = "$"; //$NON-NLS-1$
+    String name = "$"; //$NON-NLS-1$
 
     if (doc instanceof BasicDBObject) {
       processRecord((BasicDBObject) doc, root, name, lookup);
@@ -1168,15 +1048,15 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       Object fieldValue = rec.get(key);
 
       if (fieldValue instanceof BasicDBObject) {
-        processRecord((BasicDBObject) fieldValue, path + "." + key, name + "."
+        processRecord((BasicDBObject) fieldValue, path + "." + key, name + "." //$NON-NLS-1$ //$NON-NLS-2$
             + key, lookup);
       } else if (fieldValue instanceof BasicDBList) {
-        processList((BasicDBList) fieldValue, path + "." + key, name + "."
+        processList((BasicDBList) fieldValue, path + "." + key, name + "." //$NON-NLS-1$ //$NON-NLS-2$
             + key, lookup);
       } else {
         // some sort of primitive
-        String finalPath = path + "." + key;
-        String finalName = name + "." + key;
+        String finalPath = path + "." + key; //$NON-NLS-1$
+        String finalName = name + "." + key; //$NON-NLS-1$
         if (!lookup.containsKey(finalPath)) {
           MongoField newField = new MongoField();
           int kettleType = mongoToKettleType(fieldValue);
@@ -1207,22 +1087,22 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       return; // can't infer anything about an empty list
     }
 
-    String nonPrimitivePath = path + "[-]";
+    String nonPrimitivePath = path + "[-]"; //$NON-NLS-1$
     String primitivePath = path;
 
     for (int i = 0; i < list.size(); i++) {
       Object element = list.get(i);
 
       if (element instanceof BasicDBObject) {
-        processRecord((BasicDBObject) element, nonPrimitivePath, name + "[" + i
-            + ":" + i + "]", lookup);
+        processRecord((BasicDBObject) element, nonPrimitivePath, name + "[" + i //$NON-NLS-1$
+            + ":" + i + "]", lookup); //$NON-NLS-1$ //$NON-NLS-2$
       } else if (element instanceof BasicDBList) {
-        processList((BasicDBList) element, nonPrimitivePath, name + "[" + i
-            + ":" + i + "]", lookup);
+        processList((BasicDBList) element, nonPrimitivePath, name + "[" + i //$NON-NLS-1$
+            + ":" + i + "]", lookup); //$NON-NLS-1$ //$NON-NLS-2$
       } else {
         // some sort of primitive
-        String finalPath = primitivePath + "[" + i + "]";
-        String finalName = name + "[" + i + "]";
+        String finalPath = primitivePath + "[" + i + "]"; //$NON-NLS-1$ //$NON-NLS-2$
+        String finalName = name + "[" + i + "]"; //$NON-NLS-1$ //$NON-NLS-2$
         if (!lookup.containsKey(finalPath)) {
           MongoField newField = new MongoField();
           int kettleType = mongoToKettleType(element);
@@ -1250,13 +1130,13 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       List<MongoField> discoveredFields, int numDocsProcessed) {
     for (String key : fieldLookup.keySet()) {
       MongoField m = fieldLookup.get(key);
-      m.m_occurenceFraction = "" + m.m_percentageOfSample + "/"
+      m.m_occurenceFraction = "" + m.m_percentageOfSample + "/" //$NON-NLS-1$ //$NON-NLS-2$
           + numDocsProcessed;
       setMinArrayIndexes(m);
 
       // set field names to terminal part and copy any min:max array index
       // info
-      if (m.m_fieldName.contains("[") && m.m_fieldName.contains(":")) {
+      if (m.m_fieldName.contains("[") && m.m_fieldName.contains(":")) { //$NON-NLS-1$ //$NON-NLS-2$
         m.m_arrayIndexInfo = m.m_fieldName;
       }
       if (m.m_fieldName.indexOf('.') >= 0) {
@@ -1278,7 +1158,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       if (tempM.get(m.m_fieldName) != null) {
         Integer toUse = tempM.get(m.m_fieldName);
         String key = m.m_fieldName;
-        m.m_fieldName = key + "_" + toUse;
+        m.m_fieldName = key + "_" + toUse; //$NON-NLS-1$
         toUse = new Integer(toUse.intValue() + 1);
         tempM.put(key, toUse);
       } else {
@@ -1290,14 +1170,14 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   private static Iterator<DBObject> setUpPipelineSample(String query,
       int numDocsToSample, DBCollection collection) throws KettleException {
 
-    query = "{$limit : " + numDocsToSample + "}, " + query;
+    query = "{$limit : " + numDocsToSample + "}, " + query; //$NON-NLS-1$ //$NON-NLS-2$
     List<DBObject> samplePipe = jsonPipelineToDBObjectList(query);
 
     DBObject first = samplePipe.get(0);
     DBObject[] remainder = new DBObject[samplePipe.size() - 1];
     for (int i = 1; i < samplePipe.size(); i++) {
       remainder[i - 1] = samplePipe.get(i);
-      System.out.println("Remainder " + remainder[i - 1].toString());
+      System.out.println("Remainder " + remainder[i - 1].toString()); //$NON-NLS-1$
     }
 
     AggregationOutput result = collection.aggregate(first, remainder);
@@ -1305,7 +1185,6 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     return result.results().iterator();
   }
 
-  @SuppressWarnings("deprecation")
   public static boolean discoverFields(MongoDbInputMeta meta,
       VariableSpace vars, int numDocsToSample) throws KettleException {
 
@@ -1321,7 +1200,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     List<MongoField> discoveredFields = new ArrayList<MongoField>();
     Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
     try {
-      mongo = initConnection(meta, vars);
+      mongo = initConnection(meta, vars, null);
       DB database = mongo.getDB(db);
 
       String realUser = vars
@@ -1333,7 +1212,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         if (!database.authenticate(realUser, realPass.toCharArray())) {
           throw new KettleException(BaseMessages.getString(
               MongoDbInputMeta.PKG,
-              "MongoDbInput.ErrorAuthenticating.Exception"));
+              "MongoDbInput.ErrorAuthenticating.Exception")); //$NON-NLS-1$
         }
       }
       DBCollection dbcollection = database.getCollection(collection);
@@ -1350,7 +1229,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         if (Const.isEmpty(query) && Const.isEmpty(fields)) {
           cursor = dbcollection.find().limit(numDocsToSample);
         } else {
-          DBObject dbObject = (DBObject) JSON.parse(Const.isEmpty(query) ? "{}"
+          DBObject dbObject = (DBObject) JSON.parse(Const.isEmpty(query) ? "{}" //$NON-NLS-1$
               : query);
           DBObject dbObject2 = (DBObject) JSON.parse(fields);
           cursor = dbcollection.find(dbObject, dbObject2)
@@ -1435,7 +1314,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
     if (pipeline.size() == 0) {
       throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
-          "MongoDbInput.ErrorMessage.UnableToParsePipelineOperators"));
+          "MongoDbInput.ErrorMessage.UnableToParsePipelineOperators")); //$NON-NLS-1$
     }
 
     return pipeline;
@@ -1454,7 +1333,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     for (int i = 0; i < indexedVals.size(); i++) {
       temp.append(indexedVals.get(i));
       if (i < indexedVals.size() - 1) {
-        temp.append(",");
+        temp.append(","); //$NON-NLS-1$
       }
     }
 
@@ -1470,7 +1349,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
    */
   public static List<String> indexedValsList(String indexedVals) {
 
-    String[] parts = indexedVals.split(",");
+    String[] parts = indexedVals.split(","); //$NON-NLS-1$
     List<String> list = new ArrayList<String>();
     for (String s : parts) {
       list.add(s.trim());
