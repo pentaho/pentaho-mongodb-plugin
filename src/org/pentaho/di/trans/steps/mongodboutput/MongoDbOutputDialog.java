@@ -111,6 +111,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
 
   private TextVar m_hostnameField;
   private TextVar m_portField;
+  private Button m_useAllReplicaSetMembersBut;
   private TextVar m_usernameField;
   private TextVar m_passField;
 
@@ -129,7 +130,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
   private Button m_multiBut;
   private Button m_modifierUpdateBut;
 
-  private TextVar m_writeConcern;
+  private CCombo m_writeConcern;
   private TextVar m_wTimeout;
   private Button m_journalWritesCheck;
   private CCombo m_readPreference;
@@ -275,6 +276,25 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     fd.left = new FormAttachment(middle, 0);
     m_portField.setLayoutData(fd);
 
+    // Use all replica set members check box
+    Label useAllReplicaLab = new Label(wConfigComp, SWT.RIGHT);
+    useAllReplicaLab.setText(BaseMessages.getString(PKG,
+        "MongoDbOutputDialog.UseAllReplicaSetMembers.Label")); //$NON-NLS-1$
+    props.setLook(useAllReplicaLab);
+    fd = new FormData();
+    fd.left = new FormAttachment(0, 0);
+    fd.right = new FormAttachment(middle, -margin);
+    fd.top = new FormAttachment(m_portField, margin);
+    useAllReplicaLab.setLayoutData(fd);
+
+    m_useAllReplicaSetMembersBut = new Button(wConfigComp, SWT.CHECK);
+    props.setLook(m_useAllReplicaSetMembersBut);
+    fd = new FormData();
+    fd.left = new FormAttachment(middle, 0);
+    fd.right = new FormAttachment(100, 0);
+    fd.top = new FormAttachment(m_portField, margin);
+    m_useAllReplicaSetMembersBut.setLayoutData(fd);
+
     // username field
     Label userLab = new Label(wConfigComp, SWT.RIGHT);
     userLab.setText(BaseMessages.getString(PKG,
@@ -282,7 +302,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     props.setLook(userLab);
     fd = new FormData();
     fd.left = new FormAttachment(0, 0);
-    fd.top = new FormAttachment(m_portField, margin);
+    fd.top = new FormAttachment(m_useAllReplicaSetMembersBut, margin);
     fd.right = new FormAttachment(middle, -margin);
     userLab.setLayoutData(fd);
 
@@ -299,7 +319,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     });
     fd = new FormData();
     fd.right = new FormAttachment(100, 0);
-    fd.top = new FormAttachment(m_portField, margin);
+    fd.top = new FormAttachment(m_useAllReplicaSetMembersBut, margin);
     fd.left = new FormAttachment(middle, 0);
     m_usernameField.setLayoutData(fd);
 
@@ -694,12 +714,27 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     fd.right = new FormAttachment(middle, -margin);
     writeConcernLab.setLayoutData(fd);
 
-    m_writeConcern = new TextVar(transMeta, wOutputComp, SWT.SINGLE | SWT.LEFT
-        | SWT.BORDER);
+    Button getCustomWCBut = new Button(wOutputComp, SWT.PUSH | SWT.CENTER);
+    props.setLook(getCustomWCBut);
+    getCustomWCBut.setText(BaseMessages.getString(PKG,
+        "MongoDbOutputDialog.WriteConcern.CustomWriteConcerns")); //$NON-NLS-1$
+    fd = new FormData();
+    fd.right = new FormAttachment(100, 0);
+    fd.top = new FormAttachment(m_modifierUpdateBut, 0);
+    getCustomWCBut.setLayoutData(fd);
+
+    getCustomWCBut.addSelectionListener(new SelectionAdapter() {
+      @Override
+      public void widgetSelected(SelectionEvent e) {
+        setupCustomWriteConcernNames();
+      }
+    });
+
+    m_writeConcern = new CCombo(wOutputComp, SWT.BORDER);
     props.setLook(m_writeConcern);
     m_writeConcern.addModifyListener(lsMod);
     fd = new FormData();
-    fd.right = new FormAttachment(100, 0);
+    fd.right = new FormAttachment(getCustomWCBut, 0);
     fd.top = new FormAttachment(m_modifierUpdateBut, margin);
     fd.left = new FormAttachment(middle, 0);
     m_writeConcern.setLayoutData(fd);
@@ -1052,6 +1087,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
   private void getInfo(MongoDbOutputMeta meta) {
     meta.setHostnames(m_hostnameField.getText());
     meta.setPort(m_portField.getText());
+    meta.setUseAllReplicaSetMembers(m_useAllReplicaSetMembersBut.getSelection());
     meta.setUsername(m_usernameField.getText());
     meta.setPassword(m_passField.getText());
     meta.setDBName(m_dbNameField.getText());
@@ -1134,6 +1170,8 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
   private void getData() {
     m_hostnameField.setText(Const.NVL(m_currentMeta.getHostnames(), "")); //$NON-NLS-1$
     m_portField.setText(Const.NVL(m_currentMeta.getPort(), "")); //$NON-NLS-1$
+    m_useAllReplicaSetMembersBut.setSelection(m_currentMeta
+        .getUseAllReplicaSetMembers());
     m_usernameField.setText(Const.NVL(m_currentMeta.getUsername(), "")); //$NON-NLS-1$
     m_passField.setText(Const.NVL(m_currentMeta.getPassword(), "")); //$NON-NLS-1$
     m_dbNameField.setText(Const.NVL(m_currentMeta.getDBName(), "")); //$NON-NLS-1$
@@ -1236,14 +1274,16 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
       return;
     }
 
+    String current = m_collectionField.getText();
     m_collectionField.removeAll();
+    MongoClient conn = null;
 
     if (!Const.isEmpty(hostname)) {
 
       MongoDbOutputMeta meta = new MongoDbOutputMeta();
       getInfo(meta);
       try {
-        MongoClient conn = MongoDbOutputData.connect(meta, transMeta);
+        conn = MongoDbOutputData.connect(meta, transMeta, null);
         DB theDB = conn.getDB(dB);
 
         if (!Const.isEmpty(username) || !Const.isEmpty(realPass)) {
@@ -1260,9 +1300,6 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
         for (String c : collections) {
           m_collectionField.add(c);
         }
-
-        conn.close();
-        conn = null;
       } catch (Exception e) {
         logError(BaseMessages.getString(PKG,
             "MongoDbOutputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
@@ -1270,14 +1307,20 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
             "MongoDbOutputDialog.ErrorMessage." + "UnableToConnect"), //$NON-NLS-1$ //$NON-NLS-2$
             BaseMessages.getString(PKG,
                 "MongoDbOutputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
+      } finally {
+        if (conn != null) {
+          conn.close();
+          conn = null;
+        }
       }
+    }
 
+    if (!Const.isEmpty(current)) {
+      m_collectionField.setText(current);
     }
   }
 
-  private void setupDBNames() {
-    m_dbNameField.removeAll();
-
+  private void setupCustomWriteConcernNames() {
     String hostname = transMeta
         .environmentSubstitute(m_hostnameField.getText());
 
@@ -1285,15 +1328,21 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
       MongoDbOutputMeta meta = new MongoDbOutputMeta();
       getInfo(meta);
       try {
-        MongoClient conn = MongoDbOutputData.connect(meta, transMeta);
-        List<String> dbNames = conn.getDatabaseNames();
+        List<String> custom = MongoDbOutputData.getLastErrorModes(meta,
+            transMeta, null);
 
-        for (String s : dbNames) {
-          m_dbNameField.add(s);
+        if (custom.size() > 0) {
+          String current = m_writeConcern.getText();
+          m_writeConcern.removeAll();
+
+          for (String s : custom) {
+            m_writeConcern.add(s);
+          }
+
+          if (!Const.isEmpty(current)) {
+            m_writeConcern.setText(current);
+          }
         }
-
-        conn.close();
-        conn = null;
       } catch (Exception e) {
         logError(BaseMessages.getString(PKG,
             "MongoDbOutputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
@@ -1302,6 +1351,45 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
             BaseMessages.getString(PKG,
                 "MongoDbOutputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
       }
+    }
+  }
+
+  private void setupDBNames() {
+    String current = m_dbNameField.getText();
+    m_dbNameField.removeAll();
+
+    String hostname = transMeta
+        .environmentSubstitute(m_hostnameField.getText());
+
+    MongoClient conn = null;
+    if (!Const.isEmpty(hostname)) {
+      MongoDbOutputMeta meta = new MongoDbOutputMeta();
+      getInfo(meta);
+      try {
+        conn = MongoDbOutputData.connect(meta, transMeta, null);
+        List<String> dbNames = conn.getDatabaseNames();
+
+        for (String s : dbNames) {
+          m_dbNameField.add(s);
+        }
+
+      } catch (Exception e) {
+        logError(BaseMessages.getString(PKG,
+            "MongoDbOutputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
+        new ErrorDialog(shell, BaseMessages.getString(PKG,
+            "MongoDbOutputDialog.ErrorMessage." + "UnableToConnect"), //$NON-NLS-1$ //$NON-NLS-2$
+            BaseMessages.getString(PKG,
+                "MongoDbOutputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
+      } finally {
+        if (conn != null) {
+          conn.close();
+          conn = null;
+        }
+      }
+    }
+
+    if (!Const.isEmpty(current)) {
+      m_dbNameField.setText(current);
     }
   }
 

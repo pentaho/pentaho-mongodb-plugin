@@ -62,10 +62,7 @@ import org.w3c.dom.Node;
 public class MongoDbOutputMeta extends BaseStepMeta implements
     StepMetaInterface {
 
-  private static Class<?> PKG = MongoDbOutputMeta.class; // for i18n purposes,
-                                                         // needed by
-                                                         // Translator2!!
-                                                         // $NON-NLS-1$
+  private static Class<?> PKG = MongoDbOutputMeta.class; // for i18n purposes
 
   /**
    * Class encapsulating paths to document fields
@@ -283,6 +280,12 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
    */
   protected boolean m_journal;
 
+  /**
+   * whether to discover and use all replica set members (if not already
+   * specified in the hosts field)
+   */
+  private boolean m_useAllReplicaSetMembers;
+
   public void setDefault() {
     m_hostnames = "localhost"; //$NON-NLS-1$
     m_port = "27017"; //$NON-NLS-1$
@@ -363,6 +366,26 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
    */
   public String getPort() {
     return m_port;
+  }
+
+  /**
+   * Set whether to query specified host(s) to discover all replica set member
+   * addresses
+   * 
+   * @param u true if replica set members are to be automatically discovered.
+   */
+  public void setUseAllReplicaSetMembers(boolean u) {
+    m_useAllReplicaSetMembers = u;
+  }
+
+  /**
+   * Get whether to query specified host(s) to discover all replica set member
+   * addresses
+   * 
+   * @return true if replica set members are to be automatically discovered.
+   */
+  public boolean getUseAllReplicaSetMembers() {
+    return m_useAllReplicaSetMembers;
   }
 
   /**
@@ -648,6 +671,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     return m_journal;
   }
 
+  @Override
   public void check(List<CheckResultInterface> remarks, TransMeta transMeta,
       StepMeta stepMeta, RowMetaInterface prev, String[] input,
       String[] output, RowMetaInterface info) {
@@ -707,6 +731,10 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
       retval.append("\n    ").append( //$NON-NLS-1$
           XMLHandler.addTagValue("mongo_port", m_port)); //$NON-NLS-1$
     }
+
+    retval
+        .append("    ").append(XMLHandler.addTagValue("use_all_replica_members", m_useAllReplicaSetMembers)); //$NON-NLS-1$ //$NON-NLS-2$
+
     if (!Const.isEmpty(m_username)) {
       retval.append("\n    ").append( //$NON-NLS-1$
           XMLHandler.addTagValue("mongo_user", m_username)); //$NON-NLS-1$
@@ -806,6 +834,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     return retval.toString();
   }
 
+  @Override
   public void loadXML(Node stepnode, List<DatabaseMeta> databases,
       Map<String, Counter> counters) throws KettleXMLException {
 
@@ -833,6 +862,13 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     m_multi = XMLHandler.getTagValue(stepnode, "multi").equalsIgnoreCase("Y"); //$NON-NLS-1$ //$NON-NLS-2$
     m_modifierUpdate = XMLHandler.getTagValue(stepnode, "modifier_update") //$NON-NLS-1$
         .equalsIgnoreCase("Y"); //$NON-NLS-1$
+
+    m_useAllReplicaSetMembers = false; // default to false for backwards
+    // compatibility
+    String useAll = XMLHandler.getTagValue(stepnode, "use_all_replica_members"); //$NON-NLS-1$
+    if (!Const.isEmpty(useAll)) {
+      m_useAllReplicaSetMembers = useAll.equalsIgnoreCase("Y");
+    }
 
     Node fields = XMLHandler.getSubNode(stepnode, "mongo_fields"); //$NON-NLS-1$
     if (fields != null && XMLHandler.countNodes(fields, "mongo_field") > 0) { //$NON-NLS-1$
@@ -894,12 +930,15 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     }
   }
 
+  @Override
   public void readRep(Repository rep, ObjectId id_step,
       List<DatabaseMeta> databases, Map<String, Counter> counters)
       throws KettleException {
 
     m_hostnames = rep.getStepAttributeString(id_step, 0, "mongo_host"); //$NON-NLS-1$
     m_port = rep.getStepAttributeString(id_step, 0, "mongo_port"); //$NON-NLS-1$
+    m_useAllReplicaSetMembers = rep.getStepAttributeBoolean(id_step, 0,
+        "use_all_replica_members"); //$NON-NLS-1$
     m_username = rep.getStepAttributeString(id_step, 0, "mongo_user"); //$NON-NLS-1$
     m_password = rep.getStepAttributeString(id_step, 0, "mongo_password"); //$NON-NLS-1$
     m_dbName = rep.getStepAttributeString(id_step, 0, "mongo_db"); //$NON-NLS-1$
@@ -969,6 +1008,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     }
   }
 
+  @Override
   public void saveRep(Repository rep, ObjectId id_transformation,
       ObjectId id_step) throws KettleException {
 
@@ -979,6 +1019,10 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     if (!Const.isEmpty(m_port)) {
       rep.saveStepAttribute(id_transformation, id_step, 0, "mongo_port", m_port); //$NON-NLS-1$
     }
+
+    rep.saveStepAttribute(id_transformation, id_step,
+        "use_all_replica_members", m_useAllReplicaSetMembers); //$NON-NLS-1$
+
     if (!Const.isEmpty(m_username)) {
       rep.saveStepAttribute(id_transformation, id_step, 0, "mongo_user", //$NON-NLS-1$
           m_username);

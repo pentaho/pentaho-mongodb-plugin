@@ -426,7 +426,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     MongoDbInputMeta meta = new MongoDbInputMeta(); 
     saveMeta(meta);
     try {
-      conn = MongoDbInputData.initConnection(meta, new TransMeta());
+      conn = MongoDbInputData.initConnection(meta, new TransMeta(), null);
       List<String> dbNames = conn.getDatabaseNames();
 
       for (String s : dbNames) {
@@ -463,7 +463,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     MongoDbInputMeta meta = new MongoDbInputMeta(); 
     saveMeta(meta);
     try {
-      conn = MongoDbInputData.initConnection(meta, new TransMeta());
+      conn = MongoDbInputData.initConnection(meta, new TransMeta(), null);
       DB theDB = conn.getDB(dbName);
 
       if (!Const.isEmpty(authenticationUser) || !Const.isEmpty(authenticationPassword)) {
