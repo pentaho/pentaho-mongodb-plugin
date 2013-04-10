@@ -41,6 +41,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import com.mongodb.AggregationOutput;
 import com.mongodb.CommandResult;
 import com.mongodb.DBObject;
+import com.mongodb.ServerAddress;
 import com.mongodb.util.JSON;
 
 public class MongoDbInput extends BaseStep implements StepInterface {
@@ -51,6 +52,8 @@ public class MongoDbInput extends BaseStep implements StepInterface {
 
   private MongoDbInputMeta meta;
   private MongoDbInputData data;
+
+  private boolean m_serverDetermined;
 
   public MongoDbInput(StepMeta stepMeta, StepDataInterface stepDataInterface,
       int copyNr, TransMeta transMeta, Trans trans) {
@@ -72,7 +75,7 @@ public class MongoDbInput extends BaseStep implements StepInterface {
         if (meta.getQueryIsPipeline()) {
           throw new KettleException(BaseMessages.getString(
               MongoDbInputMeta.PKG,
-              "MongoDbInput.ErrorMessage.EmptyAggregationPipeline"));
+              "MongoDbInput.ErrorMessage.EmptyAggregationPipeline")); //$NON-NLS-1$
         }
 
         data.cursor = data.collection.find();
@@ -82,11 +85,11 @@ public class MongoDbInput extends BaseStep implements StepInterface {
           if (Const.isEmpty(query)) {
             throw new KettleException(BaseMessages.getString(
                 MongoDbInputMeta.PKG,
-                "MongoDbInput.ErrorMessage.EmptyAggregationPipeline"));
+                "MongoDbInput.ErrorMessage.EmptyAggregationPipeline")); //$NON-NLS-1$
           }
           List<DBObject> pipeline = MongoDbInputData
               .jsonPipelineToDBObjectList(query);
-          DBObject first = pipeline.get(0);
+          DBObject firstP = pipeline.get(0);
           DBObject[] remainder = null;
           if (pipeline.size() > 1) {
             remainder = new DBObject[pipeline.size() - 1];
@@ -98,10 +101,13 @@ public class MongoDbInput extends BaseStep implements StepInterface {
           }
 
           AggregationOutput result = data.collection
-              .aggregate(first, remainder);
+              .aggregate(firstP, remainder);
           data.m_pipelineResult = result.results().iterator();
+          logBasic(BaseMessages.getString(PKG,
+              "MongoDbInput.Message.AggregationPulledDataFrom", result //$NON-NLS-1$
+                  .getServerUsed().toString()));
         } else {
-          DBObject dbObject = (DBObject) JSON.parse(Const.isEmpty(query) ? "{}"
+          DBObject dbObject = (DBObject) JSON.parse(Const.isEmpty(query) ? "{}" //$NON-NLS-1$
               : query);
           DBObject dbObject2 = (DBObject) JSON.parse(fields);
           data.cursor = data.collection.find(dbObject, dbObject2);
@@ -120,6 +126,15 @@ public class MongoDbInput extends BaseStep implements StepInterface {
         nextDoc = data.m_pipelineResult.next();
       } else {
         nextDoc = data.cursor.next();
+      }
+
+      if (!meta.getQueryIsPipeline() && !m_serverDetermined) {
+        ServerAddress s = data.cursor.getServerAddress();
+        if (s != null) {
+          m_serverDetermined = true;
+          logBasic(BaseMessages.getString(PKG,
+              "MongoDbInput.Message.QueryPulledDataFrom", s.toString())); //$NON-NLS-1$
+        }
       }
 
       if (meta.getOutputJson() || meta.getMongoFields() == null
@@ -165,15 +180,15 @@ public class MongoDbInput extends BaseStep implements StepInterface {
       try {
         if (Const.isEmpty(db)) {
           throw new Exception(BaseMessages.getString(PKG,
-              "MongoInput.ErrorMessage.NoDBSpecified"));
+              "MongoInput.ErrorMessage.NoDBSpecified")); //$NON-NLS-1$
         }
 
         if (Const.isEmpty(collection)) {
           throw new Exception(BaseMessages.getString(PKG,
-              "MongoInput.ErrorMessage.NoCollectionSpecified"));
+              "MongoInput.ErrorMessage.NoCollectionSpecified")); //$NON-NLS-1$
         }
 
-        data.mongo = MongoDbInputData.initConnection(meta, this);
+        data.mongo = MongoDbInputData.initConnection(meta, this, log);
         data.db = data.mongo.getDB(db);
 
         String realUser = environmentSubstitute(meta.getAuthenticationUser());
@@ -186,7 +201,7 @@ public class MongoDbInput extends BaseStep implements StepInterface {
               realPass.toCharArray());
           if (!comResult.ok()) {
             throw new KettleException(BaseMessages.getString(PKG,
-                "MongoDbInput.ErrorAuthenticating.Exception",
+                "MongoDbInput.ErrorAuthenticating.Exception", //$NON-NLS-1$
                 comResult.getErrorMessage()));
           }
         }
@@ -201,7 +216,7 @@ public class MongoDbInput extends BaseStep implements StepInterface {
         return true;
       } catch (Exception e) {
         logError(BaseMessages.getString(PKG,
-            "MongoDbInput.ErrorConnectingToMongoDb.Exception", hostname, ""
+            "MongoDbInput.ErrorConnectingToMongoDb.Exception", hostname, "" //$NON-NLS-1$ //$NON-NLS-2$
                 + port, db, collection), e);
         return false;
       }
