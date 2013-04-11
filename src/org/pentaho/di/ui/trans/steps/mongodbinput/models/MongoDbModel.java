@@ -63,7 +63,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
   private String m_socketTimeout = ""; // default - never time out
 
   /** primary, primaryPreferred, secondary, secondaryPreferred, nearest */
-  private String m_readPreference = "primary";
+  private String m_readPreference = "Primary";
   
   private List<MongoDocumentField> fields = new ArrayList<MongoDocumentField>();
 
@@ -73,7 +73,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     super();
     this.mongo = mongo;
     
-    initialize();
+    initialize(this.mongo);
   }
 
   /**
@@ -90,7 +90,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     String prevVal = this.hostname;
     this.hostname = hostname;
 
-    firePropertyChange("hostname", prevVal, hostname);
+    firePropertyChange("hostnames", prevVal, hostname);
   }
 
   /**
@@ -128,7 +128,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     String prevVal = this.dbName;
     this.dbName = dbName;
     
-    firePropertyChange("database", prevVal, dbName);
+    firePropertyChange("database", prevVal, dbName==null?"":dbName);
   }
 
   public Collection<String> getDbNames() {
@@ -183,7 +183,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     String prevVal = this.collection;
     this.collection = collection;
     
-    firePropertyChange("collection", prevVal, collection);
+    firePropertyChange("collection", prevVal, collection==null?"":collection);
   }
 
   public Collection<String> getCollections() {
@@ -290,7 +290,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     String prevVal = this.m_connectTimeout;
     m_connectTimeout = to;
     
-    firePropertyChange("m_connectTimeout", prevVal, to);
+    firePropertyChange("connectTimeout", prevVal, to);
   }
 
   /**
@@ -312,7 +312,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     String prevVal = this.m_socketTimeout;
     m_socketTimeout = so;
     
-    firePropertyChange("m_socketTimeout", prevVal, so);
+    firePropertyChange("socketTimeout", prevVal, so);
   }
 
   /**
@@ -335,7 +335,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     String prevVal = this.m_readPreference;
     m_readPreference = Const.isEmpty(preference) ? "primary": preference;
     
-    firePropertyChange("m_readPreference", prevVal, preference);
+    firePropertyChange("readPreference", prevVal, preference);
   }
 
   /**
@@ -380,21 +380,29 @@ public class MongoDbModel extends XulEventSourceAdapter {
     meta.setMongoFields(MongoDocumentField.convertFromList(this.getFields()));
   }
 
-  private void initialize() {
-    setJsonQuery(mongo.getJsonQuery());
-    setAuthenticationPassword(mongo.getAuthenticationPassword());
-    setAuthenticationUser(mongo.getAuthenticationUser());
-    setCollection(mongo.getCollection());
+  private void initialize(MongoDbInputMeta m) {
+    setJsonQuery(m.getJsonQuery());
+    setAuthenticationPassword(m.getAuthenticationPassword());
+    setAuthenticationUser(m.getAuthenticationUser());
+    setCollection(m.getCollection());
     setCollections(new Vector<String>());
-    setDbName(mongo.getDbName());
+    setDbName(m.getDbName());
     setDbNames(new Vector<String>());
-    setFieldsName(mongo.getFieldsName());
-    setHostnames(mongo.getHostnames());
-    setPort(mongo.getPort());
-    setQueryIsPipeline(mongo.getQueryIsPipeline());
-    setReadPreference(mongo.getReadPreference());
-    setSocketTimeout(mongo.getSocketTimeout());
-    this.setFields(MongoDocumentField.convertList(mongo.getMongoFields()));
+    setFieldsName(m.getFieldsName());
+    setHostnames(m.getHostnames());
+    setPort(m.getPort());
+    setQueryIsPipeline(m.getQueryIsPipeline());
+    setReadPreference(m.getReadPreference());
+    setConnectTimeout(m.getConnectTimeout());
+    setSocketTimeout(m.getSocketTimeout());
+    this.setFields(MongoDocumentField.convertList(m.getMongoFields()));
+  }
+  
+  public void clear()
+  {
+    MongoDbInputMeta m = new MongoDbInputMeta();
+    m.setReadPreference("Primary");
+    initialize(m);
   }
 
   public Collection<String> getPossibleReadPreferences(){
@@ -434,6 +442,8 @@ public class MongoDbModel extends XulEventSourceAdapter {
       }
 
     } catch (Exception e) {
+      e.printStackTrace();
+     throw new Exception(e);
       // TODO: throw new exception here, and report to dialog that an error occurred...
     }finally{
       if (conn != null){
