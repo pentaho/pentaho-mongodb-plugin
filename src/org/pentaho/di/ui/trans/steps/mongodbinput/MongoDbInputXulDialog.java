@@ -183,6 +183,15 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
 
   }
   
+  @Override
+  public void clear() {
+    if (model == null)
+    {
+      return;
+    }
+    model.clear();
+  }
+
   public void getDatabaseNamesFromMongo(){
     try {
       Vector<String> dbs = model.getDatabaseNamesFromMongo();
