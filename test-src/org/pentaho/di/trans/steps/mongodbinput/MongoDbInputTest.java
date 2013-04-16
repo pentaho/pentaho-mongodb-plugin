@@ -11,13 +11,11 @@ import java.util.Map;
 
 import org.junit.Test;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
-import org.pentaho.di.core.row.value.ValueMetaPluginType;
 import org.pentaho.di.core.variables.Variables;
 
 import com.mongodb.DBObject;
@@ -34,14 +32,6 @@ public class MongoDbInputTest {
       + "\"two\" : [ { \"rec1\" : { \"f1\" : \"bob\", \"f2\" : \"fred\" } }, "
       + "{ \"rec1\" : { \"f1\" : \"sid\", \"f2\" : \"zaphod\" } } ] }, "
       + "\"name\" : \"george\", \"aNumber\" : \"Forty two\" }";
-
-  static {
-    try {
-      ValueMetaPluginType.getInstance().searchPlugins();
-    } catch (KettlePluginException ex) {
-      ex.printStackTrace();
-    }
-  }
 
   @Test
   public void testDeterminePaths() {
