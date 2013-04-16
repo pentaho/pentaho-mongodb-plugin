@@ -54,6 +54,7 @@ public class MongoDbInput extends BaseStep implements StepInterface {
   private MongoDbInputData data;
 
   private boolean m_serverDetermined;
+  private Object[] m_currentInputRowDrivingQuery = null;
 
   public MongoDbInput(StepMeta stepMeta, StepDataInterface stepDataInterface,
       int copyNr, TransMeta transMeta, Trans trans) {
@@ -63,56 +64,28 @@ public class MongoDbInput extends BaseStep implements StepInterface {
   @Override
   public boolean processRow(StepMetaInterface smi, StepDataInterface sdi)
       throws KettleException {
-    if (first) {
-      first = false;
 
+    if (meta.getExecuteForEachIncomingRow()
+        && m_currentInputRowDrivingQuery == null) {
+      m_currentInputRowDrivingQuery = getRow();
+
+      if (m_currentInputRowDrivingQuery == null) {
+        // no more input, no more queries to make
+        setOutputDone();
+        return false;
+      }
+
+      if (!first) {
+        initQuery();
+      }
+    }
+
+    if (first) {
       data.outputRowMeta = new RowMeta();
       meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
 
-      String query = environmentSubstitute(meta.getJsonQuery());
-      String fields = environmentSubstitute(meta.getFieldsName());
-      if (Const.isEmpty(query) && Const.isEmpty(fields)) {
-        if (meta.getQueryIsPipeline()) {
-          throw new KettleException(BaseMessages.getString(
-              MongoDbInputMeta.PKG,
-              "MongoDbInput.ErrorMessage.EmptyAggregationPipeline")); //$NON-NLS-1$
-        }
-
-        data.cursor = data.collection.find();
-      } else {
-
-        if (meta.getQueryIsPipeline()) {
-          if (Const.isEmpty(query)) {
-            throw new KettleException(BaseMessages.getString(
-                MongoDbInputMeta.PKG,
-                "MongoDbInput.ErrorMessage.EmptyAggregationPipeline")); //$NON-NLS-1$
-          }
-          List<DBObject> pipeline = MongoDbInputData
-              .jsonPipelineToDBObjectList(query);
-          DBObject firstP = pipeline.get(0);
-          DBObject[] remainder = null;
-          if (pipeline.size() > 1) {
-            remainder = new DBObject[pipeline.size() - 1];
-            for (int i = 1; i < pipeline.size(); i++) {
-              remainder[i - 1] = pipeline.get(i);
-            }
-          } else {
-            remainder = new DBObject[0];
-          }
-
-          AggregationOutput result = data.collection
-              .aggregate(firstP, remainder);
-          data.m_pipelineResult = result.results().iterator();
-          logBasic(BaseMessages.getString(PKG,
-              "MongoDbInput.Message.AggregationPulledDataFrom", result //$NON-NLS-1$
-                  .getServerUsed().toString()));
-        } else {
-          DBObject dbObject = (DBObject) JSON.parse(Const.isEmpty(query) ? "{}" //$NON-NLS-1$
-              : query);
-          DBObject dbObject2 = (DBObject) JSON.parse(fields);
-          data.cursor = data.collection.find(dbObject, dbObject2);
-        }
-      }
+      initQuery();
+      first = false;
 
       data.init();
     }
@@ -154,12 +127,106 @@ public class MongoDbInput extends BaseStep implements StepInterface {
           putRow(data.outputRowMeta, outputRows[i]);
         }
       }
-
-      return true;
     } else {
-      setOutputDone();
+      if (!meta.getExecuteForEachIncomingRow()) {
+        setOutputDone();
 
-      return false;
+        return false;
+      } else {
+        m_currentInputRowDrivingQuery = null; // finished with this row
+      }
+    }
+
+    return true;
+  }
+
+  protected void initQuery() throws KettleException {
+
+    // close any previous cursor
+    if (data.cursor != null) {
+      data.cursor.close();
+    }
+
+    // check logging level and only set to false if
+    // logging level at least detailed
+    if (log.isDetailed()) {
+      m_serverDetermined = false;
+    }
+
+    String query = environmentSubstitute(meta.getJsonQuery());
+    String fields = environmentSubstitute(meta.getFieldsName());
+    if (Const.isEmpty(query) && Const.isEmpty(fields)) {
+      if (meta.getQueryIsPipeline()) {
+        throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
+            "MongoDbInput.ErrorMessage.EmptyAggregationPipeline")); //$NON-NLS-1$
+      }
+
+      data.cursor = data.collection.find();
+    } else {
+
+      if (meta.getQueryIsPipeline()) {
+        if (Const.isEmpty(query)) {
+          throw new KettleException(BaseMessages.getString(
+              MongoDbInputMeta.PKG,
+              "MongoDbInput.ErrorMessage.EmptyAggregationPipeline")); //$NON-NLS-1$
+        }
+
+        if (meta.getExecuteForEachIncomingRow()
+            && m_currentInputRowDrivingQuery != null) {
+          // do field value substitution
+          query = fieldSubstitute(query, getInputRowMeta(),
+              m_currentInputRowDrivingQuery);
+        }
+
+        logDetailed(BaseMessages.getString(PKG,
+            "MongoDbInput.Message.QueryPulledDataFrom", query));
+
+        List<DBObject> pipeline = MongoDbInputData
+            .jsonPipelineToDBObjectList(query);
+        DBObject firstP = pipeline.get(0);
+        DBObject[] remainder = null;
+        if (pipeline.size() > 1) {
+          remainder = new DBObject[pipeline.size() - 1];
+          for (int i = 1; i < pipeline.size(); i++) {
+            remainder[i - 1] = pipeline.get(i);
+          }
+        } else {
+          remainder = new DBObject[0];
+        }
+
+        AggregationOutput result = data.collection.aggregate(firstP, remainder);
+        data.m_pipelineResult = result.results().iterator();
+        if (first) {
+          // log the server used for the first query at the basic level
+          logBasic(BaseMessages.getString(PKG,
+              "MongoDbInput.Message.AggregationPulledDataFrom", result //$NON-NLS-1$
+                  .getServerUsed().toString()));
+        } else {
+          // only log the server used to pull for each subsequent row at the
+          // detailed level
+          logDetailed(BaseMessages.getString(PKG,
+              "MongoDbInput.Message.AggregationPulledDataFrom", result //$NON-NLS-1$
+                  .getServerUsed().toString()));
+        }
+      } else {
+        if (meta.getExecuteForEachIncomingRow()
+            && m_currentInputRowDrivingQuery != null) {
+          // do field value substitution
+          query = fieldSubstitute(query, getInputRowMeta(),
+              m_currentInputRowDrivingQuery);
+
+          fields = fieldSubstitute(fields, getInputRowMeta(),
+              m_currentInputRowDrivingQuery);
+        }
+
+        logDetailed(BaseMessages.getString(PKG,
+            "MongoDbInput.Message.ExecutingQuery", query));
+
+        DBObject dbObject = (DBObject) JSON.parse(Const.isEmpty(query) ? "{}" //$NON-NLS-1$
+            : query);
+        DBObject dbObject2 = (DBObject) JSON.parse(fields);
+        data.cursor = data.collection.find(dbObject, dbObject2);
+      }
     }
   }
 
