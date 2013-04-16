@@ -96,6 +96,8 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
   /** optional tag sets to use with read preference settings */
   private List<String> m_readPrefTagSets;
 
+  private boolean m_executeForEachIncomingRow = false;
+
   public MongoDbInputMeta() {
     super(); // allocate BaseStepMeta
   }
@@ -122,6 +124,14 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
 
   public boolean getUseAllReplicaSetMembers() {
     return m_useAllReplicaSetMembers;
+  }
+
+  public void setExecuteForEachIncomingRow(boolean e) {
+    m_executeForEachIncomingRow = e;
+  }
+
+  public boolean getExecuteForEachIncomingRow() {
+    return m_executeForEachIncomingRow;
   }
 
   @Override
@@ -172,6 +182,12 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
           .getTagValue(stepnode, "query_is_pipeline"); //$NON-NLS-1$
       if (!Const.isEmpty(queryIsPipe)) {
         m_aggPipeline = queryIsPipe.equalsIgnoreCase("Y"); //$NON-NLS-1$
+      }
+
+      String executeForEachR = XMLHandler.getTagValue(stepnode,
+          "execute_for_each_row");
+      if (!Const.isEmpty(executeForEachR)) {
+        m_executeForEachIncomingRow = executeForEachR.equalsIgnoreCase("Y");
       }
 
       Node mongo_fields = XMLHandler.getSubNode(stepnode, "mongo_fields"); //$NON-NLS-1$
@@ -304,6 +320,9 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
         XMLHandler.addTagValue("output_json", m_outputJson)); //$NON-NLS-1$
     retval.append("    ").append( //$NON-NLS-1$
         XMLHandler.addTagValue("query_is_pipeline", m_aggPipeline)); //$NON-NLS-1$
+    retval.append("    ").append( //$NON-NLS-1$
+        XMLHandler.addTagValue(
+            "execute_for_each_row", m_executeForEachIncomingRow)); //$NON-NLS-1$
 
     if (m_fields != null && m_fields.size() > 0) {
       retval.append("\n    ").append(XMLHandler.openTag("mongo_fields")); //$NON-NLS-1$ //$NON-NLS-2$
@@ -360,6 +379,8 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
 
       m_outputJson = rep.getStepAttributeBoolean(id_step, 0, "output_json"); //$NON-NLS-1$
       m_aggPipeline = rep.getStepAttributeBoolean(id_step, "query_is_pipeline"); //$NON-NLS-1$
+      m_executeForEachIncomingRow = rep.getStepAttributeBoolean(id_step,
+          "execute_for_each_row"); //$NON-NLS-1$
 
       int nrfields = rep.countNrStepAttributes(id_step, "field_name"); //$NON-NLS-1$
       if (nrfields > 0) {
@@ -430,6 +451,9 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
           m_outputJson);
       rep.saveStepAttribute(id_transformation, id_step, 0, "query_is_pipeline", //$NON-NLS-1$
           m_aggPipeline);
+      rep.saveStepAttribute(id_transformation, id_step, 0,
+          "execute_for_each_row", //$NON-NLS-1$
+          m_executeForEachIncomingRow);
 
       if (m_fields != null && m_fields.size() > 0) {
         for (int i = 0; i < m_fields.size(); i++) {

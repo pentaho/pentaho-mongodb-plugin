@@ -125,6 +125,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
   private CCombo m_tagsCombo;
 
+  private Button m_executeForEachRowBut;
+
   private final MongoDbInputMeta input;
   private String m_currentTagsState = ""; //$NON-NLS-1$
 
@@ -703,6 +705,25 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     m_colInf[0].setReadOnly(false);
 
+    Label executeForEachRLab = new Label(wInputOptionsComp, SWT.RIGHT);
+    executeForEachRLab.setText(BaseMessages.getString(PKG,
+        "MongoDbInputDialog.ExecuteForEachRow.Label")); //$NON-NLS-1$
+    props.setLook(executeForEachRLab);
+    fd = new FormData();
+    fd.left = new FormAttachment(0, -margin);
+    fd.top = new FormAttachment(lastControl, margin);
+    fd.right = new FormAttachment(middle, -margin);
+    executeForEachRLab.setLayoutData(fd);
+
+    m_executeForEachRowBut = new Button(wInputOptionsComp, SWT.CHECK);
+    props.setLook(m_executeForEachRowBut);
+    fd = new FormData();
+    fd.left = new FormAttachment(middle, 0);
+    fd.right = new FormAttachment(100, 0);
+    fd.top = new FormAttachment(lastControl, margin);
+    m_executeForEachRowBut.setLayoutData(fd);
+    lastControl = m_executeForEachRowBut;
+
     Label tagSetsTitle = new Label(wInputOptionsComp, SWT.LEFT);
     tagSetsTitle.setText(BaseMessages.getString(PKG,
         "MongoDbInputDialog.TagSets.Title")); //$NON-NLS-1$
@@ -909,7 +930,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       public void widgetSelected(SelectionEvent e) {
         // populate table from schema
         MongoDbInputMeta newMeta = (MongoDbInputMeta) input.clone();
-        getFields(newMeta, transMeta);
+        getFields(newMeta);
       }
     });
 
@@ -1057,6 +1078,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     m_readPreference.setText(Const.NVL(meta.getReadPreference(), "")); //$NON-NLS-1$
     m_queryIsPipelineBut.setSelection(meta.getQueryIsPipeline());
     m_outputAsJson.setSelection(meta.getOutputJson());
+    m_executeForEachRowBut.setSelection(meta.getExecuteForEachIncomingRow());
 
     setFieldTableFields(meta.getMongoFields());
     setTagsTableFields(meta.getReadPrefTagSets());
@@ -1107,6 +1129,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     meta.setReadPreference(m_readPreference.getText());
     meta.setOutputJson(m_outputAsJson.getSelection());
     meta.setQueryIsPipeline(m_queryIsPipelineBut.getSelection());
+    meta.setExecuteForEachIncomingRow(m_executeForEachRowBut.getSelection());
 
     int numNonEmpty = m_fieldsView.nrNonEmpty();
     if (numNonEmpty > 0) {
@@ -1221,7 +1244,28 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     m_fieldsView.optWidth(true);
   }
 
-  private void getFields(MongoDbInputMeta meta, TransMeta transMeta) {
+  private boolean checkForUnresolved(MongoDbInputMeta meta, String title) {
+
+    String query = transMeta.environmentSubstitute(meta.getJsonQuery());
+    String fields = transMeta.environmentSubstitute(meta.getFieldsName());
+
+    boolean notOk = (query.contains("${") || query.contains("?{")); //$NON-NLS-1$ //$NON-NLS-2$
+
+    if (notOk) {
+      ShowMessageDialog smd = new ShowMessageDialog(
+          shell,
+          SWT.ICON_WARNING | SWT.OK,
+          title,
+          BaseMessages
+              .getString(PKG,
+                  "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs")); //$NON-NLS-1$
+      smd.open();
+    }
+
+    return !notOk;
+  }
+
+  private void getFields(MongoDbInputMeta meta) {
     if (!Const.isEmpty(wHostname.getText()) && !Const.isEmpty(wPort.getText())
         && !Const.isEmpty(wDbName.getText())
         && !Const.isEmpty(wCollection.getText())) {
@@ -1234,6 +1278,22 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       if (samples > 0) {
         try {
           getInfo(meta);
+          // Turn off execute for each incoming row (if set).
+          // Query is still going to
+          // be stuffed if the user has specified field replacement (i.e.
+          // ?{...}) in the query string
+          boolean current = meta.getExecuteForEachIncomingRow();
+          meta.setExecuteForEachIncomingRow(false);
+
+          if (!checkForUnresolved(
+              meta,
+              BaseMessages
+                  .getString(
+                      PKG,
+                      "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs.SamplingTitle"))) { //$NON-NLS-1$
+            return;
+          }
+
           boolean result = MongoDbInputData.discoverFields(meta, transMeta,
               samples);
 
@@ -1243,6 +1303,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
                 new KettleException(
                     "MongoDbInputDialog.ErrorMessage.NoFieldsFound")); //$NON-NLS-1$
           } else {
+            meta.setExecuteForEachIncomingRow(current);
             getData(meta);
           }
         } catch (KettleException e) {
@@ -1258,6 +1319,20 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     // Create the XML input step
     MongoDbInputMeta oneMeta = new MongoDbInputMeta();
     getInfo(oneMeta);
+
+    // Turn off execute for each incoming row (if set). Query is still going to
+    // be stuffed if the user has specified field replacement (i.e. ?{...}) in
+    // the query string
+    oneMeta.setExecuteForEachIncomingRow(false);
+
+    if (!checkForUnresolved(
+        oneMeta,
+        BaseMessages
+            .getString(
+                PKG,
+                "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs.PreviewTitle"))) { //$NON-NLS-1$
+      return;
+    }
 
     TransMeta previewMeta = TransPreviewFactory.generatePreviewTransformation(
         transMeta, oneMeta, wStepname.getText());
