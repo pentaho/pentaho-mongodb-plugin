@@ -365,7 +365,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
   
   public void saveMeta(MongoDbInputMeta meta){
     meta.setOutputJson(false);
-    meta.setJsonQuery(jsonQuery);
+    meta.setJsonQuery(this.jsonQuery);
     meta.setAuthenticationPassword(this.authenticationPassword);
     meta.setAuthenticationUser(this.authenticationUser);
     meta.setCollection(collection);

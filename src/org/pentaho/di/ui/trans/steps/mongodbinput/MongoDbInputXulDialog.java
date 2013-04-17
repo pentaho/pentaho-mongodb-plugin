@@ -3,9 +3,6 @@
  */
 package org.pentaho.di.ui.trans.steps.mongodbinput;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Vector;
@@ -14,7 +11,6 @@ import org.pentaho.di.core.Const;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
-import org.pentaho.di.ui.swing.preview.PreviewRowsSwingDialog;
 import org.pentaho.di.ui.trans.step.BaseStepGenericXulDialog;
 import org.pentaho.di.ui.trans.steps.mongodbinput.models.MongoDbModel;
 import org.pentaho.di.ui.trans.steps.mongodbinput.models.MongoDocumentField;
@@ -58,7 +54,7 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
   
   public void init(){
 
-      model = new MongoDbModel((MongoDbInputMeta)baseStepMeta);
+      model = new MongoDbModel((MongoDbInputMeta)stepMeta.getStepMetaInterface());
     
     try {
       bf.setBindingType(Binding.Type.ONE_WAY);
@@ -83,7 +79,7 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
 
       bf.setBindingType(Binding.Type.BI_DIRECTIONAL);
       
-      maxPreviewRows = 100;
+      // maxPreviewRows = 100;
       //bf.createBinding( this, "maxPreviewRows", "maxPreviewRows", "value", BindingConvertor.integer2String()).fireSourceChanged();
 
       bf.createBinding( model, "hostnames", "hostName", "value").fireSourceChanged();
@@ -157,13 +153,20 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
     dispose();
 
   }
-  
+
+  /**
+   * Currently not using this.. the preview function is baked into the different apps, 
+   * so no need to re-create it here... once the PDI dialog and the PRD container are XUL, we 
+   * will need a XUL-ified preview dialog, which will take enhancing hte underlying XUL table 
+   * to allow for dynamic rows and columns. 
+   
   public void preview(){
     MongoDbInputMeta meta = new MongoDbInputMeta();
     model.saveMeta(meta);
     PreviewRowsSwingDialog dlg = new PreviewRowsSwingDialog(parent, meta, getMaxPreviewRows());
     dlg.open();
   }
+  */
 
   @Override
   protected Class<?> getClassForMessages() {
@@ -190,6 +193,13 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
       return;
     }
     model.clear();
+    
+    try {
+      databaseBinding.fireSourceChanged();
+      collectionBinding.fireSourceChanged();
+    } catch (Exception e) {
+      this.logError("Non-critical error clearing database and collection information.", e);
+    }
   }
 
   public void getDatabaseNamesFromMongo(){
@@ -216,6 +226,7 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
     try {
       model.getFieldsFromMongo();
       fieldsBinding.fireSourceChanged(); // should I be doing this, or is there a better way? 
+
     } catch (Exception e) {
       this.logError("Error retrieving fields from MongoDB. Please check your connection information and database name and try again.", e);
     }
