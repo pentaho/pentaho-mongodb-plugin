@@ -705,25 +705,6 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     m_colInf[0].setReadOnly(false);
 
-    Label executeForEachRLab = new Label(wInputOptionsComp, SWT.RIGHT);
-    executeForEachRLab.setText(BaseMessages.getString(PKG,
-        "MongoDbInputDialog.ExecuteForEachRow.Label")); //$NON-NLS-1$
-    props.setLook(executeForEachRLab);
-    fd = new FormData();
-    fd.left = new FormAttachment(0, -margin);
-    fd.top = new FormAttachment(lastControl, margin);
-    fd.right = new FormAttachment(middle, -margin);
-    executeForEachRLab.setLayoutData(fd);
-
-    m_executeForEachRowBut = new Button(wInputOptionsComp, SWT.CHECK);
-    props.setLook(m_executeForEachRowBut);
-    fd = new FormData();
-    fd.left = new FormAttachment(middle, 0);
-    fd.right = new FormAttachment(100, 0);
-    fd.top = new FormAttachment(lastControl, margin);
-    m_executeForEachRowBut.setLayoutData(fd);
-    lastControl = m_executeForEachRowBut;
-
     Label tagSetsTitle = new Label(wInputOptionsComp, SWT.LEFT);
     tagSetsTitle.setText(BaseMessages.getString(PKG,
         "MongoDbInputDialog.TagSets.Title")); //$NON-NLS-1$
@@ -788,13 +769,32 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     wFieldsName.setLayoutData(fdFieldsName);
     lastControl = wFieldsName;
 
+    Label executeForEachRLab = new Label(wQueryComp, SWT.RIGHT);
+    executeForEachRLab.setText(BaseMessages.getString(PKG,
+        "MongoDbInputDialog.ExecuteForEachRow.Label")); //$NON-NLS-1$
+    props.setLook(executeForEachRLab);
+    fd = new FormData();
+    fd.left = new FormAttachment(0, -margin);
+    fd.bottom = new FormAttachment(lastControl, -margin);
+    fd.right = new FormAttachment(middle, -margin);
+    executeForEachRLab.setLayoutData(fd);
+
+    m_executeForEachRowBut = new Button(wQueryComp, SWT.CHECK);
+    props.setLook(m_executeForEachRowBut);
+    fd = new FormData();
+    fd.left = new FormAttachment(middle, 0);
+    fd.right = new FormAttachment(100, 0);
+    fd.bottom = new FormAttachment(lastControl, -margin);
+    m_executeForEachRowBut.setLayoutData(fd);
+    lastControl = m_executeForEachRowBut;
+
     Label queryIsPipelineL = new Label(wQueryComp, SWT.RIGHT);
     queryIsPipelineL.setText(BaseMessages.getString(PKG,
         "MongoDbInputDialog.Pipeline.Label")); //$NON-NLS-1$
     props.setLook(queryIsPipelineL);
     fd = new FormData();
     fd.bottom = new FormAttachment(lastControl, -margin);
-    fd.left = new FormAttachment(0, 0);
+    fd.left = new FormAttachment(0, -margin);
     fd.right = new FormAttachment(middle, -margin);
     queryIsPipelineL.setLayoutData(fd);
 
