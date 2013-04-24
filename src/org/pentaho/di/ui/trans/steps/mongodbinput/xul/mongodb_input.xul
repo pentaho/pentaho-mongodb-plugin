@@ -101,7 +101,7 @@
 					<tabpanel>
 						<vbox>
 							<tree flex="1" editable="true" seltype="cell" height="200"
-								enableColumnDrag="true" id="fieldsTable" autocreatenewrows="true">
+								enableColumnDrag="true" id="fieldsTable" autocreatenewrows="true" newitembinding="handler.createNewField()">
 								<treecols id="column_list">
 									<treecol id="name_col" label="${column-name}" pen:binding="fieldName" editable="true" />
 									<treecol id="path_col" label="${column-path}" pen:binding="fieldPath" editable="true" />

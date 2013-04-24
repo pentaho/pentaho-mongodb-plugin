@@ -26,11 +26,13 @@ import java.util.Vector;
 
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.util.StringUtil;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 import org.pentaho.ui.xul.stereotype.Bindable;
+import org.pentaho.ui.xul.util.AbstractModelList;
 
 import com.mongodb.CommandResult;
 import com.mongodb.DB;
@@ -65,7 +67,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
   /** primary, primaryPreferred, secondary, secondaryPreferred, nearest */
   private String m_readPreference = "Primary";
   
-  private List<MongoDocumentField> fields = new ArrayList<MongoDocumentField>();
+  private AbstractModelList<MongoDocumentField> fields = new AbstractModelList<MongoDocumentField>();
 
   private MongoDbInputMeta mongo;
 
@@ -74,6 +76,17 @@ public class MongoDbModel extends XulEventSourceAdapter {
     this.mongo = mongo;
     
     initialize(this.mongo);
+  }
+  
+  public boolean validate(){
+    boolean valid = false; 
+    
+    valid = (!StringUtil.isEmpty(hostname)) &&
+            (!StringUtil.isEmpty(port)) && 
+            (fields.size() > 0);
+    
+    firePropertyChange("validate", null, valid);
+    return valid; 
   }
 
   /**
@@ -91,8 +104,9 @@ public class MongoDbModel extends XulEventSourceAdapter {
     this.hostname = hostname;
 
     firePropertyChange("hostnames", prevVal, hostname);
+    validate();
   }
-
+  
   /**
    * @return the port. This is a port to use for all hostnames (avoids having to
    *         specify the same port for each hostname in the hostnames list
@@ -111,6 +125,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     this.port = port;
     
     firePropertyChange("port", prevVal, port);
+    validate();
   }
   
 
@@ -348,15 +363,9 @@ public class MongoDbModel extends XulEventSourceAdapter {
     return m_readPreference;
   }
 
-  public List<MongoDocumentField> getFields() {
+  
+  public AbstractModelList<MongoDocumentField> getFields() {
     return fields;
-  }
-
-  public void setFields(List<MongoDocumentField> fields) {
-    List<MongoDocumentField> prevVal = this.fields;
-    this.fields = fields;
-
-    firePropertyChange("fields", prevVal, fields);
   }
 
   public void save() {
@@ -395,7 +404,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     setReadPreference(m.getReadPreference());
     setConnectTimeout(m.getConnectTimeout());
     setSocketTimeout(m.getSocketTimeout());
-    this.setFields(MongoDocumentField.convertList(m.getMongoFields()));
+    MongoDocumentField.convertList(m.getMongoFields(), getFields());
   }
   
   public void clear()
@@ -513,7 +522,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
         if (!result) {
             // TODO: Deal with error here ....
         } else {
-          setFields(MongoDocumentField.convertList(meta.getMongoFields()));
+          MongoDocumentField.convertList(meta.getMongoFields(), getFields());
         }
       } catch (KettleException e) {
         // TODO: log and rethrow exception so UI has a chance to deal with it...
