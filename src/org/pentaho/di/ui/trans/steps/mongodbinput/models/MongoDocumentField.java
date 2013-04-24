@@ -8,6 +8,7 @@ import org.pentaho.di.core.Const;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData.MongoField;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
+import org.pentaho.ui.xul.util.AbstractModelList;
 
 public class MongoDocumentField extends XulEventSourceAdapter{
 
@@ -99,21 +100,19 @@ public class MongoDocumentField extends XulEventSourceAdapter{
     field.m_occurenceFraction = this.m_occurenceFraction;
   }
   
-  public static List<MongoDocumentField> convertList(List<MongoField> fields){
-    List<MongoDocumentField> docFields = new ArrayList<MongoDocumentField>();
+  public static void convertList(List<MongoField> fields, AbstractModelList<MongoDocumentField> docFields){
     
     if ( fields == null || fields.isEmpty()){
-      return docFields;
+      return;
     }
     for (MongoField field: fields){
       MongoDocumentField docField = new MongoDocumentField();
       docField.convertFrom(field);
       docFields.add(docField);
     }
-    return docFields;
   }
 
-  public static List<MongoField> convertFromList(List<MongoDocumentField> docFields){
+  public static List<MongoField> convertFromList(AbstractModelList<MongoDocumentField> docFields){
     List<MongoField> fields = new ArrayList<MongoField>();
     
     if ( docFields == null || docFields.isEmpty()){

@@ -3,6 +3,7 @@
  */
 package org.pentaho.di.ui.trans.steps.mongodbinput;
 
+import java.beans.PropertyChangeListener;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Vector;
@@ -72,10 +73,9 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
       collectionBinding = bf.createBinding(model, "collections", "collection", "elements");
       collectionBinding.fireSourceChanged();
       
-      bf.createBinding( this, "fieldValuesChanged", "fieldsTable", "onedit");
-      
+
       // this controls enabling the external preview function ...
-      bf.createBinding( model, "fields", this, "dialogState");
+      bf.createBinding( model.getFields(), "children", this, "previewState").fireSourceChanged();
 
       bf.setBindingType(Binding.Type.BI_DIRECTIONAL);
       
@@ -99,7 +99,7 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
 
       bf.createBinding("isAggPipeline", "checked", "fieldsQuery", "disabled").fireSourceChanged();
       
-      fieldsBinding = bf.createBinding(model, "fields", "fieldsTable", "elements");
+      Binding fieldsBinding = bf.createBinding(model.getFields(), "children", "fieldsTable", "elements");
       fieldsBinding.fireSourceChanged();
 
     } catch (Exception e) {
@@ -108,34 +108,37 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
     }
   }
   
-  public void setDialogState(List<MongoDocumentField> fields)
-  {
-
-    firePropertyChange("fields", null, fields.size());
-    
+  /**
+   * Because we are using an AbstractModelList as our fields container, we need 
+   * to bind the validate() method here, instead of calling it from the setter in 
+   * model as we do for other fields that need to fire validation checks. 
+   * 
+   * TODO: There could be a better way? 
+   * 
+   * @param elements
+   */
+  public void setPreviewState(List<MongoDocumentField> elements){
+    validate();
   }
   
-  public String getFieldValuesChanged(){
-    try {
-      
-      if (fieldsBinding != null){
-        
-        fieldsBinding.fireSourceChanged();
-      }
-      firePropertyChange("fields", null, model.getFields().size());
-
-    } catch (Exception e) {
-
-      log.logError("Error updating fields.", e);
-
-    }
-    return null;
+  /**
+   * In order for the model to control validation, the external container needs to register 
+   * the model instead of the XUL dialog... but don't prevent the dialog from registering with 
+   * listeners as well. 
+   */
+  @Override
+  public void addPropertyChangeListener(PropertyChangeListener listener) {
+    model.addPropertyChangeListener(listener);
+    super.addPropertyChangeListener(listener);
   }
 
+  @Override
+  public boolean validate(){
+   return model.validate();
+  }
+  
   protected void initializeXul() throws XulException {
-
     initializeXul(new SwingXulLoader(), new SwingBindingFactory(), new SwingXulRunner(), parent);
-      
   }
   
   @Override
@@ -201,6 +204,15 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
       this.logError("Non-critical error clearing database and collection information.", e);
     }
   }
+  
+  /**
+   *  Method bound to newitembinding attribute on XUL tree with ID "fieldsTable"; this will  
+   *  be invoked from the context menu item "Insert new row".
+   */
+  public void createNewField(){
+    MongoDocumentField field = new MongoDocumentField();
+    model.getFields().add(field);
+  }
 
   public void getDatabaseNamesFromMongo(){
     try {
@@ -225,7 +237,6 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
   public void getDocumentFieldsFromMongo(){
     try {
       model.getFieldsFromMongo();
-      fieldsBinding.fireSourceChanged(); // should I be doing this, or is there a better way? 
 
     } catch (Exception e) {
       this.logError("Error retrieving fields from MongoDB. Please check your connection information and database name and try again.", e);
