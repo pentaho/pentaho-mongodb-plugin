@@ -1201,6 +1201,11 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
     try {
       mongo = initConnection(meta, vars, null);
+      if (Const.isEmpty(db)) {
+        throw new KettleException(BaseMessages.getString(
+            MongoDbInputMeta.PKG,
+            "MongoInput.ErrorMessage.NoDBSpecified")); //$NON-NLS-1$
+      }
       DB database = mongo.getDB(db);
 
       String realUser = vars
@@ -1214,6 +1219,11 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
               MongoDbInputMeta.PKG,
               "MongoDbInput.ErrorAuthenticating.Exception")); //$NON-NLS-1$
         }
+      }
+      if (Const.isEmpty(collection)) {
+        throw new KettleException(BaseMessages.getString(
+            MongoDbInputMeta.PKG,
+            "MongoInput.ErrorMessage.NoCollectionSpecified")); //$NON-NLS-1$
       }
       DBCollection dbcollection = database.getCollection(collection);
 
