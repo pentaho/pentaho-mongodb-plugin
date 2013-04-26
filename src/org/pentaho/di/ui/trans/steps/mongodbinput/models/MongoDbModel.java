@@ -26,10 +26,12 @@ import java.util.Vector;
 
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.util.StringUtil;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
+import org.pentaho.mongo.MongoDbException;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 import org.pentaho.ui.xul.stereotype.Bindable;
 import org.pentaho.ui.xul.util.AbstractModelList;
@@ -70,11 +72,13 @@ public class MongoDbModel extends XulEventSourceAdapter {
   private AbstractModelList<MongoDocumentField> fields = new AbstractModelList<MongoDocumentField>();
 
   private MongoDbInputMeta mongo;
+  
+  private LogChannel log; 
 
   public MongoDbModel(MongoDbInputMeta mongo) {
     super();
     this.mongo = mongo;
-    
+    log = new LogChannel(this.mongo);
     initialize(this.mongo);
   }
   
@@ -82,7 +86,9 @@ public class MongoDbModel extends XulEventSourceAdapter {
     boolean valid = false; 
     
     valid = (!StringUtil.isEmpty(hostname)) &&
-            (!StringUtil.isEmpty(port)) && 
+         //   (!StringUtil.isEmpty(port)) &&     // port can be empty; MongoDb will assume 27017
+            (!StringUtil.isEmpty(dbName)) && 
+            (!StringUtil.isEmpty(collection)) && 
             (fields.size() > 0);
     
     firePropertyChange("validate", null, valid);
@@ -435,7 +441,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     Vector<String> dbs = new Vector<String>();
     
     if (Const.isEmpty(hostname)) {
-      //TODO = what's on the else side here? This button should be disabled until hostname is given...
+      log.logBasic("Fetching database names aborted. Missing hostname.");
       return dbs;
     }
 
@@ -451,9 +457,8 @@ public class MongoDbModel extends XulEventSourceAdapter {
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
-     throw new Exception(e);
-      // TODO: throw new exception here, and report to dialog that an error occurred...
+      log.logError("Unexpected error retrieving database names from MongoDb. Check your connection details.", meta);
+      throw new MongoDbException("Unexpected error retrieving database names from MongoDb. Check your connection details.", e);
     }finally{
       if (conn != null){
         conn.close();
@@ -470,11 +475,11 @@ public class MongoDbModel extends XulEventSourceAdapter {
    * @return Vector<String> list of collection names
    * @throws Exception Should anything go wrong connecting to MongoDB, it will be reported with this exception
    */
-  public Vector<String> getCollectionNamesFromMongo() {
+  public Vector<String> getCollectionNamesFromMongo() throws MongoDbException{
     Vector<String> newCollections = new Vector<String>();
     
     if (Const.isEmpty(dbName) || Const.isEmpty(hostname)) {
-      // TODO: if the database name is empty, the button should be disabled...
+      log.logBasic("Fetching collection names aborted. Missing database name or hostname.");
       return newCollections;
     }
 
@@ -489,7 +494,8 @@ public class MongoDbModel extends XulEventSourceAdapter {
         CommandResult comResult = theDB.authenticateCommand(authenticationUser,
                                                             authenticationPassword.toCharArray());
         if (!comResult.ok()) {
-            // TODO: throw new exception here, and report to dialog that an error occurred...
+          log.logBasic("Failed to authenticate user {0}.", authenticationUser);
+          throw new MongoDbException("Failed to autheticate the user. Check your credentials.");
         }
       }
 
@@ -499,7 +505,8 @@ public class MongoDbModel extends XulEventSourceAdapter {
       }
 
     } catch (Exception e) {
-      // TODO: throw new exception here, and report to dialog that an error occurred...
+      log.logError("Unexpected error retrieving collection names from MongoDb. Check that your database name is valid.", meta);
+      throw new MongoDbException("Unexpected error retrieving collection names from MongoDb. Check that your database name is valid.", e);
     }finally{
       if (conn!=null){
         conn.close();
@@ -509,23 +516,26 @@ public class MongoDbModel extends XulEventSourceAdapter {
     return newCollections;
   }
   
-  public void getFieldsFromMongo(){
+  public void getFieldsFromMongo() throws MongoDbException{
     // TODO: This should be a sample dialog requested from the user ...
     int samples = 100;
     MongoDbInputMeta meta = new MongoDbInputMeta(); 
     if (samples > 0) {
       try {
+
         saveMeta(meta);
         boolean result = MongoDbInputData.discoverFields(meta, new TransMeta(),
             samples);
 
         if (!result) {
-            // TODO: Deal with error here ....
+          log.logBasic("No fields were returned from MongoDb. Check your query, and/or connection details.");
+          throw new MongoDbException("No fields were returned from MongoDb. Check your query, and/or connection details.");
         } else {
           MongoDocumentField.convertList(meta.getMongoFields(), getFields());
         }
       } catch (KettleException e) {
-        // TODO: log and rethrow exception so UI has a chance to deal with it...
+       log.logError("Unexpected error retrieving fields from MongoDb. Check your connection details.", meta);
+       throw new MongoDbException("Unexpected error retrieving fields from MongoDb. Check your connection details.", e);
       }
     }    
   }
