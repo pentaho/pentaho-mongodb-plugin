@@ -19,6 +19,7 @@ import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulSettingsManager;
 import org.pentaho.ui.xul.binding.Binding;
 import org.pentaho.ui.xul.binding.BindingConvertor;
+import org.pentaho.ui.xul.components.XulMessageBox;
 import org.pentaho.ui.xul.swing.SwingBindingFactory;
 import org.pentaho.ui.xul.swing.SwingXulLoader;
 import org.pentaho.ui.xul.swing.SwingXulRunner;
@@ -42,6 +43,7 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
   public MongoDbInputXulDialog(Object parent, BaseStepMeta baseStepMeta, TransMeta transMeta, String stepname ) {
 
     super("org/pentaho/di/ui/trans/steps/mongodbinput/xul/mongodb_input.xul", parent, baseStepMeta, transMeta, stepname);
+    
 
   }
 
@@ -220,7 +222,7 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
       model.setDbNames(dbs);
       databaseBinding.fireSourceChanged(); // should I be doing this, or is there a better way? 
     } catch (Exception e) {
-      this.logError("Error retrieving database names from MongoDB. Please check your connection information and try again.", e);
+      showMessage(e.getMessage(), "MongoDb Error");
     }
   }
 
@@ -230,16 +232,20 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
       model.setCollections(collections);
       collectionBinding.fireSourceChanged(); // should I be doing this, or is there a better way? 
     } catch (Exception e) {
-      this.logError("Error retrieving collection names from MongoDB. Please check your connection information and database name and try again.", e);
+      showMessage(e.getMessage(), "MongoDb Error");
     }
   }
   
+  /**
+   * This method is invoked from the XUL definition; bound to the "fields" button on the Fields tab. 
+   */
   public void getDocumentFieldsFromMongo(){
     try {
+      
       model.getFieldsFromMongo();
 
     } catch (Exception e) {
-      this.logError("Error retrieving fields from MongoDB. Please check your connection information and database name and try again.", e);
+      showMessage(e.getMessage(), "MongoDb Error");
     }
   }
   private static class IsEmptyStringToBooleanConvertor extends BindingConvertor<String, Boolean> {
@@ -256,4 +262,5 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
     }
   }
 
+    
 }
