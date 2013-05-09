@@ -76,6 +76,7 @@ import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.dialog.TransPreviewProgressDialog;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.mongo.MongoUtils;
+import org.pentaho.mongo.NamedReadPreference;
 
 import com.mongodb.CommandResult;
 import com.mongodb.DB;
@@ -539,14 +540,14 @@ public class MongoDbInputDialog extends BaseStepDialog implements
             .environmentSubstitute(m_readPreference.getText()));
       }
     });
-    m_readPreference.add("Primary"); //$NON-NLS-1$
-    m_readPreference.add("Primary preferred"); //$NON-NLS-1$
-    m_readPreference.add("Secondary"); //$NON-NLS-1$
-    m_readPreference.add("Secondary preferred"); //$NON-NLS-1$
-    m_readPreference.add("Nearest"); //$NON-NLS-1$
+
+    for (NamedReadPreference preference : NamedReadPreference.values()) {
+      m_readPreference.add(preference.getName());
+    }
 
     lastControl = m_readPreference;
 
+/*    
     // add to table button
     Button addToTableBut = new Button(wInputOptionsComp, SWT.PUSH | SWT.CENTER);
     props.setLook(addToTableBut);
@@ -565,6 +566,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       }
     });
 
+    
+    
     // get tags button
     Button getTagsBut = new Button(wInputOptionsComp, SWT.PUSH | SWT.CENTER);
     props.setLook(getTagsBut);
@@ -678,7 +681,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
         input.setChanged();
       }
     });
-
+*/
     // test tag set but
     Button testUserTagsBut = new Button(wInputOptionsComp, SWT.PUSH
         | SWT.CENTER);
@@ -699,6 +702,48 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       }
     });
 
+    Button joinTagsBut = new Button(wInputOptionsComp, SWT.PUSH | SWT.CENTER);
+    props.setLook(joinTagsBut);
+    joinTagsBut.setText("Join tags");
+    joinTagsBut.setToolTipText("Join tags");
+    
+/*    joinTagsBut.setText(BaseMessages.getString(PKG,
+        "MongoDbInputDialog.GetTags.Button")); //$NON-NLS-1$
+    joinTagsBut.setToolTipText(BaseMessages.getString(PKG,
+        "MongoDbInputDialog.GetTags.Button.TipText")); //$NON-NLS-1$
+*/    
+    fd = new FormData();
+    fd.bottom = new FormAttachment(100, -margin * 2);
+    fd.right = new FormAttachment(testUserTagsBut, margin);
+    joinTagsBut.setLayoutData(fd);
+
+    joinTagsBut.addSelectionListener(new SelectionAdapter() {
+      @Override
+      public void widgetSelected(SelectionEvent e) {
+        concatenateTags();
+      }
+    });
+
+    Button getTagsBut = new Button(wInputOptionsComp, SWT.PUSH | SWT.CENTER);
+    props.setLook(getTagsBut);
+    getTagsBut.setText(BaseMessages.getString(PKG,
+        "MongoDbInputDialog.GetTags.Button")); //$NON-NLS-1$
+    getTagsBut.setToolTipText(BaseMessages.getString(PKG,
+        "MongoDbInputDialog.GetTags.Button.TipText")); //$NON-NLS-1$
+    fd = new FormData();
+    //fd.top = new FormAttachment(lastControl, 0);
+    fd.bottom = new FormAttachment(100, -margin * 2);
+    fd.right = new FormAttachment(joinTagsBut, margin);
+    getTagsBut.setLayoutData(fd);
+
+    getTagsBut.addSelectionListener(new SelectionAdapter() {
+      @Override
+      public void widgetSelected(SelectionEvent e) {
+        setupTagSetComboValues();
+      }
+    });
+
+    
     m_colInf = new ColumnInfo[] { new ColumnInfo(BaseMessages.getString(PKG,
         "MongoDbInputDialog.TagSets.TagSetColumnTitle"), //$NON-NLS-1$
         ColumnInfo.COLUMN_TYPE_TEXT, false), };
@@ -721,7 +766,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     fd = new FormData();
     fd.top = new FormAttachment(lastControl, margin * 2);
-    fd.bottom = new FormAttachment(editSelectedBut, -margin * 2);
+    fd.bottom = new FormAttachment(100, -margin * 2);
     fd.left = new FormAttachment(0, 0);
     fd.right = new FormAttachment(100, 0);
     m_tagsView.setLayoutData(fd);
@@ -1154,6 +1199,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     }
 
     numNonEmpty = m_tagsView.nrNonEmpty();
+    
     List<String> tags = new ArrayList<String>();
     if (numNonEmpty > 0) {
 
@@ -1471,21 +1517,14 @@ public class MongoDbInputDialog extends BaseStepDialog implements
   private void setupTagSetComboValues() {
     String hostname = transMeta.environmentSubstitute(wHostname.getText());
 
-    String current = m_tagsCombo.getText();
     if (!Const.isEmpty(hostname)) {
       MongoDbInputMeta meta = new MongoDbInputMeta();
       getInfo(meta);
 
       try {
         List<String> repSetTags = MongoUtils.getAllTags(meta, transMeta, null);
+        this.setTagsTableFields(repSetTags);
 
-        if (repSetTags != null && repSetTags.size() > 0) {
-
-          m_tagsCombo.removeAll();
-          for (String r : repSetTags) {
-            m_tagsCombo.add(r);
-          }
-        }
       } catch (Exception e) {
         logError(BaseMessages.getString(PKG,
             "MongoDbInputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
@@ -1494,10 +1533,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
             BaseMessages.getString(PKG,
                 "MongoDbInputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
       } finally {
-        if (!Const.isEmpty(current)) {
-          m_tagsCombo.setText(current);
-          m_currentTagsState = current;
-        }
+          // set m_currentTagState?
       }
     }
   }
@@ -1659,5 +1695,21 @@ public class MongoDbInputDialog extends BaseStepDialog implements
               "MongoDbInputDialog.ErrorMessage.NoTagSetsDefined")); //$NON-NLS-1$
       smd.open();
     }
+  }
+  
+  private void concatenateTags(){
+    int[] selectedTags = this.m_tagsView.getSelectionIndices();
+    String concatenated = "";
+    
+    for (int i : selectedTags) {
+      TableItem item = m_tagsView.table.getItem(i);
+      String t = item.getText(1).trim();
+      concatenated = concatenated
+          + ((concatenated.length() > 0) ? ((!concatenated
+              .endsWith(",")) ? ", " : "") : "") + t; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+    }
+    TableItem item = new TableItem(m_tagsView.table, SWT.NONE);
+    item.setText(1, concatenated);
+
   }
 }
