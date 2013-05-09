@@ -48,6 +48,7 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.mongo.NamedReadPreference;
 import org.w3c.dom.Node;
 
 /**
@@ -256,7 +257,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
   protected String m_socketTimeout = ""; // default - never time out //$NON-NLS-1$
 
   /** primary, primaryPreferred, secondary, secondaryPreferred, nearest */
-  protected String m_readPreference = "primary"; //$NON-NLS-1$
+  protected String m_readPreference = NamedReadPreference.PRIMARY.getName(); 
 
   /**
    * default = 1 (standalone or primary acknowledges writes; -1 no

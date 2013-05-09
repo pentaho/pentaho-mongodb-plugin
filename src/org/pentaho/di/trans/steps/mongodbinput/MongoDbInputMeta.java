@@ -50,6 +50,7 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.mongo.NamedReadPreference;
 import org.w3c.dom.Node;
 
 /**
@@ -83,7 +84,7 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
   private String m_socketTimeout = ""; // default - never time out //$NON-NLS-1$
 
   /** primary, primaryPreferred, secondary, secondaryPreferred, nearest */
-  private String m_readPreference = "primary"; //$NON-NLS-1$
+  private String m_readPreference = NamedReadPreference.PRIMARY.getName(); 
 
   /**
    * whether to discover and use all replica set members (if not already

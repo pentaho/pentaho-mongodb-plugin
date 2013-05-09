@@ -45,6 +45,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.ReadPreference;
 import com.mongodb.ServerAddress;
+import com.mongodb.TaggableReadPreference;
 import com.mongodb.WriteConcern;
 import com.mongodb.util.JSON;
 
@@ -117,7 +118,7 @@ public class MongoUtils {
     }
 
     if (log != null) {
-      String rpLogSetting = "Primary"; //$NON-NLS-1$
+      String rpLogSetting = NamedReadPreference.PRIMARY.getName(); 
 
       if (!Const.isEmpty(readPreference)) {
         rpLogSetting = readPreference;
@@ -138,7 +139,7 @@ public class MongoUtils {
       }
       if (log != null
           && (!Const.isEmpty(readPreference) && !readPreference
-              .equalsIgnoreCase("primary"))) { //$NON-NLS-1$
+              .equalsIgnoreCase(NamedReadPreference.PRIMARY.getName()))) { 
         StringBuilder builder = new StringBuilder();
         for (String s : tagSet) {
           builder.append(s).append(" "); //$NON-NLS-1$
@@ -157,40 +158,18 @@ public class MongoUtils {
 
     // read preference
     if (!Const.isEmpty(readPreference)) {
+
       String rp = vars.environmentSubstitute(readPreference);
 
-      if (rp.equalsIgnoreCase("Primary")) { //$NON-NLS-1$
-        optsBuilder.readPreference(ReadPreference.primary());
-      } else if (rp.equalsIgnoreCase("Primary preferred")) { //$NON-NLS-1$
-        if (firstTagSet != null) {
-          optsBuilder.readPreference(ReadPreference.primaryPreferred(
-              firstTagSet, remainingTagSets));
-        } else {
-          optsBuilder.readPreference(ReadPreference.primaryPreferred());
-        }
-      } else if (rp.equalsIgnoreCase("Secondary")) { //$NON-NLS-1$
-        if (firstTagSet != null) {
-          System.out.println("Configuring read preference with tag set."); //$NON-NLS-1$
-          optsBuilder.readPreference(ReadPreference.secondary(firstTagSet,
-              remainingTagSets));
-        } else {
-          optsBuilder.readPreference(ReadPreference.secondary());
-        }
-      } else if (rp.equalsIgnoreCase("Secondary preferred")) { //$NON-NLS-1$
-        if (firstTagSet != null) {
-          optsBuilder.readPreference(ReadPreference.secondaryPreferred(
-              firstTagSet, remainingTagSets));
-        } else {
-          optsBuilder.readPreference(ReadPreference.secondaryPreferred());
-        }
-      } else if (rp.equalsIgnoreCase("Nearest")) { //$NON-NLS-1$
-        if (firstTagSet != null) {
-          optsBuilder.readPreference(ReadPreference.nearest(firstTagSet,
-              remainingTagSets));
-        } else {
-          optsBuilder.readPreference(ReadPreference.nearest());
-        }
+      NamedReadPreference preference = NamedReadPreference.byName(rp);
+      
+      if ((firstTagSet != null) && 
+          (preference.getPreference() instanceof TaggableReadPreference)){
+        optsBuilder.readPreference(preference.getTaggableReadPreference(firstTagSet, remainingTagSets));
+      }else{
+        optsBuilder.readPreference(preference.getPreference());
       }
+
     }
 
     // write concern

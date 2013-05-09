@@ -8,29 +8,32 @@
 	ondialogaccept="handler.onAccept()" ondialogcancel="handler.onCancel()" 
 	buttons="accept,cancel" onload="handler.init()">
 
-	<vbox flex="1" id="root">
+	<!--  <vbox flex="1" id="root">  -->
 		<!-- PDI UI element 
 		<hbox> <spacer flex="1"/> <label value="${step-name}"/> <textbox id="stepName" 
 			flex="2"/> 
 		</hbox> 
 		-->
-		<hbox>
+		<hbox flex="1" id="root">
 			<tabbox id="tabBox" selectedIndex="0" flex="1">
 				<tabs id="tabs">
 					<tab label="${configure-connection}" id="tab1" />
-					<tab label="${query}" id="tab2" />
-					<tab label="${fields}" id="tab3" />
+					<tab label="${options}" id="tab2" />
+					<tab label="${query}" id="tab3" />
+					<tab label="${fields}" id="tab4" />
 				</tabs>
 				<tabpanels id="tabpanels">
+
+				<!--  CONFIGURE CONNECTION TAB -->
+
 					<tabpanel>
 						<grid flex="1">
 							<columns>
 								<column/>
-								<column/>
-								<column/>
+								<column flex="1"/>
 							</columns>
 							<rows>
-								<row >
+								<row>
 									<label value="${host-name}" />
 									<textbox id="hostName" width="350"/>
 								</row>
@@ -39,20 +42,7 @@
 									<textbox id="port" width="350"/>
 								</row>
 								<row>
-									<label value="${database}" />
-									<menulist editable="true" id="database" width="350">
-										<menupopup>
-										</menupopup>
-									</menulist>
-									<button label="${get-dbs}" id="getDbs" onclick="handler.getDatabaseNamesFromMongo()"/>
-								</row>
-								<row>
-									<label value="${collection}" />
-									<menulist editable="true" id="collection"  width="350">
-										<menupopup>
-										</menupopup>
-									</menulist>
-									<button label="${get-collections}" id="getCollections" onclick="handler.getCollectionNamesFromMongo()"/>
+									<checkbox id="isUseAllReplicas" label="${use-all-replicas}"/>
 								</row>
 								<row>
 									<label value="${auth-user}" />
@@ -67,21 +57,70 @@
 									<textbox id="connectionTimeout" width="350"/>
 								</row>
 								<row>
-								
 									<label value="${socket-timeout}" />
 									<textbox id="socketTimeout" width="350"/>
-								</row>
-								<row>
-									<label value="${read-preference}" />
-									<menulist editable="true" id="readPreference" width="350">
-										<menupopup>
-										</menupopup>
-									</menulist>
 								</row>
 							</rows>
 						</grid>						
 
 					</tabpanel>
+
+				<!--  OPTIONS TAB -->
+
+					<tabpanel>
+						<vbox>
+							<grid flex="1">
+								<columns>
+									<column/>
+									<column/>
+									<column/>
+								</columns>
+								<rows>
+									<row>
+										<label value="${database}" />
+										<menulist editable="true" id="database" width="350">
+											<menupopup>
+											</menupopup>
+										</menulist>
+										<button label="${get-dbs}" id="getDbs" onclick="handler.getDatabaseNamesFromMongo()"/>
+									</row>
+									<row>
+										<label value="${collection}" />
+										<menulist editable="true" id="collection"  width="350">
+											<menupopup>
+											</menupopup>
+										</menulist>
+										<button label="${get-collections}" id="getCollections" onclick="handler.getCollectionNamesFromMongo()"/>
+									</row>
+									<row>
+										<label value="${read-preference}" />
+										<menulist editable="true" id="readPreference" width="350">
+											<menupopup>
+											</menupopup>
+										</menulist>
+									</row>
+								</rows>
+							</grid>						
+
+							<!-- seltype="cell"  -->
+							<tree flex="1" editable="true" height="200" seltype="multiple"
+								 id="tagsTable" autocreatenewrows="true" newitembinding="handler.createNewTag()">
+								<treecols id="column_list">
+									<treecol id="tag_col" label="${column-tag}" pen:binding="tagName" editable="true" />
+								</treecols>
+								<treechildren id="main_treechildren">
+								</treechildren>
+							</tree>
+							<hbox>
+								<button label="${get-tags}" id="getTags" onclick="handler.getTagsFromMongo()"/>
+								<button label="${join-tags}" id="joinTags" onclick="handler.joinTags()"/>
+								<button label="${test-tags}" id="testTags" onclick="handler.testTags()"/>
+							</hbox>
+						</vbox>
+					</tabpanel>
+
+				<!--  QUERY TAB -->
+
 					<tabpanel>
 						<vbox>
 							<label value="${query-expression}" />
@@ -98,6 +137,9 @@
 							</vbox>
 						</vbox>
 					</tabpanel>
+
+				<!--  FIELDS TAB -->
+
 					<tabpanel>
 						<vbox>
 							<tree flex="1" editable="true" seltype="cell" height="200"
@@ -132,5 +174,5 @@
 			<button label="${preview}" id="getPreview" onclick="handler.preview()"/>
 		</hbox> 
 		-->
-	</vbox>
+	<!--  </vbox>  -->
 </dialog>
