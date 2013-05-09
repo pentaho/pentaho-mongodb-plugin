@@ -32,13 +32,17 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.mongo.MongoDbException;
+import org.pentaho.mongo.MongoUtils;
+import org.pentaho.mongo.NamedReadPreference;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 import org.pentaho.ui.xul.stereotype.Bindable;
 import org.pentaho.ui.xul.util.AbstractModelList;
 
 import com.mongodb.CommandResult;
 import com.mongodb.DB;
+import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.util.JSON;
 
 public class MongoDbModel extends XulEventSourceAdapter {
 
@@ -61,15 +65,19 @@ public class MongoDbModel extends XulEventSourceAdapter {
   private String jsonQuery;
 
   private boolean m_aggPipeline = false;
+  
+  private boolean m_useAllReplicaSetMembers = false;
 
   private String m_connectTimeout = ""; // default - never time out
 
   private String m_socketTimeout = ""; // default - never time out
 
   /** primary, primaryPreferred, secondary, secondaryPreferred, nearest */
-  private String m_readPreference = "Primary";
+  private String m_readPreference = NamedReadPreference.PRIMARY.getName();
   
   private AbstractModelList<MongoDocumentField> fields = new AbstractModelList<MongoDocumentField>();
+  
+  private AbstractModelList<MongoTag> tags = new AbstractModelList<MongoTag>();
 
   private MongoDbInputMeta mongo;
   
@@ -302,6 +310,26 @@ public class MongoDbModel extends XulEventSourceAdapter {
     return m_aggPipeline;
   }
 
+
+  /**
+   * Set  whether to include all members in the replica set for querying   
+   * 
+   */
+  public void setUseAllReplicaMembers(boolean u) {
+    Boolean prevVal = new Boolean(this.m_useAllReplicaSetMembers);
+    m_useAllReplicaSetMembers = u;
+    
+    firePropertyChange("m_useAllReplicaSetMembers", prevVal, new Boolean(u));
+  }
+
+  /**
+   * Get whether to include all members in the replica set for querying
+   * 
+   */
+  public boolean getUseAllReplicaMembers() {
+    return m_useAllReplicaSetMembers;
+  }
+
   /**
    * Set the connection timeout. The default is never timeout
    * 
@@ -354,7 +382,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
    */
   public void setReadPreference(String preference) {
     String prevVal = this.m_readPreference;
-    m_readPreference = Const.isEmpty(preference) ? "primary": preference;
+    m_readPreference = Const.isEmpty(preference) ? NamedReadPreference.PRIMARY.getName(): preference;
     
     firePropertyChange("readPreference", prevVal, preference);
   }
@@ -393,6 +421,8 @@ public class MongoDbModel extends XulEventSourceAdapter {
     meta.setReadPreference(this.m_readPreference);
     meta.setSocketTimeout(this.m_socketTimeout);
     meta.setMongoFields(MongoDocumentField.convertFromList(this.getFields()));
+    meta.setUseAllReplicaSetMembers(this.m_useAllReplicaSetMembers);
+    meta.setReadPrefTagSets(MongoTag.convertFromList(this.tags));
   }
 
   private void initialize(MongoDbInputMeta m) {
@@ -411,23 +441,25 @@ public class MongoDbModel extends XulEventSourceAdapter {
     setConnectTimeout(m.getConnectTimeout());
     setSocketTimeout(m.getSocketTimeout());
     MongoDocumentField.convertList(m.getMongoFields(), getFields());
+    setUseAllReplicaMembers(m.getUseAllReplicaSetMembers());
+    MongoTag.convertList(m.getReadPrefTagSets(), getTags());
   }
   
+  public AbstractModelList<MongoTag> getTags(){
+    return tags;
+  }
+
   public void clear()
   {
     MongoDbInputMeta m = new MongoDbInputMeta();
-    m.setReadPreference("Primary");
+    m.setReadPreference(NamedReadPreference.PRIMARY.getName());
     initialize(m);
   }
 
   public Collection<String> getPossibleReadPreferences(){
-    ArrayList<String> prefs = new ArrayList<String>();
-    prefs.add("Primary");
-    prefs.add("Primary preferred");
-    prefs.add("Secondary");
-    prefs.add("Secondary preferred");
-    prefs.add("Nearest");
-    return prefs;
+    
+    return NamedReadPreference.getPreferenceNames();
+
   }
   
   /**
@@ -538,6 +570,85 @@ public class MongoDbModel extends XulEventSourceAdapter {
        throw new MongoDbException("Unexpected error retrieving fields from MongoDb. Check your connection details.", e);
       }
     }    
+  }
+
+  public void getTagsFromMongo() throws MongoDbException {
+
+    if (Const.isEmpty(hostname)) {
+      log.logBasic("Fetching tags aborted. Missing hostname.");
+      return;
+    }
+
+    MongoDbInputMeta meta = new MongoDbInputMeta();
+    saveMeta(meta);
+
+    try {
+      List<String> repSetTags = MongoUtils.getAllTags(meta, new TransMeta(), null);
+      MongoTag.convertList(repSetTags, getTags());
+
+    } catch (Exception e) {
+      log.logError("Unexpected error retrieving tags from MongoDb. Check connection details.", e); 
+      throw new MongoDbException("Unexpected error retrieving tags from MongoDb. Check your connection details.", e);
+    } finally {
+        // set m_currentTagState?
+    }
+    
+  }
+  
+  public List<String> testSelectedTags() throws MongoDbException{
+    List<String> tagSets = null;
+    
+    if (Const.isEmpty(hostname)) {
+      log.logBasic("Testing tags aborted. Missing hostname.");
+      return tagSets;
+    }
+
+    if (tags.isEmpty()){
+      log.logBasic("No tags available for testing.");
+      return tagSets;
+    }
+    
+    
+    List<DBObject> mongoTagSets = new ArrayList<DBObject>();
+    List<String> setsToTest = MongoTag.convertFromList(tags);
+    
+    for (String tagSet : setsToTest) {
+      DBObject set = (DBObject) JSON.parse(tagSet);
+      if (set != null) {
+        mongoTagSets.add(set);
+      }
+    }
+    
+    if (mongoTagSets.isEmpty()){
+      log.logBasic("Could not parse tags for testing.");
+      return tagSets;
+    }
+    
+    MongoDbInputMeta meta = new MongoDbInputMeta();
+    saveMeta(meta);
+
+    try {
+      List<DBObject> result = MongoUtils.getReplicaSetMembersThatSatisfyTagSets
+                                        (mongoTagSets, meta, new TransMeta(), null);
+      
+      if(result.size()==0){
+        log.logBasic("No replica set members match tag sets.");
+        return tagSets;
+      }
+
+      tagSets = new ArrayList<String>();
+      for (DBObject dbObject : result) {
+        tagSets.add(dbObject.toString());
+      }
+
+    } catch (Exception e) {
+      log.logError("Unexpected error evaluating tag sets against replica members.", e); 
+      throw new MongoDbException("Unexpected error evaluating tag sets against replica members.", e);
+    } finally {
+        // set m_currentTagState?
+    }
+
+    return tagSets;
   }
 
 

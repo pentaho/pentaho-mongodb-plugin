@@ -72,6 +72,7 @@ import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
+import org.pentaho.mongo.NamedReadPreference;
 
 import com.mongodb.CommandResult;
 import com.mongodb.DB;
@@ -815,11 +816,11 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
             .environmentSubstitute(m_readPreference.getText()));
       }
     });
-    m_readPreference.add("Primary"); //$NON-NLS-1$
-    m_readPreference.add("Primary preferred"); //$NON-NLS-1$
-    m_readPreference.add("Secondary"); //$NON-NLS-1$
-    m_readPreference.add("Secondary preferred"); //$NON-NLS-1$
-    m_readPreference.add("Nearest"); //$NON-NLS-1$
+    m_readPreference.add(NamedReadPreference.PRIMARY.getName()); 
+    m_readPreference.add(NamedReadPreference.PRIMARY_PREFERRED.getName()); 
+    m_readPreference.add(NamedReadPreference.SECONDARY.getName()); 
+    m_readPreference.add(NamedReadPreference.SECONDARY_PREFERRED.getName()); 
+    m_readPreference.add(NamedReadPreference.NEAREST.getName()); 
 
     fd = new FormData();
     fd.left = new FormAttachment(0, 0);
