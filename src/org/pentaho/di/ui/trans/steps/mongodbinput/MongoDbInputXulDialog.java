@@ -4,6 +4,7 @@
 package org.pentaho.di.ui.trans.steps.mongodbinput;
 
 import java.beans.PropertyChangeListener;
+import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Vector;
@@ -40,6 +41,8 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
   private Binding collectionBinding;
   
   protected static BindingConvertor<String, Boolean> emptyStringBinding = new IsEmptyStringToBooleanConvertor();
+  protected static BindingConvertor<int[], Boolean> selectedItemsBinding = new SelectedToBooleanConvertor();
+  protected static BindingConvertor<Collection<MongoTag>, Boolean> rowCountBinding = new RowCountToBooleanConvertor<MongoTag>();
 
   public MongoDbInputXulDialog(Object parent, BaseStepMeta baseStepMeta, TransMeta transMeta, String stepname ) {
     super("org/pentaho/di/ui/trans/steps/mongodbinput/xul/mongodb_input.xul", parent, baseStepMeta, transMeta, stepname);
@@ -65,11 +68,7 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
       bf.createBinding( "hostName", "value", "getDbs", "disabled", emptyStringBinding ).fireSourceChanged();
       bf.createBinding( "hostName", "value", "getCollections", "disabled", emptyStringBinding ).fireSourceChanged();
       bf.createBinding( "hostName", "value", "getTags", "disabled", emptyStringBinding ).fireSourceChanged();
-      bf.createBinding( "hostName", "value", "joinTags", "disabled", emptyStringBinding ).fireSourceChanged();
-      bf.createBinding( "hostName", "value", "testTags", "disabled", emptyStringBinding ).fireSourceChanged();
       bf.createBinding( "hostName", "value", "getFields", "disabled", emptyStringBinding ).fireSourceChanged();
-//      bf.createBinding( "database", "value", "getCollections", "disabled", emptyStringBinding ).fireSourceChanged();
- //     bf.createBinding( "database", "selectedItem", "getCollections", "disabled", emptyStringBinding ).fireSourceChanged();
            
       databaseBinding = bf.createBinding( model, "dbNames", "database", "elements");
       databaseBinding.fireSourceChanged();
@@ -105,7 +104,13 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
       
       Binding tagsBinding = bf.createBinding(model.getTags(), "children", "tagsTable", "elements");
       tagsBinding.fireSourceChanged();
+      
+      bf.setBindingType(Binding.Type.ONE_WAY);
 
+      bf.createBinding( "tagsTable", "absoluteSelectedRows", "joinTags", "disabled", selectedItemsBinding ).fireSourceChanged();
+      bf.createBinding( model.getTags(), "children", "testTags", "disabled", rowCountBinding ).fireSourceChanged();
+
+    
     } catch (Exception e) {
       log.logError("Error creating bindings for dialog. This dialog will not be available", e);
 
@@ -220,6 +225,22 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
    * This method is invoked from the XUL definition; bound to the "fields" button on the Fields tab. 
    */
   public void getDocumentFieldsFromMongo(){
+    
+    if (Const.isEmpty(model.getHostnames())){
+      showMessage("At least one host name is required. Return to the configure tab, enter a host name and try again.", "MongoDb Error");
+      return;
+    }
+    
+    if (Const.isEmpty(model.getDbName())){
+      showMessage("A database name is required. Return to the options tab, enter a database name and try again.", "MongoDb Error");
+      return;
+    }
+    
+    if (Const.isEmpty(model.getCollection())){
+      showMessage("A collection name is required. Return to the options tab, enter a collection name and try again.", "MongoDb Error");
+      return;
+    }
+    
     try {
       
       model.getFieldsFromMongo();
@@ -228,6 +249,7 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
       showMessage(e.getMessage(), "MongoDb Error");
     }
   }
+
   private static class IsEmptyStringToBooleanConvertor extends BindingConvertor<String, Boolean> {
 
     @Override
@@ -243,14 +265,55 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
   }
   
   /**
+   * Convertor logic for enabling/disabling the "Join Tags" button.
+   * Disable if the Tags table has one or less selections; or the 
+   * inverse, enable if the table has 2 or more selections. 
+   */
+  private static class SelectedToBooleanConvertor extends BindingConvertor<int[], Boolean> {
+
+    @Override
+    public Boolean sourceToTarget(int[] value) {
+      return value.length <= 1;
+      
+    }
+
+    @Override
+    public int[] targetToSource(Boolean value) {
+      return null;
+    }
+  }
+  
+  /**
+   * Convertor logic for enabling/disabling the "Test Tags" button.
+   * Disable if the Tags table has zero rows; or the 
+   * inverse, enable if the table has 1 or more rows. 
+   * @param <T>
+   */
+  private static class RowCountToBooleanConvertor<T> extends BindingConvertor<Collection<T>, Boolean> {
+
+    @Override
+    public Boolean sourceToTarget(Collection<T> value) {
+      
+      return (value == null) || (value.isEmpty());
+      
+    }
+
+    @Override
+    public Collection<T> targetToSource(Boolean value) {
+      return null;
+    }
+  }
+  
+
+  /**
    * 
    */
   public void getTagsFromMongo(){
     try {
       
       if (model.getReadPreference() == NamedReadPreference.PRIMARY.getName()){
-        showMessage("Tag sets defined with a read preference of Primary will not honored by MongoDb. \n" +  
-                     "Consider changing your read preference to one other than Primary.", "MongoDb Warning");
+        showMessage("Tag sets defined with a read preference of 'primary' will not be honored by MongoDb. \n" +  
+                     "Consider changing your read preference to one other than primary.", "MongoDb Warning");
       }
       
       model.getTagsFromMongo();
@@ -290,12 +353,17 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
     try {
       List<String> results = model.testSelectedTags();
       
+      if(results == null){
+        showMessage("No matches found." , "Replica Set Member Matches");
+        return;
+      }
+      
       StringBuffer message = new StringBuffer();
       for (String result : results) {
         message.append(result).append("\n");
       }
       
-      this.showMessage(message.toString(), "Replica Set Member Matches");
+      showMessage(message.toString(), "Replica Set Member Matches");
     
     } catch (MongoDbException e) {
 
@@ -310,6 +378,8 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
   public void createNewTag(){
     model.getTags().add(new MongoTag());
   }
+  
+  
 
     
 }
