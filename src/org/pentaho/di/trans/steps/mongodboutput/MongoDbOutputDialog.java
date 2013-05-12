@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.steps.mongodboutput;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -78,9 +77,7 @@ import com.mongodb.CommandResult;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
-import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
-import com.mongodb.MongoException;
 
 /**
  * Dialog class for the MongoDB output step
@@ -816,11 +813,11 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
             .environmentSubstitute(m_readPreference.getText()));
       }
     });
-    m_readPreference.add(NamedReadPreference.PRIMARY.getName()); 
-    m_readPreference.add(NamedReadPreference.PRIMARY_PREFERRED.getName()); 
-    m_readPreference.add(NamedReadPreference.SECONDARY.getName()); 
-    m_readPreference.add(NamedReadPreference.SECONDARY_PREFERRED.getName()); 
-    m_readPreference.add(NamedReadPreference.NEAREST.getName()); 
+    m_readPreference.add(NamedReadPreference.PRIMARY.getName());
+    m_readPreference.add(NamedReadPreference.PRIMARY_PREFERRED.getName());
+    m_readPreference.add(NamedReadPreference.SECONDARY.getName());
+    m_readPreference.add(NamedReadPreference.SECONDARY_PREFERRED.getName());
+    m_readPreference.add(NamedReadPreference.NEAREST.getName());
 
     fd = new FormData();
     fd.left = new FormAttachment(0, 0);
@@ -1623,98 +1620,89 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
   private void showIndexInfo() {
     String hostname = transMeta
         .environmentSubstitute(m_hostnameField.getText());
-    int port = Const.toInt(
-        transMeta.environmentSubstitute(m_portField.getText()), 27017);
     String dbName = transMeta.environmentSubstitute(m_dbNameField.getText());
     String collection = transMeta.environmentSubstitute(m_collectionField
         .getText());
 
-    try {
-      Mongo mongo = new Mongo(hostname, port);
-      DB db = mongo.getDB(dbName);
+    if (!Const.isEmpty(hostname)) {
+      MongoClient conn = null;
+      try {
+        MongoDbOutputMeta meta = new MongoDbOutputMeta();
+        getInfo(meta);
+        conn = MongoDbOutputData.connect(meta, transMeta, null);
 
-      if (db == null) {
-        throw new Exception(BaseMessages.getString(PKG,
-            "MongoDbOutputDialog.ErrorMessage.NonExistentDB", dbName)); //$NON-NLS-1$
-      }
+        // Mongo mongo = new Mongo(hostname, port);
+        DB db = conn.getDB(dbName);
 
-      String realUser = transMeta.environmentSubstitute(m_usernameField
-          .getText());
-      String realPass = Encr.decryptPasswordOptionallyEncrypted(transMeta
-          .environmentSubstitute(m_passField.getText()));
-
-      if (!Const.isEmpty(realUser) || !Const.isEmpty(realPass)) {
-        CommandResult comResult = db.authenticateCommand(realUser,
-            realPass.toCharArray());
-        if (!comResult.ok()) {
+        if (db == null) {
           throw new Exception(BaseMessages.getString(PKG,
-              "MongoDbOutputDialog.ErrorMessage.UnableToAuthenticate", //$NON-NLS-1$
-              comResult.getErrorMessage()));
+              "MongoDbOutputDialog.ErrorMessage.NonExistentDB", dbName)); //$NON-NLS-1$
+        }
+
+        String realUser = transMeta.environmentSubstitute(m_usernameField
+            .getText());
+        String realPass = Encr.decryptPasswordOptionallyEncrypted(transMeta
+            .environmentSubstitute(m_passField.getText()));
+
+        if (!Const.isEmpty(realUser) || !Const.isEmpty(realPass)) {
+          CommandResult comResult = db.authenticateCommand(realUser,
+              realPass.toCharArray());
+          if (!comResult.ok()) {
+            throw new Exception(BaseMessages.getString(PKG,
+                "MongoDbOutputDialog.ErrorMessage.UnableToAuthenticate", //$NON-NLS-1$
+                comResult.getErrorMessage()));
+          }
+        }
+
+        if (Const.isEmpty(collection)) {
+          throw new Exception(BaseMessages.getString(PKG,
+              "MongoDbOutputDialog.ErrorMessage.NoCollectionSpecified")); //$NON-NLS-1$
+        }
+
+        if (!db.collectionExists(collection)) {
+          db.createCollection(collection, null);
+        }
+
+        DBCollection coll = db.getCollection(collection);
+        if (coll == null) {
+          throw new Exception(BaseMessages.getString(PKG,
+              "MongoDbOutputDialog.ErrorMessage.UnableToGetInfoForCollection", //$NON-NLS-1$
+              collection));
+        }
+
+        List<DBObject> collInfo = coll.getIndexInfo();
+        StringBuffer result = new StringBuffer();
+        if (collInfo == null || collInfo.size() == 0) {
+          result.append(BaseMessages.getString(PKG,
+              "MongoDbOutputDialog.ErrorMessage.UnableToGetInfoForCollection", //$NON-NLS-1$
+              collection));
+        }
+        for (DBObject index : collInfo) {
+          result.append(index).append("\n\n"); //$NON-NLS-1$
+        }
+
+        ShowMessageDialog smd = new ShowMessageDialog(
+            shell,
+            SWT.ICON_INFORMATION | SWT.OK,
+            BaseMessages.getString(PKG,
+                "MongoDbOutputDialog.IndexInfo", collection), result.toString(), true); //$NON-NLS-1$
+        smd.open();
+      } catch (Exception e) {
+        logError(
+            BaseMessages.getString(PKG,
+                "MongoDbOutputDialog.ErrorMessage.GeneralError.Message") //$NON-NLS-1$
+                + ":\n\n" + e.getMessage(), e); //$NON-NLS-1$
+        new ErrorDialog(shell, BaseMessages.getString(PKG,
+            "MongoDbOutputDialog.ErrorMessage.IndexPreview.Title"), //$NON-NLS-1$
+            BaseMessages.getString(PKG,
+                "MongoDbOutputDialog.ErrorMessage.GeneralError.Message") //$NON-NLS-1$
+                + ":\n\n" + e.getMessage(), e); //$NON-NLS-1$
+      } finally {
+        if (conn != null) {
+          conn.close();
+          conn = null;
         }
       }
-
-      if (Const.isEmpty(collection)) {
-        throw new Exception(BaseMessages.getString(PKG,
-            "MongoDbOutputDialog.ErrorMessage.NoCollectionSpecified")); //$NON-NLS-1$
-      }
-
-      if (!db.collectionExists(collection)) {
-        db.createCollection(collection, null);
-      }
-
-      DBCollection coll = db.getCollection(collection);
-      if (coll == null) {
-        throw new Exception(BaseMessages.getString(PKG,
-            "MongoDbOutputDialog.ErrorMessage.UnableToGetInfoForCollection", //$NON-NLS-1$
-            collection));
-      }
-
-      List<DBObject> collInfo = coll.getIndexInfo();
-      StringBuffer result = new StringBuffer();
-      if (collInfo == null || collInfo.size() == 0) {
-        result.append(BaseMessages.getString(PKG,
-            "MongoDbOutputDialog.ErrorMessage.UnableToGetInfoForCollection", //$NON-NLS-1$
-            collection));
-      }
-      for (DBObject index : collInfo) {
-        result.append(index).append("\n\n"); //$NON-NLS-1$
-      }
-
-      ShowMessageDialog smd = new ShowMessageDialog(shell, SWT.ICON_INFORMATION
-          | SWT.OK, BaseMessages.getString(PKG,
-          "MongoDbOutputDialog.IndexInfo", collection), result.toString(), true); //$NON-NLS-1$
-      smd.open();
-    } catch (UnknownHostException e) {
-      logError(
-          BaseMessages.getString(PKG,
-              "MongoDbOutputDialog.ErrorMessage.UnknownHost.Message", hostname) //$NON-NLS-1$
-              + ":\n\n" + e.getMessage(), e); //$NON-NLS-1$
-      new ErrorDialog(shell, BaseMessages.getString(PKG,
-          "MongoDbOutputDialog.ErrorMessage.IndexPreview.Title"), //$NON-NLS-1$
-          BaseMessages.getString(PKG,
-              "MongoDbOutputDialog.ErrorMessage.UnknownHost.Message", hostname) //$NON-NLS-1$
-              + ":\n\n" + e.getMessage(), e); //$NON-NLS-1$
-      return;
-    } catch (MongoException e) {
-      logError(
-          BaseMessages.getString(PKG,
-              "MongoDbOutputDialog.ErrorMessage.MongoException.Message") //$NON-NLS-1$
-              + ":\n\n" + e.getMessage(), e); //$NON-NLS-1$
-      new ErrorDialog(shell, BaseMessages.getString(PKG,
-          "MongoDbOutputDialog.ErrorMessage.IndexPreview.Title"), //$NON-NLS-1$
-          BaseMessages.getString(PKG,
-              "MongoDbOutputDialog.ErrorMessage.MongoException.Message") //$NON-NLS-1$
-              + ":\n\n" + e.getMessage(), e); //$NON-NLS-1$
-    } catch (Exception e) {
-      logError(
-          BaseMessages.getString(PKG,
-              "MongoDbOutputDialog.ErrorMessage.GeneralError.Message") //$NON-NLS-1$
-              + ":\n\n" + e.getMessage(), e); //$NON-NLS-1$
-      new ErrorDialog(shell, BaseMessages.getString(PKG,
-          "MongoDbOutputDialog.ErrorMessage.IndexPreview.Title"), //$NON-NLS-1$
-          BaseMessages.getString(PKG,
-              "MongoDbOutputDialog.ErrorMessage.GeneralError.Message") //$NON-NLS-1$
-              + ":\n\n" + e.getMessage(), e); //$NON-NLS-1$
     }
   }
 }
