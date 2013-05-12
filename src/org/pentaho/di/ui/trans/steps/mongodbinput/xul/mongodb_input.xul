@@ -8,12 +8,6 @@
 	ondialogaccept="handler.onAccept()" ondialogcancel="handler.onCancel()" 
 	buttons="accept,cancel" onload="handler.init()">
 
-	<!--  <vbox flex="1" id="root">  -->
-		<!-- PDI UI element 
-		<hbox> <spacer flex="1"/> <label value="${step-name}"/> <textbox id="stepName" 
-			flex="2"/> 
-		</hbox> 
-		-->
 		<hbox flex="1" id="root">
 			<tabbox id="tabBox" selectedIndex="0" flex="1">
 				<tabs id="tabs">
@@ -165,14 +159,4 @@
 			</tabbox>
 		</hbox>
 
-		<!-- ====================== PREVIEW ========================= 
-
-		<hbox align="CENTER"> 
-			<spacer flex="1"/>
-			<label value="${max-preview-rows}"/> 
-			<textbox id="maxPreviewRows" />
-			<button label="${preview}" id="getPreview" onclick="handler.preview()"/>
-		</hbox> 
-		-->
-	<!--  </vbox>  -->
 </dialog>

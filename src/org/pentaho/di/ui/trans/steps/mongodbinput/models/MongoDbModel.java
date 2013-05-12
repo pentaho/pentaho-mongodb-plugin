@@ -613,9 +613,14 @@ public class MongoDbModel extends XulEventSourceAdapter {
     List<String> setsToTest = MongoTag.convertFromList(tags);
     
     for (String tagSet : setsToTest) {
-      DBObject set = (DBObject) JSON.parse(tagSet);
-      if (set != null) {
-        mongoTagSets.add(set);
+      try{
+        DBObject set = (DBObject) JSON.parse(tagSet);
+        if (set != null) {
+          mongoTagSets.add(set);
+        }
+      }catch(Exception e){
+        log.logError("Error parsing MongoDb tag sets.", e);
+        throw new MongoDbException("Error parsing MongoDb tag sets. Check your tag set names and try again.", e);
       }
     }
     
