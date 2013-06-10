@@ -112,6 +112,23 @@ public class MongoDocumentField extends XulEventSourceAdapter{
     }
   }
 
+  public static void trimList(List<MongoField> fields, AbstractModelList<MongoDocumentField> docFields){
+    
+    if ( fields == null || fields.isEmpty()){
+      return;
+    }
+    for (int i = fields.size() -1; i >= 0; i--){
+      MongoField field = fields.get(i);
+      for(MongoDocumentField docField: docFields.asList()){
+        if ((field.m_fieldName.equalsIgnoreCase(docField.m_fieldName)) &&
+            (field.m_fieldPath.equalsIgnoreCase(docField.m_fieldPath))){
+          fields.remove(field);
+          break;
+        }
+      }
+    }
+  }
+
   public static List<MongoField> convertFromList(AbstractModelList<MongoDocumentField> docFields){
     List<MongoField> fields = new ArrayList<MongoField>();
     

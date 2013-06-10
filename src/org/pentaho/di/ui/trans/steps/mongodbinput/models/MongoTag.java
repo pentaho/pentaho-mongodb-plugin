@@ -53,6 +53,23 @@ public class MongoTag extends XulEventSourceAdapter{
     }
   }
 
+  public static void trimList(List<String> tags, AbstractModelList<MongoTag> docTags){
+    
+    if ( tags == null || tags.isEmpty()){
+      return;
+    }
+    
+    for (int i = tags.size() -1; i >= 0; i--){
+      String tag = tags.get(i);
+      for(MongoTag docTag: docTags.asList()){
+        if (tag.equalsIgnoreCase(docTag.getTagName())){
+          tags.remove(tag);
+          break;
+        }
+      }
+    }
+  }
+
   public static List<String> convertFromList(AbstractModelList<MongoTag> docTags){
     List<String> tags = new ArrayList<String>();
     
