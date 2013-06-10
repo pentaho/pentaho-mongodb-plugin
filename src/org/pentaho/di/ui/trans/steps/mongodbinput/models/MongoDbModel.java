@@ -619,7 +619,17 @@ public class MongoDbModel extends XulEventSourceAdapter {
     return newCollections;
   }
   
-  public void getFieldsFromMongo() throws MongoDbException{
+  /**
+   * 
+   * @param mergeStrategy
+   *  0 = Add new
+   *  1 = Add all
+   *  2 = Clear and add all 
+   *  3 = Cancel
+   *
+   * @throws MongoDbException
+   */
+  public void getFieldsFromMongo(int mergeStrategy) throws MongoDbException{
     // TODO: This should be a sample dialog requested from the user ...
     int samples = 100;
     MongoDbInputMeta meta = new MongoDbInputMeta(); 
@@ -634,6 +644,16 @@ public class MongoDbModel extends XulEventSourceAdapter {
           log.logBasic("No fields were returned from MongoDb. Check your query, and/or connection details.");
           throw new MongoDbException("No fields were returned from MongoDb. Check your query, and/or connection details.");
         } else {
+          switch(mergeStrategy){
+            case 0:
+              MongoDocumentField.trimList(meta.getMongoFields(), getFields());
+              break;
+            case 1:
+              break;
+            case 2:
+              getFields().removeAll(getFields());
+              break;
+          }
           MongoDocumentField.convertList(meta.getMongoFields(), getFields());
         }
       } catch (KettleException e) {
@@ -643,7 +663,17 @@ public class MongoDbModel extends XulEventSourceAdapter {
     }    
   }
 
-  public void getTagsFromMongo() throws MongoDbException {
+  /**
+   * 
+   * @param mergeStrategy
+   *  0 = Add new
+   *  1 = Add all
+   *  2 = Clear and add all 
+   *  3 = Cancel
+   *
+   * @throws MongoDbException
+   */
+  public void getTagsFromMongo(int mergeStrategy) throws MongoDbException {
 
     if (Const.isEmpty(hostname)) {
       log.logBasic("Fetching tags aborted. Missing hostname.");
@@ -655,6 +685,18 @@ public class MongoDbModel extends XulEventSourceAdapter {
 
     try {
       List<String> repSetTags = MongoUtils.getAllTags(meta, new TransMeta(), null);
+
+      switch(mergeStrategy){
+        case 0:
+          MongoTag.trimList(repSetTags, getTags());
+          break;
+        case 1:
+          break;
+        case 2:
+          getTags().removeAll(getTags());
+          break;
+      }
+      
       MongoTag.convertList(repSetTags, getTags());
 
     } catch (Exception e) {

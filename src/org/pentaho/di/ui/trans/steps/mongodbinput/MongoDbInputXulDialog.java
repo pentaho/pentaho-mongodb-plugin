@@ -243,7 +243,20 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
     
     try {
       
-      model.getFieldsFromMongo();
+      // 0 = Add new
+      // 1 = Add all
+      // 2 = Clear and add all 
+      // 3 = Cancel
+      
+      int mergeStrategy = 1;
+      
+      if (model.getFields().size() > 0){
+        mergeStrategy = this.showClearDataMessage(); 
+      }
+      
+      if ((mergeStrategy < 3) && (mergeStrategy > -1)){
+        model.getFieldsFromMongo(mergeStrategy);
+      }
 
     } catch (Exception e) {
       showMessage(e.getMessage(), "MongoDb Error");
@@ -311,12 +324,25 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
   public void getTagsFromMongo(){
     try {
       
-      if (model.getReadPreference() == NamedReadPreference.PRIMARY.getName()){
+      if (model.getReadPreference().equalsIgnoreCase(NamedReadPreference.PRIMARY.getName())){
         showMessage("Tag sets defined with a read preference of 'primary' will not be honored by MongoDb. \n" +  
                      "Consider changing your read preference to one other than primary.", "MongoDb Warning");
       }
       
-      model.getTagsFromMongo();
+      // 0 = Add new
+      // 1 = Add all
+      // 2 = Clear and add all 
+      // 3 = Cancel
+      
+      int mergeStrategy = 1;
+      
+      if (model.getTags().size() > 0){
+        mergeStrategy = this.showClearDataMessage(); 
+      }
+      
+      if ((mergeStrategy < 3) && (mergeStrategy > -1)){
+        model.getTagsFromMongo(mergeStrategy);
+      }
 
     } catch (Exception e) {
       showMessage(e.getMessage(), "MongoDb Error");
