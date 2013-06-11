@@ -286,6 +286,13 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
    */
   private boolean m_useAllReplicaSetMembers;
 
+  public static final int RETRIES = 5;
+  public static final int RETRY_DELAY = 10; // seconds
+
+  private String m_writeRetries = "" + RETRIES; //$NON-NLS-1$
+  private String m_writeRetryDelay = "" + RETRY_DELAY; // seconds //$NON-NLS-1$
+
+  @Override
   public void setDefault() {
     m_hostnames = "localhost"; //$NON-NLS-1$
     m_port = "27017"; //$NON-NLS-1$
@@ -386,6 +393,44 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
    */
   public boolean getUseAllReplicaSetMembers() {
     return m_useAllReplicaSetMembers;
+  }
+
+  /**
+   * Set the number of retry attempts to make if a particular write operation
+   * fails
+   * 
+   * @param r the number of retry attempts to make
+   */
+  public void setWriteRetries(String r) {
+    m_writeRetries = r;
+  }
+
+  /**
+   * Get the number of retry attempts to make if a particular write operation
+   * fails
+   * 
+   * @return the number of retry attempts to make
+   */
+  public String getWriteRetries() {
+    return m_writeRetries;
+  }
+
+  /**
+   * Set the delay (in seconds) between write retry attempts
+   * 
+   * @param d the delay in seconds between retry attempts
+   */
+  public void setWriteRetryDelay(String d) {
+    m_writeRetryDelay = d;
+  }
+
+  /**
+   * Get the delay (in seconds) between write retry attempts
+   * 
+   * @return the delay in seconds between retry attempts
+   */
+  public String getWriteRetryDelay() {
+    return m_writeRetryDelay;
   }
 
   /**
@@ -707,6 +752,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
 
   }
 
+  @Override
   public StepInterface getStep(StepMeta stepMeta,
       StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta,
       Trans trans) {
@@ -715,6 +761,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
         trans);
   }
 
+  @Override
   public StepDataInterface getStepData() {
     return new MongoDbOutputData();
   }
@@ -776,6 +823,11 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     retval.append("\n    ").append(XMLHandler.addTagValue("multi", m_multi)); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append("\n    ").append( //$NON-NLS-1$
         XMLHandler.addTagValue("modifier_update", m_modifierUpdate)); //$NON-NLS-1$
+
+    retval.append("    ").append( //$NON-NLS-1$
+        XMLHandler.addTagValue("write_retries", m_writeRetries)); //$NON-NLS-1$
+    retval.append("    ").append( //$NON-NLS-1$
+        XMLHandler.addTagValue("write_retry_delay", m_writeRetryDelay)); //$NON-NLS-1$
 
     if (m_mongoFields != null && m_mongoFields.size() > 0) {
       retval.append("\n    ").append(XMLHandler.openTag("mongo_fields")); //$NON-NLS-1$ //$NON-NLS-2$
@@ -867,7 +919,17 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     // compatibility
     String useAll = XMLHandler.getTagValue(stepnode, "use_all_replica_members"); //$NON-NLS-1$
     if (!Const.isEmpty(useAll)) {
-      m_useAllReplicaSetMembers = useAll.equalsIgnoreCase("Y");
+      m_useAllReplicaSetMembers = useAll.equalsIgnoreCase("Y"); //$NON-NLS-1$
+    }
+
+    String writeRetries = XMLHandler.getTagValue(stepnode, "write_retries"); //$NON-NLS-1$
+    if (!Const.isEmpty(writeRetries)) {
+      m_writeRetries = writeRetries;
+    }
+    String writeRetryDelay = XMLHandler.getTagValue(stepnode,
+        "write_retry_delay"); //$NON-NLS-1$
+    if (!Const.isEmpty(writeRetryDelay)) {
+      m_writeRetryDelay = writeRetryDelay;
     }
 
     Node fields = XMLHandler.getSubNode(stepnode, "mongo_fields"); //$NON-NLS-1$
@@ -960,6 +1022,16 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
         "modifier_update"); //$NON-NLS-1$
 
     int nrfields = rep.countNrStepAttributes(id_step, "incoming_field_name"); //$NON-NLS-1$
+
+    String writeRetries = rep.getStepAttributeString(id_step, "write_retries"); //$NON-NLS-1$
+    if (!Const.isEmpty(writeRetries)) {
+      m_writeRetries = writeRetries;
+    }
+    String writeRetryDelay = rep.getStepAttributeString(id_step,
+        "write_retry_delay"); //$NON-NLS-1$
+    if (!Const.isEmpty(writeRetryDelay)) {
+      m_writeRetryDelay = writeRetryDelay;
+    }
 
     if (nrfields > 0) {
       m_mongoFields = new ArrayList<MongoField>();
@@ -1060,6 +1132,10 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     rep.saveStepAttribute(id_transformation, id_step, 0, "multi", m_multi); //$NON-NLS-1$
     rep.saveStepAttribute(id_transformation, id_step, 0, "modifier_update", //$NON-NLS-1$
         m_modifierUpdate);
+    rep.saveStepAttribute(id_transformation, id_step, 0, "write_retries", //$NON-NLS-1$
+        m_writeRetries);
+    rep.saveStepAttribute(id_transformation, id_step, 0, "write_retry_delay", //$NON-NLS-1$
+        m_writeRetryDelay);
 
     if (m_mongoFields != null && m_mongoFields.size() > 0) {
       for (int i = 0; i < m_mongoFields.size(); i++) {
