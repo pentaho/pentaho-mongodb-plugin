@@ -133,6 +133,9 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
   private Button m_journalWritesCheck;
   private CCombo m_readPreference;
 
+  private TextVar m_writeRetries;
+  private TextVar m_writeRetryDelay;
+
   private TableView m_mongoFieldsView;
   private TableView m_mongoIndexesView;
 
@@ -144,6 +147,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     m_originalMeta = (MongoDbOutputMeta) m_currentMeta.clone();
   }
 
+  @Override
   public String open() {
 
     Shell parent = getParent();
@@ -156,6 +160,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
 
     // used to listen to a text field (m_wStepname)
     ModifyListener lsMod = new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         m_currentMeta.setChanged();
       }
@@ -233,6 +238,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     m_hostnameField.addModifyListener(lsMod);
     // set the tool tip to the contents with any env variables expanded
     m_hostnameField.addModifyListener(new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         m_hostnameField.setToolTipText(transMeta
             .environmentSubstitute(m_hostnameField.getText()));
@@ -263,6 +269,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     m_portField.addModifyListener(lsMod);
     // set the tool tip to the contents with any env variables expanded
     m_portField.addModifyListener(new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         m_portField.setToolTipText(transMeta.environmentSubstitute(m_portField
             .getText()));
@@ -310,6 +317,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     m_usernameField.addModifyListener(lsMod);
     // set the tool tip to the contents with any env variables expanded
     m_usernameField.addModifyListener(new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         m_usernameField.setToolTipText(transMeta
             .environmentSubstitute(m_usernameField.getText()));
@@ -338,6 +346,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     m_passField.setEchoChar('*');
     // If the password contains a variable, don't hide it.
     m_passField.getTextWidget().addModifyListener(new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         checkPasswordVisible();
       }
@@ -374,6 +383,13 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     fd.top = new FormAttachment(m_passField, margin);
     fd.right = new FormAttachment(100, 0);
     m_connectTimeout.setLayoutData(fd);
+    m_connectTimeout.addModifyListener(new ModifyListener() {
+      @Override
+      public void modifyText(ModifyEvent e) {
+        m_connectTimeout.setToolTipText(transMeta
+            .environmentSubstitute(m_connectTimeout.getText()));
+      }
+    });
 
     // socket timeout
     Label socketTimeoutL = new Label(wConfigComp, SWT.RIGHT);
@@ -398,6 +414,13 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     fd.top = new FormAttachment(m_connectTimeout, margin);
     fd.right = new FormAttachment(100, 0);
     m_socketTimeout.setLayoutData(fd);
+    m_socketTimeout.addModifyListener(new ModifyListener() {
+      @Override
+      public void modifyText(ModifyEvent e) {
+        m_socketTimeout.setToolTipText(transMeta
+            .environmentSubstitute(m_socketTimeout.getText()));
+      }
+    });
 
     fd = new FormData();
     fd.left = new FormAttachment(0, 0);
@@ -445,6 +468,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     props.setLook(m_dbNameField);
 
     m_dbNameField.addModifyListener(new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         m_currentMeta.setChanged();
         m_dbNameField.setToolTipText(transMeta
@@ -464,10 +488,12 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
       }
     });
     m_dbNameField.addFocusListener(new FocusListener() {
+      @Override
       public void focusGained(FocusEvent e) {
 
       }
 
+      @Override
       public void focusLost(FocusEvent e) {
         setupCollectionNamesForDB(true);
       }
@@ -519,6 +545,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     m_collectionField = new CCombo(wOutputComp, SWT.BORDER);
     props.setLook(m_collectionField);
     m_collectionField.addModifyListener(new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         m_currentMeta.setChanged();
 
@@ -551,6 +578,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     m_batchInsertSizeField.addModifyListener(lsMod);
     // set the tool tip to the contents with any env variables expanded
     m_batchInsertSizeField.addModifyListener(new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         m_batchInsertSizeField.setToolTipText(transMeta
             .environmentSubstitute(m_batchInsertSizeField.getText()));
@@ -759,6 +787,13 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     fd.top = new FormAttachment(m_writeConcern, margin);
     fd.left = new FormAttachment(middle, 0);
     m_wTimeout.setLayoutData(fd);
+    m_wTimeout.addModifyListener(new ModifyListener() {
+      @Override
+      public void modifyText(ModifyEvent e) {
+        m_wTimeout.setToolTipText(transMeta.environmentSubstitute(m_wTimeout
+            .getText()));
+      }
+    });
 
     Label journalWritesLab = new Label(wOutputComp, SWT.RIGHT);
     journalWritesLab.setText(BaseMessages.getString(PKG,
@@ -807,6 +842,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     fd.right = new FormAttachment(100, 0);
     m_readPreference.setLayoutData(fd);
     m_readPreference.addModifyListener(new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         m_currentMeta.setChanged();
         m_readPreference.setToolTipText(transMeta
@@ -818,6 +854,54 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     m_readPreference.add(NamedReadPreference.SECONDARY.getName());
     m_readPreference.add(NamedReadPreference.SECONDARY_PREFERRED.getName());
     m_readPreference.add(NamedReadPreference.NEAREST.getName());
+
+    // retries stuff
+    Label retriesLab = new Label(wOutputComp, SWT.RIGHT);
+    props.setLook(retriesLab);
+    retriesLab.setText(BaseMessages.getString(PKG,
+        "MongoDbOutputDialog.WriteRetries.Label")); //$NON-NLS-1$
+    retriesLab.setToolTipText(BaseMessages.getString(PKG,
+        "MongoDbOutputDialog.WriteRetries.TipText")); //$NON-NLS-1$
+    fd = new FormData();
+    fd.left = new FormAttachment(0, -margin);
+    fd.top = new FormAttachment(m_readPreference, margin);
+    fd.right = new FormAttachment(middle, -margin);
+    retriesLab.setLayoutData(fd);
+
+    m_writeRetries = new TextVar(transMeta, wOutputComp, SWT.SINGLE | SWT.LEFT
+        | SWT.BORDER);
+    props.setLook(m_writeRetries);
+    fd = new FormData();
+    fd.left = new FormAttachment(middle, 0);
+    fd.top = new FormAttachment(m_readPreference, margin);
+    fd.right = new FormAttachment(100, 0);
+    m_writeRetries.setLayoutData(fd);
+    m_writeRetries.addModifyListener(new ModifyListener() {
+      @Override
+      public void modifyText(ModifyEvent e) {
+        m_writeRetries.setToolTipText(transMeta
+            .environmentSubstitute(m_writeRetries.getText()));
+      }
+    });
+
+    Label retriesDelayLab = new Label(wOutputComp, SWT.RIGHT);
+    props.setLook(retriesDelayLab);
+    retriesDelayLab.setText(BaseMessages.getString(PKG,
+        "MongoDbOutputDialog.WriteRetriesDelay.Label")); //$NON-NLS-1$
+    fd = new FormData();
+    fd.left = new FormAttachment(0, -margin);
+    fd.top = new FormAttachment(m_writeRetries, margin);
+    fd.right = new FormAttachment(middle, -margin);
+    retriesDelayLab.setLayoutData(fd);
+
+    m_writeRetryDelay = new TextVar(transMeta, wOutputComp, SWT.SINGLE
+        | SWT.LEFT | SWT.BORDER);
+    props.setLook(m_writeRetryDelay);
+    fd = new FormData();
+    fd.left = new FormAttachment(middle, 0);
+    fd.top = new FormAttachment(m_writeRetries, margin);
+    fd.right = new FormAttachment(100, 0);
+    m_writeRetryDelay.setLayoutData(fd);
 
     fd = new FormData();
     fd.left = new FormAttachment(0, 0);
@@ -1012,12 +1096,14 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
 
     // Add listeners
     lsCancel = new Listener() {
+      @Override
       public void handleEvent(Event e) {
         cancel();
       }
     };
 
     lsOK = new Listener() {
+      @Override
       public void handleEvent(Event e) {
         ok();
       }
@@ -1101,6 +1187,8 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     meta.setWTimeout(m_wTimeout.getText());
     meta.setJournal(m_journalWritesCheck.getSelection());
     meta.setReadPreference(m_readPreference.getText());
+    meta.setWriteRetries(m_writeRetries.getText());
+    meta.setWriteRetryDelay(m_writeRetryDelay.getText());
 
     meta.setMongoFields(tableToMongoFieldList());
 
@@ -1200,6 +1288,10 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     m_wTimeout.setText(Const.NVL(m_currentMeta.getWTimeout(), "")); //$NON-NLS-1$
     m_journalWritesCheck.setSelection(m_currentMeta.getJournal());
     m_readPreference.setText(Const.NVL(m_currentMeta.getReadPreference(), "")); //$NON-NLS-1$
+    m_writeRetries.setText(Const.NVL(m_currentMeta.getWriteRetries(), "" //$NON-NLS-1$
+        + MongoDbOutputMeta.RETRIES));
+    m_writeRetryDelay.setText(Const.NVL(m_currentMeta.getWriteRetryDelay(), "" //$NON-NLS-1$
+        + MongoDbOutputMeta.RETRIES));
 
     List<MongoDbOutputMeta.MongoField> mongoFields = m_currentMeta
         .getMongoFields();
