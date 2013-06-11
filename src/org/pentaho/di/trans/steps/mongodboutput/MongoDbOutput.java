@@ -232,22 +232,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
           }
 
           if (insertUpdate != null) {
-            WriteResult result = null;
-
-            result = m_data.getCollection().update(updateQuery, insertUpdate,
-                true, m_meta.getMulti());
-
-            CommandResult cmd = result.getLastError();
-            if (cmd != null && !cmd.ok()) {
-              String message = cmd.getErrorMessage();
-              logError(BaseMessages.getString(PKG,
-                  "MongoDbOutput.Messages.Error.MongoReported", message)); //$NON-NLS-1$
-              try {
-                cmd.throwOnError();
-              } catch (MongoException me) {
-                throw new KettleException(me.getMessage(), me);
-              }
-            }
+            commitUpsert(updateQuery, insertUpdate);
           }
         }
       } else {
@@ -281,6 +266,15 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       WriteResult result = null;
       CommandResult cmd = null;
       try {
+        // TODO It seems that doing an update() via a secondary node does not
+        // generate any sort of exception or error result! (at least via
+        // driver version 2.11.1). Transformation completes successfully
+        // but no updates are made to the collection.
+        // This is unlike doing an insert(), which generates
+        // a MongoException if you are not talking to the primary. So we need
+        // some logic to check whether or not the connection configuration
+        // contains the primary in the replica set and give feedback if it
+        // doesnt
         result = m_data.getCollection().update(updateQuery, insertUpdate, true,
             m_meta.getMulti());
 
@@ -313,7 +307,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       }
     }
 
-    if (retrys > 5 && lastEx != null) {
+    if ((retrys > 5 || isStopped()) && lastEx != null) {
       throw new KettleException(lastEx);
     }
   }
@@ -322,7 +316,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
     int retrys = 0;
     MongoException lastEx = null;
 
-    while (retrys <= m_writeRetries) {
+    while (retrys <= m_writeRetries && !isStopped()) {
       WriteResult result = null;
       CommandResult cmd = null;
       try {
@@ -366,7 +360,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       }
     }
 
-    if (retrys > 5 && lastEx != null) {
+    if ((retrys > 5 || isStopped()) && lastEx != null) {
       throw new KettleException(lastEx);
     }
 
