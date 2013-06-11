@@ -415,6 +415,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       return null;
     }
 
+    @Override
     public int compareTo(MongoField comp) {
       return m_fieldName.compareTo(comp.m_fieldName);
     }
@@ -1170,14 +1171,13 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   private static Iterator<DBObject> setUpPipelineSample(String query,
       int numDocsToSample, DBCollection collection) throws KettleException {
 
-    query = "{$limit : " + numDocsToSample + "}, " + query; //$NON-NLS-1$ //$NON-NLS-2$
+    query = query + ", {$limit : " + numDocsToSample + "}"; //$NON-NLS-1$ //$NON-NLS-2$
     List<DBObject> samplePipe = jsonPipelineToDBObjectList(query);
 
     DBObject first = samplePipe.get(0);
     DBObject[] remainder = new DBObject[samplePipe.size() - 1];
     for (int i = 1; i < samplePipe.size(); i++) {
       remainder[i - 1] = samplePipe.get(i);
-      System.out.println("Remainder " + remainder[i - 1].toString()); //$NON-NLS-1$
     }
 
     AggregationOutput result = collection.aggregate(first, remainder);
@@ -1202,8 +1202,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     try {
       mongo = initConnection(meta, vars, null);
       if (Const.isEmpty(db)) {
-        throw new KettleException(BaseMessages.getString(
-            MongoDbInputMeta.PKG,
+        throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
             "MongoInput.ErrorMessage.NoDBSpecified")); //$NON-NLS-1$
       }
       DB database = mongo.getDB(db);
@@ -1221,8 +1220,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         }
       }
       if (Const.isEmpty(collection)) {
-        throw new KettleException(BaseMessages.getString(
-            MongoDbInputMeta.PKG,
+        throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
             "MongoInput.ErrorMessage.NoCollectionSpecified")); //$NON-NLS-1$
       }
       DBCollection dbcollection = database.getCollection(collection);
