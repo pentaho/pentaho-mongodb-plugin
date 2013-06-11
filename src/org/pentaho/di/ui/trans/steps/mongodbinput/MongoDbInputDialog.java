@@ -133,6 +133,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     input = (MongoDbInputMeta) in;
   }
 
+  @Override
   public String open() {
     Shell parent = getParent();
     Display display = parent.getDisplay();
@@ -142,6 +143,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     setShellImage(shell, input);
 
     ModifyListener lsMod = new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         input.setChanged();
       }
@@ -428,6 +430,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     lastControl = wDbName;
 
     wDbName.addModifyListener(new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         input.setChanged();
         wDbName.setToolTipText(transMeta.environmentSubstitute(wDbName
@@ -448,10 +451,12 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     });
 
     wDbName.addFocusListener(new FocusListener() {
+      @Override
       public void focusGained(FocusEvent e) {
 
       }
 
+      @Override
       public void focusLost(FocusEvent e) {
         setupCollectionNamesForDB();
       }
@@ -503,10 +508,12 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     });
 
     wCollection.addFocusListener(new FocusListener() {
+      @Override
       public void focusGained(FocusEvent e) {
 
       }
 
+      @Override
       public void focusLost(FocusEvent e) {
         updateQueryTitleInfo();
       }
@@ -531,6 +538,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     fd.right = new FormAttachment(100, 0);
     m_readPreference.setLayoutData(fd);
     m_readPreference.addModifyListener(new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         input.setChanged();
         m_readPreference.setToolTipText(transMeta
@@ -629,10 +637,12 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     });
 
     m_tagsCombo.addFocusListener(new FocusListener() {
+      @Override
       public void focusGained(FocusEvent e) {
 
       }
 
+      @Override
       public void focusLost(FocusEvent e) {
         m_currentTagsState = m_tagsCombo.getText();
       }
@@ -984,16 +994,19 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     // Add listeners
     lsCancel = new Listener() {
+      @Override
       public void handleEvent(Event e) {
         cancel();
       }
     };
     lsPreview = new Listener() {
+      @Override
       public void handleEvent(Event e) {
         preview();
       }
     };
     lsOK = new Listener() {
+      @Override
       public void handleEvent(Event e) {
         ok();
       }
@@ -1240,8 +1253,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements
           if (!result) {
             new ErrorDialog(shell, stepname, BaseMessages.getString(PKG,
                 "MongoDbInputDialog.ErrorMessage.NoFieldsFound"), //$NON-NLS-1$
-                new KettleException(
-                    "MongoDbInputDialog.ErrorMessage.NoFieldsFound")); //$NON-NLS-1$
+                new KettleException(BaseMessages.getString(PKG,
+                    "MongoDbInputDialog.ErrorMessage.NoFieldsFound"))); //$NON-NLS-1$
           } else {
             getData(meta);
           }

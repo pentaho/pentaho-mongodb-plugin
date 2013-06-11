@@ -415,6 +415,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       return null;
     }
 
+    @Override
     public int compareTo(MongoField comp) {
       return m_fieldName.compareTo(comp.m_fieldName);
     }
@@ -1170,7 +1171,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   private static Iterator<DBObject> setUpPipelineSample(String query,
       int numDocsToSample, DBCollection collection) throws KettleException {
 
-    query = "{$limit : " + numDocsToSample + "}, " + query; //$NON-NLS-1$ //$NON-NLS-2$
+    query = query + ", {$limit : " + numDocsToSample + "}"; //$NON-NLS-1$ //$NON-NLS-2$
     List<DBObject> samplePipe = jsonPipelineToDBObjectList(query);
 
     DBObject first = samplePipe.get(0);
