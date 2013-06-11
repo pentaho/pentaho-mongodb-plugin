@@ -136,6 +136,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     input = (MongoDbInputMeta) in;
   }
 
+  @Override
   public String open() {
     Shell parent = getParent();
     Display display = parent.getDisplay();
@@ -145,6 +146,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     setShellImage(shell, input);
 
     ModifyListener lsMod = new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         input.setChanged();
       }
@@ -431,6 +433,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     lastControl = wDbName;
 
     wDbName.addModifyListener(new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         input.setChanged();
         wDbName.setToolTipText(transMeta.environmentSubstitute(wDbName
@@ -451,10 +454,12 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     });
 
     wDbName.addFocusListener(new FocusListener() {
+      @Override
       public void focusGained(FocusEvent e) {
 
       }
 
+      @Override
       public void focusLost(FocusEvent e) {
         setupCollectionNamesForDB();
       }
@@ -506,10 +511,12 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     });
 
     wCollection.addFocusListener(new FocusListener() {
+      @Override
       public void focusGained(FocusEvent e) {
 
       }
 
+      @Override
       public void focusLost(FocusEvent e) {
         updateQueryTitleInfo();
       }
@@ -534,6 +541,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     fd.right = new FormAttachment(100, 0);
     m_readPreference.setLayoutData(fd);
     m_readPreference.addModifyListener(new ModifyListener() {
+      @Override
       public void modifyText(ModifyEvent e) {
         input.setChanged();
         m_readPreference.setToolTipText(transMeta
@@ -547,141 +555,105 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     lastControl = m_readPreference;
 
-/*    
-    // add to table button
-    Button addToTableBut = new Button(wInputOptionsComp, SWT.PUSH | SWT.CENTER);
-    props.setLook(addToTableBut);
-    addToTableBut.setText(BaseMessages.getString(PKG,
-        "MongoDbInputDialog.AddToTable.Button")); //$NON-NLS-1$
-    fd = new FormData();
-    fd.top = new FormAttachment(lastControl, 0);
-    fd.right = new FormAttachment(100, 0);
-    addToTableBut.setLayoutData(fd);
-
-    addToTableBut.addSelectionListener(new SelectionAdapter() {
-      @Override
-      public void widgetSelected(SelectionEvent e) {
-        addTagsToTable();
-        input.setChanged();
-      }
-    });
-
-    
-    
-    // get tags button
-    Button getTagsBut = new Button(wInputOptionsComp, SWT.PUSH | SWT.CENTER);
-    props.setLook(getTagsBut);
-    getTagsBut.setText(BaseMessages.getString(PKG,
-        "MongoDbInputDialog.GetTags.Button")); //$NON-NLS-1$
-    getTagsBut.setToolTipText(BaseMessages.getString(PKG,
-        "MongoDbInputDialog.GetTags.Button.TipText")); //$NON-NLS-1$
-    fd = new FormData();
-    fd.top = new FormAttachment(lastControl, 0);
-    fd.right = new FormAttachment(addToTableBut, margin);
-    getTagsBut.setLayoutData(fd);
-
-    getTagsBut.addSelectionListener(new SelectionAdapter() {
-      @Override
-      public void widgetSelected(SelectionEvent e) {
-        setupTagSetComboValues();
-      }
-    });
-
-    // tags editor text field/combo
-    Label tagsLabel = new Label(wInputOptionsComp, SWT.RIGHT);
-    tagsLabel.setText(BaseMessages.getString(PKG,
-        "MongoDbInputDialog.TagSetCombo.Label")); //$NON-NLS-1$
-    props.setLook(tagsLabel);
-    fd = new FormData();
-    fd.left = new FormAttachment(0, -margin);
-    fd.top = new FormAttachment(lastControl, margin);
-    fd.right = new FormAttachment(middle, -margin);
-    tagsLabel.setLayoutData(fd);
-
-    m_tagsCombo = new CCombo(wInputOptionsComp, SWT.BORDER);
-    props.setLook(m_tagsCombo);
-    fd = new FormData();
-    fd.left = new FormAttachment(middle, 0);
-    fd.top = new FormAttachment(lastControl, margin);
-    fd.right = new FormAttachment(getTagsBut, 0);
-    m_tagsCombo.setLayoutData(fd);
-
-    lastControl = m_tagsCombo;
-
-    m_tagsCombo.addSelectionListener(new SelectionAdapter() {
-      @Override
-      public void widgetSelected(SelectionEvent e) {
-        String current = m_tagsCombo.getText();
-        if (!Const.isEmpty(current)) {
-          m_currentTagsState = m_currentTagsState
-              + ((m_currentTagsState.length() > 0) ? ((!m_currentTagsState
-                  .endsWith(",")) ? ", " : "") : "") + current; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-          m_tagsCombo.setText(m_currentTagsState);
-        }
-      }
-
-      @Override
-      public void widgetDefaultSelected(SelectionEvent e) {
-        // listen for enter being pressed in the text field and update
-        // the current tags state variable
-        String current = m_tagsCombo.getText();
-        if (!Const.isEmpty(current)) {
-          m_currentTagsState = current;
-        } else {
-          m_currentTagsState = ""; //$NON-NLS-1$
-        }
-      }
-    });
-
-    m_tagsCombo.addFocusListener(new FocusListener() {
-      public void focusGained(FocusEvent e) {
-
-      }
-
-      public void focusLost(FocusEvent e) {
-        m_currentTagsState = m_tagsCombo.getText();
-      }
-    });
-
-    // edit selected button
-    Button editSelectedBut = new Button(wInputOptionsComp, SWT.PUSH
-        | SWT.CENTER);
-    props.setLook(editSelectedBut);
-    editSelectedBut.setText(BaseMessages.getString(PKG,
-        "MongoDbInputDialog.EditSelected.Button")); //$NON-NLS-1$
-
-    fd = new FormData();
-    fd.bottom = new FormAttachment(100, -margin * 2);
-    fd.left = new FormAttachment(0, 0);
-    editSelectedBut.setLayoutData(fd);
-
-    editSelectedBut.addSelectionListener(new SelectionAdapter() {
-      @Override
-      public void widgetSelected(SelectionEvent e) {
-        moveSelectedTagSetToEditor();
-      }
-    });
-
-    // delete selected button
-    Button deleteSelectedBut = new Button(wInputOptionsComp, SWT.PUSH
-        | SWT.CENTER);
-    props.setLook(deleteSelectedBut);
-    deleteSelectedBut.setText(BaseMessages.getString(PKG,
-        "MongoDbInputDialog.DeleteSelected.Button")); //$NON-NLS-1$
-
-    fd = new FormData();
-    fd.bottom = new FormAttachment(100, -margin * 2);
-    fd.left = new FormAttachment(editSelectedBut, margin);
-    deleteSelectedBut.setLayoutData(fd);
-
-    deleteSelectedBut.addSelectionListener(new SelectionAdapter() {
-      @Override
-      public void widgetSelected(SelectionEvent e) {
-        deleteSelectedFromView();
-        input.setChanged();
-      }
-    });
-*/
+    /*
+     * // add to table button Button addToTableBut = new
+     * Button(wInputOptionsComp, SWT.PUSH | SWT.CENTER);
+     * props.setLook(addToTableBut);
+     * addToTableBut.setText(BaseMessages.getString(PKG,
+     * "MongoDbInputDialog.AddToTable.Button")); //$NON-NLS-1$ fd = new
+     * FormData(); fd.top = new FormAttachment(lastControl, 0); fd.right = new
+     * FormAttachment(100, 0); addToTableBut.setLayoutData(fd);
+     * 
+     * addToTableBut.addSelectionListener(new SelectionAdapter() {
+     * 
+     * @Override public void widgetSelected(SelectionEvent e) {
+     * addTagsToTable(); input.setChanged(); } });
+     * 
+     * 
+     * 
+     * // get tags button Button getTagsBut = new Button(wInputOptionsComp,
+     * SWT.PUSH | SWT.CENTER); props.setLook(getTagsBut);
+     * getTagsBut.setText(BaseMessages.getString(PKG,
+     * "MongoDbInputDialog.GetTags.Button")); //$NON-NLS-1$
+     * getTagsBut.setToolTipText(BaseMessages.getString(PKG,
+     * "MongoDbInputDialog.GetTags.Button.TipText")); //$NON-NLS-1$ fd = new
+     * FormData(); fd.top = new FormAttachment(lastControl, 0); fd.right = new
+     * FormAttachment(addToTableBut, margin); getTagsBut.setLayoutData(fd);
+     * 
+     * getTagsBut.addSelectionListener(new SelectionAdapter() {
+     * 
+     * @Override public void widgetSelected(SelectionEvent e) {
+     * setupTagSetComboValues(); } });
+     * 
+     * // tags editor text field/combo Label tagsLabel = new
+     * Label(wInputOptionsComp, SWT.RIGHT);
+     * tagsLabel.setText(BaseMessages.getString(PKG,
+     * "MongoDbInputDialog.TagSetCombo.Label")); //$NON-NLS-1$
+     * props.setLook(tagsLabel); fd = new FormData(); fd.left = new
+     * FormAttachment(0, -margin); fd.top = new FormAttachment(lastControl,
+     * margin); fd.right = new FormAttachment(middle, -margin);
+     * tagsLabel.setLayoutData(fd);
+     * 
+     * m_tagsCombo = new CCombo(wInputOptionsComp, SWT.BORDER);
+     * props.setLook(m_tagsCombo); fd = new FormData(); fd.left = new
+     * FormAttachment(middle, 0); fd.top = new FormAttachment(lastControl,
+     * margin); fd.right = new FormAttachment(getTagsBut, 0);
+     * m_tagsCombo.setLayoutData(fd);
+     * 
+     * lastControl = m_tagsCombo;
+     * 
+     * m_tagsCombo.addSelectionListener(new SelectionAdapter() {
+     * 
+     * @Override public void widgetSelected(SelectionEvent e) { String current =
+     * m_tagsCombo.getText(); if (!Const.isEmpty(current)) { m_currentTagsState
+     * = m_currentTagsState + ((m_currentTagsState.length() > 0) ?
+     * ((!m_currentTagsState .endsWith(",")) ? ", " : "") : "") + current;
+     * //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+     * m_tagsCombo.setText(m_currentTagsState); } }
+     * 
+     * @Override public void widgetDefaultSelected(SelectionEvent e) { // listen
+     * for enter being pressed in the text field and update // the current tags
+     * state variable String current = m_tagsCombo.getText(); if
+     * (!Const.isEmpty(current)) { m_currentTagsState = current; } else {
+     * m_currentTagsState = ""; //$NON-NLS-1$ } } });
+     * 
+     * m_tagsCombo.addFocusListener(new FocusListener() { public void
+     * focusGained(FocusEvent e) {
+     * 
+     * }
+     * 
+     * public void focusLost(FocusEvent e) { m_currentTagsState =
+     * m_tagsCombo.getText(); } });
+     * 
+     * // edit selected button Button editSelectedBut = new
+     * Button(wInputOptionsComp, SWT.PUSH | SWT.CENTER);
+     * props.setLook(editSelectedBut);
+     * editSelectedBut.setText(BaseMessages.getString(PKG,
+     * "MongoDbInputDialog.EditSelected.Button")); //$NON-NLS-1$
+     * 
+     * fd = new FormData(); fd.bottom = new FormAttachment(100, -margin * 2);
+     * fd.left = new FormAttachment(0, 0); editSelectedBut.setLayoutData(fd);
+     * 
+     * editSelectedBut.addSelectionListener(new SelectionAdapter() {
+     * 
+     * @Override public void widgetSelected(SelectionEvent e) {
+     * moveSelectedTagSetToEditor(); } });
+     * 
+     * // delete selected button Button deleteSelectedBut = new
+     * Button(wInputOptionsComp, SWT.PUSH | SWT.CENTER);
+     * props.setLook(deleteSelectedBut);
+     * deleteSelectedBut.setText(BaseMessages.getString(PKG,
+     * "MongoDbInputDialog.DeleteSelected.Button")); //$NON-NLS-1$
+     * 
+     * fd = new FormData(); fd.bottom = new FormAttachment(100, -margin * 2);
+     * fd.left = new FormAttachment(editSelectedBut, margin);
+     * deleteSelectedBut.setLayoutData(fd);
+     * 
+     * deleteSelectedBut.addSelectionListener(new SelectionAdapter() {
+     * 
+     * @Override public void widgetSelected(SelectionEvent e) {
+     * deleteSelectedFromView(); input.setChanged(); } });
+     */
     // test tag set but
     Button testUserTagsBut = new Button(wInputOptionsComp, SWT.PUSH
         | SWT.CENTER);
@@ -706,12 +678,13 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     props.setLook(joinTagsBut);
     joinTagsBut.setText("Join tags");
     joinTagsBut.setToolTipText("Join tags");
-    
-/*    joinTagsBut.setText(BaseMessages.getString(PKG,
-        "MongoDbInputDialog.GetTags.Button")); //$NON-NLS-1$
-    joinTagsBut.setToolTipText(BaseMessages.getString(PKG,
-        "MongoDbInputDialog.GetTags.Button.TipText")); //$NON-NLS-1$
-*/    
+
+    /*
+     * joinTagsBut.setText(BaseMessages.getString(PKG,
+     * "MongoDbInputDialog.GetTags.Button")); //$NON-NLS-1$
+     * joinTagsBut.setToolTipText(BaseMessages.getString(PKG,
+     * "MongoDbInputDialog.GetTags.Button.TipText")); //$NON-NLS-1$
+     */
     fd = new FormData();
     fd.bottom = new FormAttachment(100, -margin * 2);
     fd.right = new FormAttachment(testUserTagsBut, margin);
@@ -731,7 +704,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     getTagsBut.setToolTipText(BaseMessages.getString(PKG,
         "MongoDbInputDialog.GetTags.Button.TipText")); //$NON-NLS-1$
     fd = new FormData();
-    //fd.top = new FormAttachment(lastControl, 0);
+    // fd.top = new FormAttachment(lastControl, 0);
     fd.bottom = new FormAttachment(100, -margin * 2);
     fd.right = new FormAttachment(joinTagsBut, margin);
     getTagsBut.setLayoutData(fd);
@@ -743,7 +716,6 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       }
     });
 
-    
     m_colInf = new ColumnInfo[] { new ColumnInfo(BaseMessages.getString(PKG,
         "MongoDbInputDialog.TagSets.TagSetColumnTitle"), //$NON-NLS-1$
         ColumnInfo.COLUMN_TYPE_TEXT, false), };
@@ -1050,16 +1022,19 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     // Add listeners
     lsCancel = new Listener() {
+      @Override
       public void handleEvent(Event e) {
         cancel();
       }
     };
     lsPreview = new Listener() {
+      @Override
       public void handleEvent(Event e) {
         preview();
       }
     };
     lsOK = new Listener() {
+      @Override
       public void handleEvent(Event e) {
         ok();
       }
@@ -1199,7 +1174,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     }
 
     numNonEmpty = m_tagsView.nrNonEmpty();
-    
+
     List<String> tags = new ArrayList<String>();
     if (numNonEmpty > 0) {
 
@@ -1346,8 +1321,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements
           if (!result) {
             new ErrorDialog(shell, stepname, BaseMessages.getString(PKG,
                 "MongoDbInputDialog.ErrorMessage.NoFieldsFound"), //$NON-NLS-1$
-                new KettleException(
-                    "MongoDbInputDialog.ErrorMessage.NoFieldsFound")); //$NON-NLS-1$
+                new KettleException(BaseMessages.getString(PKG,
+                    "MongoDbInputDialog.ErrorMessage.NoFieldsFound"))); //$NON-NLS-1$
           } else {
             meta.setExecuteForEachIncomingRow(current);
             getData(meta);
@@ -1533,7 +1508,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
             BaseMessages.getString(PKG,
                 "MongoDbInputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
       } finally {
-          // set m_currentTagState?
+        // set m_currentTagState?
       }
     }
   }
@@ -1696,17 +1671,16 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       smd.open();
     }
   }
-  
-  private void concatenateTags(){
+
+  private void concatenateTags() {
     int[] selectedTags = this.m_tagsView.getSelectionIndices();
     String concatenated = "";
-    
+
     for (int i : selectedTags) {
       TableItem item = m_tagsView.table.getItem(i);
       String t = item.getText(1).trim();
       concatenated = concatenated
-          + ((concatenated.length() > 0) ? ((!concatenated
-              .endsWith(",")) ? ", " : "") : "") + t; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+          + ((concatenated.length() > 0) ? ((!concatenated.endsWith(",")) ? ", " : "") : "") + t; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
     }
     TableItem item = new TableItem(m_tagsView.table, SWT.NONE);
     item.setText(1, concatenated);
