@@ -262,7 +262,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
     int retrys = 0;
     MongoException lastEx = null;
 
-    while (retrys <= m_writeRetries) {
+    while (retrys <= m_writeRetries && !isStopped()) {
       WriteResult result = null;
       CommandResult cmd = null;
       try {
