@@ -68,6 +68,9 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
   /** Holds a batch */
   protected List<DBObject> m_batch;
 
+  protected int m_writeRetries = MongoDbOutputMeta.RETRIES;
+  protected int m_writeRetryDelay = MongoDbOutputMeta.RETRY_DELAY;
+
   public MongoDbOutput(StepMeta stepMeta, StepDataInterface stepDataInterface,
       int copyNr, TransMeta transMeta, Trans trans) {
     super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
@@ -229,22 +232,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
           }
 
           if (insertUpdate != null) {
-            WriteResult result = null;
-
-            result = m_data.getCollection().update(updateQuery, insertUpdate,
-                true, m_meta.getMulti());
-
-            CommandResult cmd = result.getLastError();
-            if (cmd != null && !cmd.ok()) {
-              String message = cmd.getErrorMessage();
-              logError(BaseMessages.getString(PKG,
-                  "MongoDbOutput.Messages.Error.MongoReported", message)); //$NON-NLS-1$
-              try {
-                cmd.throwOnError();
-              } catch (MongoException me) {
-                throw new KettleException(me.getMessage(), me);
-              }
-            }
+            commitUpsert(updateQuery, insertUpdate);
           }
         }
       } else {
@@ -268,30 +256,112 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
     return true;
   }
 
-  protected void doBatch() throws KettleException {
-    WriteResult result = null;
+  protected void commitUpsert(DBObject updateQuery, DBObject insertUpdate)
+      throws KettleException {
 
-    result = m_data.getCollection().insert(m_batch);
+    int retrys = 0;
+    MongoException lastEx = null;
 
-    CommandResult cmd = result.getLastError();
-
-    if (cmd != null && !cmd.ok()) {
-      String message = cmd.getErrorMessage();
-      logError(BaseMessages.getString(PKG,
-          "MongoDbOutput.Messages.Error.MongoReported", message)); //$NON-NLS-1$
+    while (retrys <= m_writeRetries && !isStopped()) {
+      WriteResult result = null;
+      CommandResult cmd = null;
       try {
-        cmd.throwOnError();
+        // TODO It seems that doing an update() via a secondary node does not
+        // generate any sort of exception or error result! (at least via
+        // driver version 2.11.1). Transformation completes successfully
+        // but no updates are made to the collection.
+        // This is unlike doing an insert(), which generates
+        // a MongoException if you are not talking to the primary. So we need
+        // some logic to check whether or not the connection configuration
+        // contains the primary in the replica set and give feedback if it
+        // doesnt
+        result = m_data.getCollection().update(updateQuery, insertUpdate, true,
+            m_meta.getMulti());
+
+        cmd = result.getLastError();
+        if (cmd != null && !cmd.ok()) {
+          String message = cmd.getErrorMessage();
+          logError(BaseMessages.getString(PKG,
+              "MongoDbOutput.Messages.Error.MongoReported", message)); //$NON-NLS-1$
+
+          cmd.throwOnError();
+        }
       } catch (MongoException me) {
-        throw new KettleException(me.getMessage(), me);
+        lastEx = me;
+        retrys++;
+        if (retrys <= m_writeRetries) {
+          logError(BaseMessages.getString(PKG,
+              "MongoDbOutput.Messages.Error.ErrorWritingToMongo", //$NON-NLS-1$
+              me.toString()));
+          logBasic(BaseMessages.getString(PKG,
+              "MongoDbOutput.Messages.Message.Retry", m_writeRetryDelay)); //$NON-NLS-1$
+          try {
+            Thread.sleep(m_writeRetryDelay * 1000);
+          } catch (InterruptedException e) {
+          }
+        }
+      }
+
+      if (cmd != null && cmd.ok()) {
+        break;
       }
     }
 
-    if (cmd != null) {
-      ServerAddress s = cmd.getServerUsed();
-      if (s != null) {
-        logBasic(BaseMessages.getString(PKG,
-            "MongoDbOutput.Messages.WroteBatchToServer", s.toString())); //$NON-NLS-1$
+    if ((retrys > 5 || isStopped()) && lastEx != null) {
+      throw new KettleException(lastEx);
+    }
+  }
+
+  protected void doBatch() throws KettleException {
+    int retrys = 0;
+    MongoException lastEx = null;
+
+    while (retrys <= m_writeRetries && !isStopped()) {
+      WriteResult result = null;
+      CommandResult cmd = null;
+      try {
+        result = m_data.getCollection().insert(m_batch);
+        cmd = result.getLastError();
+
+        if (cmd != null && !cmd.ok()) {
+          String message = cmd.getErrorMessage();
+          logError(BaseMessages.getString(PKG,
+              "MongoDbOutput.Messages.Error.MongoReported", message)); //$NON-NLS-1$
+
+          cmd.throwOnError();
+        }
+      } catch (MongoException me) {
+        lastEx = me;
+        retrys++;
+        if (retrys <= 5) {
+          logError(BaseMessages.getString(PKG,
+              "MongoDbOutput.Messages.Error.ErrorWritingToMongo", //$NON-NLS-1$
+              me.toString()));
+          logBasic(BaseMessages.getString(PKG,
+              "MongoDbOutput.Messages.Message.Retry", m_writeRetryDelay)); //$NON-NLS-1$
+          try {
+            Thread.sleep(m_writeRetryDelay * 1000);
+          } catch (InterruptedException e) {
+          }
+        }
+        // throw new KettleException(me.getMessage(), me);
       }
+
+      if (cmd != null) {
+        ServerAddress s = cmd.getServerUsed();
+        if (s != null) {
+          logBasic(BaseMessages.getString(PKG,
+              "MongoDbOutput.Messages.WroteBatchToServer", s.toString())); //$NON-NLS-1$
+        }
+      }
+
+      if (cmd != null && cmd.ok()) {
+        break;
+      }
+    }
+
+    if ((retrys > 5 || isStopped()) && lastEx != null) {
+      throw new KettleException(lastEx);
     }
 
     m_batch.clear();
@@ -303,6 +373,20 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
     if (super.init(stepMetaInterface, stepDataInterface)) {
       m_meta = (MongoDbOutputMeta) stepMetaInterface;
       m_data = (MongoDbOutputData) stepDataInterface;
+
+      if (!Const.isEmpty(m_meta.getWriteRetries())) {
+        try {
+          m_writeRetries = Integer.parseInt(m_meta.getWriteRetries());
+        } catch (NumberFormatException ex) {
+        }
+      }
+
+      if (!Const.isEmpty(m_meta.getWriteRetryDelay())) {
+        try {
+          m_writeRetryDelay = Integer.parseInt(m_meta.getWriteRetryDelay());
+        } catch (NumberFormatException ex) {
+        }
+      }
 
       String hostname = environmentSubstitute(m_meta.getHostnames());
       int port = Const.toInt(environmentSubstitute(m_meta.getPort()), 27017);
