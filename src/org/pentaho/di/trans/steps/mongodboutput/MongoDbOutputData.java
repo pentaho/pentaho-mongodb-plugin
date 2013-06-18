@@ -149,7 +149,8 @@ public class MongoDbOutputData extends BaseStepData implements
   public static MongoClient connect(MongoDbOutputMeta meta, VariableSpace vars,
       LogChannelInterface log) throws KettleException {
 
-    return MongoUtils.initConnection(meta, vars, log);
+    return MongoUtils.initConnection(meta, vars,
+        MongoUtils.createCredentials(meta, vars), log);
   }
 
   /**
@@ -165,7 +166,8 @@ public class MongoDbOutputData extends BaseStepData implements
   public static List<String> getLastErrorModes(MongoDbOutputMeta meta,
       VariableSpace vars, LogChannelInterface log) throws KettleException {
 
-    return MongoUtils.getLastErrorModes(meta, vars, log);
+    return MongoUtils.getLastErrorModes(meta, vars,
+        MongoUtils.createCredentials(meta, vars), log);
   }
 
   /**

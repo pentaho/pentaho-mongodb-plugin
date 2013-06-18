@@ -221,6 +221,9 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
   /** Password for authentication */
   protected String m_password;
 
+  /** Kerberos authentication? */
+  private boolean m_kerberos;
+
   /** True if upserts are to be performed */
   protected boolean m_upsert;
 
@@ -504,6 +507,24 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
    */
   public String getPassword() {
     return m_password;
+  }
+
+  /**
+   * Set whether to use kerberos authentication
+   * 
+   * @param k true if kerberos is to be used
+   */
+  public void setUseKerberosAuthentication(boolean k) {
+    m_kerberos = k;
+  }
+
+  /**
+   * Get whether to use kerberos authentication
+   * 
+   * @return true if kerberos is to be used
+   */
+  public boolean getUseKerberosAuthentication() {
+    return m_kerberos;
   }
 
   /**
@@ -792,6 +813,10 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
           XMLHandler.addTagValue("mongo_password", //$NON-NLS-1$
               Encr.encryptPasswordIfNotUsingVariables(m_password)));
     }
+
+    retval.append("    ").append( //$NON-NLS-1$
+        XMLHandler.addTagValue("auth_kerberos", m_kerberos)); //$NON-NLS-1$
+
     if (!Const.isEmpty(m_dbName)) {
       retval.append("\n    ").append( //$NON-NLS-1$
           XMLHandler.addTagValue("mongo_db", m_dbName)); //$NON-NLS-1$
@@ -895,6 +920,13 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     m_port = XMLHandler.getTagValue(stepnode, "mongo_port"); //$NON-NLS-1$
     m_username = XMLHandler.getTagValue(stepnode, "mongo_user"); //$NON-NLS-1$
     m_password = XMLHandler.getTagValue(stepnode, "mongo_password"); //$NON-NLS-1$
+
+    m_kerberos = false;
+    String useKerberos = XMLHandler.getTagValue(stepnode, "auth_kerberos"); //$NON-NLS-1$
+    if (!Const.isEmpty(useKerberos)) {
+      m_kerberos = useKerberos.equalsIgnoreCase("Y");
+    }
+
     m_dbName = XMLHandler.getTagValue(stepnode, "mongo_db"); //$NON-NLS-1$
     m_collection = XMLHandler.getTagValue(stepnode, "mongo_collection"); //$NON-NLS-1$
     m_batchInsertSize = XMLHandler.getTagValue(stepnode, "batch_insert_size"); //$NON-NLS-1$
@@ -1004,6 +1036,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
         "use_all_replica_members"); //$NON-NLS-1$
     m_username = rep.getStepAttributeString(id_step, 0, "mongo_user"); //$NON-NLS-1$
     m_password = rep.getStepAttributeString(id_step, 0, "mongo_password"); //$NON-NLS-1$
+    m_kerberos = rep.getStepAttributeBoolean(id_step, "auth_kerberos"); //$NON-NLS-1$
     m_dbName = rep.getStepAttributeString(id_step, 0, "mongo_db"); //$NON-NLS-1$
     m_collection = rep.getStepAttributeString(id_step, 0, "mongo_collection"); //$NON-NLS-1$
     m_batchInsertSize = rep.getStepAttributeString(id_step, 0,
@@ -1104,6 +1137,10 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
       rep.saveStepAttribute(id_transformation, id_step, 0, "password", //$NON-NLS-1$
           Encr.encryptPasswordIfNotUsingVariables(m_password));
     }
+
+    rep.saveStepAttribute(id_transformation, id_step, "auth_kerberos", //$NON-NLS-1$
+        m_kerberos);
+
     if (!Const.isEmpty(m_dbName)) {
       rep.saveStepAttribute(id_transformation, id_step, 0, "mongo_db", m_dbName); //$NON-NLS-1$
     }

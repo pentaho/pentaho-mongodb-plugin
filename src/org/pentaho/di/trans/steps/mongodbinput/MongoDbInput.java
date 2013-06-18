@@ -25,7 +25,6 @@ package org.pentaho.di.trans.steps.mongodbinput;
 import java.util.List;
 
 import org.pentaho.di.core.Const;
-import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMeta;
@@ -39,7 +38,6 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 
 import com.mongodb.AggregationOutput;
-import com.mongodb.CommandResult;
 import com.mongodb.DBObject;
 import com.mongodb.ServerAddress;
 import com.mongodb.util.JSON;
@@ -255,23 +253,21 @@ public class MongoDbInput extends BaseStep implements StepInterface {
               "MongoInput.ErrorMessage.NoCollectionSpecified")); //$NON-NLS-1$
         }
 
+        if (!Const.isEmpty(meta.getAuthenticationUser())) {
+          String authInfo = (meta.getUseKerberosAuthentication() ? BaseMessages
+              .getString(PKG, "MongoDbInput.Message.KerberosAuthentication",
+                  environmentSubstitute(meta.getAuthenticationUser()))
+              : BaseMessages.getString(PKG,
+                  "MongoDbInput.Message.NormalAuthentication",
+                  environmentSubstitute(meta.getAuthenticationUser())));
+
+          logBasic(authInfo);
+        }
+
+        // init connection constructs a MongoCredentials object if necessary
         data.mongo = MongoDbInputData.initConnection(meta, this, log);
         data.db = data.mongo.getDB(db);
 
-        String realUser = environmentSubstitute(meta.getAuthenticationUser());
-        String realPass = Encr
-            .decryptPasswordOptionallyEncrypted(environmentSubstitute(meta
-                .getAuthenticationPassword()));
-
-        if (!Const.isEmpty(realUser) || !Const.isEmpty(realPass)) {
-          CommandResult comResult = data.db.authenticateCommand(realUser,
-              realPass.toCharArray());
-          if (!comResult.ok()) {
-            throw new KettleException(BaseMessages.getString(PKG,
-                "MongoDbInput.ErrorAuthenticating.Exception", //$NON-NLS-1$
-                comResult.getErrorMessage()));
-          }
-        }
         data.collection = data.db.getCollection(collection);
 
         if (!((MongoDbInputMeta) stepMetaInterface).getOutputJson()) {

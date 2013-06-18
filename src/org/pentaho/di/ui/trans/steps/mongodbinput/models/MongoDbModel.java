@@ -684,7 +684,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     saveMeta(meta);
 
     try {
-      List<String> repSetTags = MongoUtils.getAllTags(meta, new TransMeta(), null);
+      List<String> repSetTags = MongoUtils.getAllTags(meta, new TransMeta(), MongoUtils.createCredentials(meta, new TransMeta()), null);
 
       switch(mergeStrategy){
         case 0:
@@ -747,7 +747,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
 
     try {
       List<DBObject> result = MongoUtils.getReplicaSetMembersThatSatisfyTagSets
-                                        (mongoTagSets, meta, new TransMeta(), null);
+                                        (mongoTagSets, meta, new TransMeta(), MongoUtils.createCredentials(meta, new TransMeta()), null);
       
       if(result.size()==0){
         log.logBasic("No replica set members match tag sets.");
