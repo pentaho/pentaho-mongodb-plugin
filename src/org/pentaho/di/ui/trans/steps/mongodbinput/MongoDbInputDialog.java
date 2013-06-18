@@ -114,6 +114,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements
   private TextVar wAuthUser;
   private TextVar wAuthPass;
 
+  private Button m_kerberosBut;
+
   private Button m_outputAsJson;
   private TableView m_fieldsView;
 
@@ -250,10 +252,12 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     wPort.setLayoutData(fdPort);
     lastControl = wPort;
 
-    // Use all replica set members check box
+    // Use all replica set members/mongos check box
     Label useAllReplicaLab = new Label(wConfigComp, SWT.RIGHT);
     useAllReplicaLab.setText(BaseMessages.getString(PKG,
         "MongoDbInputDialog.UseAllReplicaSetMembers.Label")); //$NON-NLS-1$
+    useAllReplicaLab.setToolTipText(BaseMessages.getString(PKG,
+        "MongoDbInputDialog.UseAllReplicaSetMembers.TipText"));
     props.setLook(useAllReplicaLab);
     FormData fd = new FormData();
     fd.left = new FormAttachment(0, 0);
@@ -322,6 +326,33 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     fdAuthPass.right = new FormAttachment(100, 0);
     wAuthPass.setLayoutData(fdAuthPass);
     lastControl = wAuthPass;
+
+    // use kerberos authentication
+    Label kerbLab = new Label(wConfigComp, SWT.RIGHT);
+    kerbLab.setText(BaseMessages.getString(PKG,
+        "MongoDbInputDialog.Kerberos.Label"));
+    props.setLook(kerbLab);
+    fd = new FormData();
+    fd.left = new FormAttachment(0, 0);
+    fd.top = new FormAttachment(wAuthPass, margin);
+    fd.right = new FormAttachment(middle, -margin);
+    kerbLab.setLayoutData(fd);
+
+    m_kerberosBut = new Button(wConfigComp, SWT.CHECK);
+    props.setLook(m_kerberosBut);
+    fd = new FormData();
+    fd.left = new FormAttachment(middle, 0);
+    fd.right = new FormAttachment(100, 0);
+    fd.top = new FormAttachment(wAuthPass, margin);
+    m_kerberosBut.setLayoutData(fd);
+
+    m_kerberosBut.addSelectionListener(new SelectionAdapter() {
+      @Override
+      public void widgetSelected(SelectionEvent e) {
+        wAuthPass.setEnabled(!m_kerberosBut.getSelection());
+      }
+    });
+    lastControl = m_kerberosBut;
 
     // connection timeout
     Label connectTimeoutL = new Label(wConfigComp, SWT.RIGHT);
@@ -438,30 +469,6 @@ public class MongoDbInputDialog extends BaseStepDialog implements
         input.setChanged();
         wDbName.setToolTipText(transMeta.environmentSubstitute(wDbName
             .getText()));
-      }
-    });
-
-    wDbName.addSelectionListener(new SelectionAdapter() {
-      @Override
-      public void widgetSelected(SelectionEvent e) {
-        setupCollectionNamesForDB();
-      }
-
-      @Override
-      public void widgetDefaultSelected(SelectionEvent e) {
-        setupCollectionNamesForDB();
-      }
-    });
-
-    wDbName.addFocusListener(new FocusListener() {
-      @Override
-      public void focusGained(FocusEvent e) {
-
-      }
-
-      @Override
-      public void focusLost(FocusEvent e) {
-        setupCollectionNamesForDB();
       }
     });
 
@@ -1093,6 +1100,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     wAuthUser.setText(Const.NVL(meta.getAuthenticationUser(), "")); // $NON-NLS-1$ //$NON-NLS-1$
     wAuthPass.setText(Const.NVL(meta.getAuthenticationPassword(), "")); // $NON-NLS-1$ //$NON-NLS-1$
+    m_kerberosBut.setSelection(meta.getUseKerberosAuthentication());
+    wAuthPass.setEnabled(!m_kerberosBut.getSelection());
     m_connectionTimeout.setText(Const.NVL(meta.getConnectTimeout(), "")); //$NON-NLS-1$
     m_socketTimeout.setText(Const.NVL(meta.getSocketTimeout(), "")); //$NON-NLS-1$
     m_readPreference.setText(Const.NVL(meta.getReadPreference(), "")); //$NON-NLS-1$
@@ -1144,6 +1153,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     meta.setAuthenticationUser(wAuthUser.getText());
     meta.setAuthenticationPassword(wAuthPass.getText());
+    meta.setUseKerberosAuthentication(m_kerberosBut.getSelection());
     meta.setConnectTimeout(m_connectionTimeout.getText());
     meta.setSocketTimeout(m_socketTimeout.getText());
     meta.setReadPreference(m_readPreference.getText());
@@ -1497,7 +1507,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       getInfo(meta);
 
       try {
-        List<String> repSetTags = MongoUtils.getAllTags(meta, transMeta, null);
+        List<String> repSetTags = MongoUtils.getAllTags(meta, transMeta,
+            MongoUtils.createCredentials(meta, transMeta), null);
         this.setTagsTableFields(repSetTags);
 
       } catch (Exception e) {
@@ -1596,7 +1607,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
             List<DBObject> satisfy = MongoUtils
                 .getReplicaSetMembersThatSatisfyTagSets(tagSets, meta,
-                    transMeta, null);
+                    transMeta, MongoUtils.createCredentials(meta, transMeta),
+                    null);
 
             if (satisfy.size() == 0) {
 

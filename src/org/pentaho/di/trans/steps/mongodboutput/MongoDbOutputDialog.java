@@ -30,8 +30,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
-import org.eclipse.swt.events.FocusEvent;
-import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -112,6 +110,8 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
   private Button m_useAllReplicaSetMembersBut;
   private TextVar m_usernameField;
   private TextVar m_passField;
+
+  private Button m_kerberosBut;
 
   private TextVar m_connectTimeout;
   private TextVar m_socketTimeout;
@@ -285,6 +285,8 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     Label useAllReplicaLab = new Label(wConfigComp, SWT.RIGHT);
     useAllReplicaLab.setText(BaseMessages.getString(PKG,
         "MongoDbOutputDialog.UseAllReplicaSetMembers.Label")); //$NON-NLS-1$
+    useAllReplicaLab.setToolTipText(BaseMessages.getString(PKG,
+        "MongoDbOutputDialog.UseAllReplicaSetMembers.TipText"));
     props.setLook(useAllReplicaLab);
     fd = new FormData();
     fd.left = new FormAttachment(0, 0);
@@ -360,6 +362,32 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     fd.left = new FormAttachment(middle, 0);
     m_passField.setLayoutData(fd);
 
+    // use kerberos authentication
+    Label kerbLab = new Label(wConfigComp, SWT.RIGHT);
+    kerbLab.setText(BaseMessages.getString(PKG,
+        "MongoDbOutputDialog.Kerberos.Label"));
+    props.setLook(kerbLab);
+    fd = new FormData();
+    fd.left = new FormAttachment(0, 0);
+    fd.top = new FormAttachment(m_passField, margin);
+    fd.right = new FormAttachment(middle, -margin);
+    kerbLab.setLayoutData(fd);
+
+    m_kerberosBut = new Button(wConfigComp, SWT.CHECK);
+    props.setLook(m_kerberosBut);
+    fd = new FormData();
+    fd.left = new FormAttachment(middle, 0);
+    fd.right = new FormAttachment(100, 0);
+    fd.top = new FormAttachment(m_passField, margin);
+    m_kerberosBut.setLayoutData(fd);
+
+    m_kerberosBut.addSelectionListener(new SelectionAdapter() {
+      @Override
+      public void widgetSelected(SelectionEvent e) {
+        m_passField.setEnabled(!m_kerberosBut.getSelection());
+      }
+    });
+
     // connection timeout
     Label connectTimeoutL = new Label(wConfigComp, SWT.RIGHT);
     connectTimeoutL.setText(BaseMessages.getString(PKG,
@@ -370,7 +398,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
 
     fd = new FormData();
     fd.left = new FormAttachment(0, -margin);
-    fd.top = new FormAttachment(m_passField, margin);
+    fd.top = new FormAttachment(m_kerberosBut, margin);
     fd.right = new FormAttachment(middle, -margin);
     connectTimeoutL.setLayoutData(fd);
 
@@ -380,7 +408,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     m_connectTimeout.addModifyListener(lsMod);
     fd = new FormData();
     fd.left = new FormAttachment(middle, 0);
-    fd.top = new FormAttachment(m_passField, margin);
+    fd.top = new FormAttachment(m_kerberosBut, margin);
     fd.right = new FormAttachment(100, 0);
     m_connectTimeout.setLayoutData(fd);
     m_connectTimeout.addModifyListener(new ModifyListener() {
@@ -473,29 +501,6 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
         m_currentMeta.setChanged();
         m_dbNameField.setToolTipText(transMeta
             .environmentSubstitute(m_dbNameField.getText()));
-      }
-    });
-
-    m_dbNameField.addSelectionListener(new SelectionAdapter() {
-      @Override
-      public void widgetSelected(SelectionEvent e) {
-        setupCollectionNamesForDB(true);
-      }
-
-      @Override
-      public void widgetDefaultSelected(SelectionEvent e) {
-        setupCollectionNamesForDB(true);
-      }
-    });
-    m_dbNameField.addFocusListener(new FocusListener() {
-      @Override
-      public void focusGained(FocusEvent e) {
-
-      }
-
-      @Override
-      public void focusLost(FocusEvent e) {
-        setupCollectionNamesForDB(true);
       }
     });
 
@@ -1174,6 +1179,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     meta.setUseAllReplicaSetMembers(m_useAllReplicaSetMembersBut.getSelection());
     meta.setUsername(m_usernameField.getText());
     meta.setPassword(m_passField.getText());
+    meta.setUseKerberosAuthentication(m_kerberosBut.getSelection());
     meta.setDBName(m_dbNameField.getText());
     meta.setCollection(m_collectionField.getText());
     meta.setBatchInsertSize(m_batchInsertSizeField.getText());
@@ -1260,6 +1266,8 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
         .getUseAllReplicaSetMembers());
     m_usernameField.setText(Const.NVL(m_currentMeta.getUsername(), "")); //$NON-NLS-1$
     m_passField.setText(Const.NVL(m_currentMeta.getPassword(), "")); //$NON-NLS-1$
+    m_kerberosBut.setSelection(m_currentMeta.getUseKerberosAuthentication());
+    m_passField.setEnabled(!m_kerberosBut.getSelection());
     m_dbNameField.setText(Const.NVL(m_currentMeta.getDBName(), "")); //$NON-NLS-1$
     m_collectionField.setText(Const.NVL(m_currentMeta.getCollection(), "")); //$NON-NLS-1$
     m_batchInsertSizeField.setText(Const.NVL(
