@@ -828,7 +828,8 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   public static MongoClient initConnection(MongoDbInputMeta meta,
       VariableSpace vars, LogChannelInterface log) throws KettleException {
 
-    return MongoUtils.initConnection(meta, vars, log);
+    return MongoUtils.initConnection(meta, vars,
+        MongoUtils.createCredentials(meta, vars), log);
   }
 
   /**

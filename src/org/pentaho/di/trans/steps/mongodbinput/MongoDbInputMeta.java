@@ -73,6 +73,8 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
   private String authenticationUser;
   private String authenticationPassword;
 
+  private boolean m_kerberos;
+
   private String jsonQuery;
 
   private boolean m_aggPipeline = false;
@@ -84,7 +86,7 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
   private String m_socketTimeout = ""; // default - never time out //$NON-NLS-1$
 
   /** primary, primaryPreferred, secondary, secondaryPreferred, nearest */
-  private String m_readPreference = NamedReadPreference.PRIMARY.getName(); 
+  private String m_readPreference = NamedReadPreference.PRIMARY.getName();
 
   /**
    * whether to discover and use all replica set members (if not already
@@ -161,6 +163,12 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
           .decryptPasswordOptionallyEncrypted(XMLHandler.getTagValue(stepnode,
               "auth_password")); //$NON-NLS-1$
 
+      m_kerberos = false;
+      String useKerberos = XMLHandler.getTagValue(stepnode, "auth_kerberos"); //$NON-NLS-1$
+      if (!Const.isEmpty(useKerberos)) {
+        m_kerberos = useKerberos.equalsIgnoreCase("Y");
+      }
+
       m_connectTimeout = XMLHandler.getTagValue(stepnode, "connect_timeout"); //$NON-NLS-1$
       m_socketTimeout = XMLHandler.getTagValue(stepnode, "socket_timeout"); //$NON-NLS-1$
       m_readPreference = XMLHandler.getTagValue(stepnode, "read_preference"); //$NON-NLS-1$
@@ -234,6 +242,7 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
     }
   }
 
+  @Override
   public void setDefault() {
     hostname = "localhost"; //$NON-NLS-1$
     port = "27017"; //$NON-NLS-1$
@@ -312,6 +321,8 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
         XMLHandler.addTagValue("auth_password", //$NON-NLS-1$
             Encr.encryptPasswordIfNotUsingVariables(authenticationPassword)));
     retval.append("    ").append( //$NON-NLS-1$
+        XMLHandler.addTagValue("auth_kerberos", m_kerberos)); //$NON-NLS-1$
+    retval.append("    ").append( //$NON-NLS-1$
         XMLHandler.addTagValue("connect_timeout", m_connectTimeout)); //$NON-NLS-1$
     retval.append("    ").append( //$NON-NLS-1$
         XMLHandler.addTagValue("socket_timeout", m_socketTimeout)); //$NON-NLS-1$
@@ -374,6 +385,7 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
       authenticationUser = rep.getStepAttributeString(id_step, "auth_user"); //$NON-NLS-1$
       authenticationPassword = Encr.decryptPasswordOptionallyEncrypted(rep
           .getStepAttributeString(id_step, "auth_password")); //$NON-NLS-1$
+      m_kerberos = rep.getStepAttributeBoolean(id_step, "auth_kerberos"); //$NON-NLS-1$
       m_connectTimeout = rep.getStepAttributeString(id_step, "connect_timeout"); //$NON-NLS-1$
       m_socketTimeout = rep.getStepAttributeString(id_step, "socket_timeout"); //$NON-NLS-1$
       m_readPreference = rep.getStepAttributeString(id_step, "read_preference"); //$NON-NLS-1$
@@ -442,6 +454,8 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
           authenticationUser);
       rep.saveStepAttribute(id_transformation, id_step, "auth_password", //$NON-NLS-1$
           Encr.encryptPasswordIfNotUsingVariables(authenticationPassword));
+      rep.saveStepAttribute(id_transformation, id_step, "auth_kerberos", //$NON-NLS-1$
+          m_kerberos);
       rep.saveStepAttribute(id_transformation, id_step,
           "connect_timeout", m_connectTimeout); //$NON-NLS-1$
       rep.saveStepAttribute(id_transformation, id_step,
@@ -486,11 +500,13 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
     }
   }
 
+  @Override
   public StepInterface getStep(StepMeta stepMeta,
       StepDataInterface stepDataInterface, int cnr, TransMeta tr, Trans trans) {
     return new MongoDbInput(stepMeta, stepDataInterface, cnr, tr, trans);
   }
 
+  @Override
   public StepDataInterface getStepData() {
     return new MongoDbInputData();
   }
@@ -615,6 +631,24 @@ public class MongoDbInputMeta extends BaseStepMeta implements StepMetaInterface 
    */
   public void setAuthenticationPassword(String authenticationPassword) {
     this.authenticationPassword = authenticationPassword;
+  }
+
+  /**
+   * Set whether to use kerberos authentication
+   * 
+   * @param k true if kerberos is to be used
+   */
+  public void setUseKerberosAuthentication(boolean k) {
+    m_kerberos = k;
+  }
+
+  /**
+   * Get whether to use kerberos authentication
+   * 
+   * @return true if kerberos is to be used
+   */
+  public boolean getUseKerberosAuthentication() {
+    return m_kerberos;
   }
 
   /**

@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.pentaho.di.core.Const;
-import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
@@ -405,23 +404,18 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
               "MongoDbOutput.Messages.Error.NoCollectionSpecified")); //$NON-NLS-1$
         }
 
+        if (!Const.isEmpty(m_meta.getUsername())) {
+          String authInfo = (m_meta.getUseKerberosAuthentication() ? BaseMessages
+              .getString(PKG, "MongoDbOutput.Message.KerberosAuthentication",
+                  environmentSubstitute(m_meta.getUsername())) : BaseMessages
+              .getString(PKG, "MongoDbOutput.Message.NormalAuthentication",
+                  environmentSubstitute(m_meta.getUsername())));
+
+          logBasic(authInfo);
+        }
+
         m_data.setConnection(MongoDbOutputData.connect(m_meta, this, log));
         m_data.setDB(m_data.getConnection().getDB(db));
-
-        String realUser = environmentSubstitute(m_meta.getUsername());
-        String realPass = Encr
-            .decryptPasswordOptionallyEncrypted(environmentSubstitute(m_meta
-                .getPassword()));
-
-        if (!Const.isEmpty(realUser) || !Const.isEmpty(realPass)) {
-          CommandResult comResult = m_data.getDB().authenticateCommand(
-              realUser, realPass.toCharArray());
-          if (!comResult.ok()) {
-            throw new KettleException(BaseMessages.getString(PKG,
-                "MongoDbOutput.Messages.Error.UnableToAuthenticate", //$NON-NLS-1$
-                comResult.getErrorMessage()));
-          }
-        }
 
         if (Const.isEmpty(collection)) {
           throw new KettleException(BaseMessages.getString(PKG,
