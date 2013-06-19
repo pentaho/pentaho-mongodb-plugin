@@ -499,7 +499,8 @@ public class MongoUtils {
 
     MongoClient mongo = null;
     try {
-      if (cred.getMechanism().equals(MongoCredential.MONGODB_CR_MECHANISM)) {
+      if (cred != null
+          && cred.getMechanism().equals(MongoCredential.MONGODB_CR_MECHANISM)) {
         // need to make a new credential that specifies the local database
         cred = MongoCredential.createMongoCRCredential(cred.getUserName(),
             LOCAL_DB, cred.getPassword());
@@ -758,7 +759,8 @@ public class MongoUtils {
     MongoClient mongo = null;
     BasicDBList setMembers = null;
     try {
-      if (cred.getMechanism().equals(MongoCredential.MONGODB_CR_MECHANISM)) {
+      if (cred != null
+          && cred.getMechanism().equals(MongoCredential.MONGODB_CR_MECHANISM)) {
         // need to make a new credential that specifies the local database
         cred = MongoCredential.createMongoCRCredential(cred.getUserName(),
             LOCAL_DB, cred.getPassword());
