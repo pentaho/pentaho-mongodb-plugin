@@ -2,6 +2,7 @@ package org.pentaho.di.trans.steps.mongodboutput;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputData.kettleRowToMongo;
 
 import java.util.ArrayList;
@@ -61,7 +62,7 @@ public class MongoDbOutputTest {
     }
 
     DBObject result = kettleRowToMongo(paths, rmi, row, vs,
-        MongoDbOutputData.MongoTopLevel.RECORD);
+        MongoDbOutputData.MongoTopLevel.RECORD, false);
 
     assertEquals(result.toString(),
         "{ \"field1\" : \"value1\" , \"field2\" : 12}");
@@ -104,7 +105,7 @@ public class MongoDbOutputTest {
     }
 
     DBObject result = kettleRowToMongo(paths, rmi, row, vs,
-        MongoDbOutputData.MongoTopLevel.ARRAY);
+        MongoDbOutputData.MongoTopLevel.ARRAY, false);
 
     assertEquals(result.toString(), "[ \"value1\" , 12]");
   }
@@ -145,7 +146,7 @@ public class MongoDbOutputTest {
     }
 
     DBObject result = kettleRowToMongo(paths, rmi, row, vs,
-        MongoDbOutputData.MongoTopLevel.ARRAY);
+        MongoDbOutputData.MongoTopLevel.ARRAY, false);
 
     assertEquals(result.toString(),
         "[ { \"field1\" : \"value1\"} , { \"field2\" : 12}]");
@@ -188,7 +189,7 @@ public class MongoDbOutputTest {
     }
 
     DBObject result = kettleRowToMongo(paths, rmi, row, vs,
-        MongoDbOutputData.MongoTopLevel.ARRAY);
+        MongoDbOutputData.MongoTopLevel.ARRAY, false);
 
     assertEquals(result.toString(),
         "[ { \"field1\" : \"value1\" , \"field2\" : 12}]");
@@ -231,7 +232,7 @@ public class MongoDbOutputTest {
     }
 
     DBObject result = kettleRowToMongo(paths, rmi, row, vs,
-        MongoDbOutputData.MongoTopLevel.ARRAY);
+        MongoDbOutputData.MongoTopLevel.ARRAY, false);
 
     assertEquals(result.toString(),
         "[ { \"inner\" : [ { \"field1\" : \"value1\"} , { \"field2\" : 12}]}]");
@@ -274,7 +275,7 @@ public class MongoDbOutputTest {
     }
 
     DBObject result = kettleRowToMongo(paths, rmi, row, vs,
-        MongoDbOutputData.MongoTopLevel.RECORD);
+        MongoDbOutputData.MongoTopLevel.RECORD, false);
 
     assertEquals(result.toString(),
         "{ \"field1\" : \"value1\" , \"nestedDoc\" : { \"field2\" : 12}}");
@@ -317,7 +318,7 @@ public class MongoDbOutputTest {
     }
 
     DBObject result = kettleRowToMongo(paths, rmi, row, vs,
-        MongoDbOutputData.MongoTopLevel.RECORD);
+        MongoDbOutputData.MongoTopLevel.RECORD, false);
 
     assertEquals(
         result.toString(),
@@ -588,12 +589,77 @@ public class MongoDbOutputTest {
     }
 
     DBObject result = kettleRowToMongo(paths, rmi, row, vs,
-        MongoDbOutputData.MongoTopLevel.RECORD);
+        MongoDbOutputData.MongoTopLevel.RECORD, false);
 
     assertEquals(
         result.toString(),
         "{ \"field1\" : \"value1\" , \"field2\" : 12 , \"jsonField\" : { \"jsonDocField1\" : \"aval\" , \"jsonDocField2\" : 42}}");
 
+  }
+
+  @Test
+  public void testScanForInsertTopLevelJSONDocAsIs() throws KettleException {
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+    MongoDbOutputMeta.MongoField mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "";
+    mf.m_mongoDocPath = "";
+    mf.m_useIncomingFieldNameAsMongoFieldName = false;
+    mf.m_JSON = true;
+    paths.add(mf);
+
+    assertTrue(MongoDbOutputData.scanForInsertTopLevelJSONDoc(paths));
+  }
+
+  @Test
+  public void testForInsertTopLevelJSONDocAsIsWithOneJSONMatchPathAndOneJSONInsertPath()
+      throws KettleException {
+
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+    MongoDbOutputMeta.MongoField mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "";
+    mf.m_mongoDocPath = "";
+    mf.m_useIncomingFieldNameAsMongoFieldName = false;
+    mf.m_JSON = true;
+    paths.add(mf);
+
+    mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "";
+    mf.m_mongoDocPath = "";
+    mf.m_updateMatchField = true;
+    mf.m_useIncomingFieldNameAsMongoFieldName = false;
+    mf.m_JSON = true;
+    paths.add(mf);
+
+    assertTrue(MongoDbOutputData.scanForInsertTopLevelJSONDoc(paths));
+  }
+
+  @Test
+  public void testScanForInsertTopLevelJSONDocAsIsWithMoreThanOnePathSpecifyingATopLevelJSONDocToInsert() {
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+    MongoDbOutputMeta.MongoField mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "";
+    mf.m_mongoDocPath = "";
+    mf.m_useIncomingFieldNameAsMongoFieldName = false;
+    mf.m_JSON = true;
+    paths.add(mf);
+
+    mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "";
+    mf.m_mongoDocPath = "";
+    mf.m_useIncomingFieldNameAsMongoFieldName = false;
+    mf.m_JSON = true;
+    paths.add(mf);
+
+    try {
+      MongoDbOutputData.scanForInsertTopLevelJSONDoc(paths);
+      fail("Was expecting an exception because more than one path specifying a JSON "
+          + "doc to insert as-is is not kosher");
+    } catch (KettleException ex) {
+      // an Exception is expected
+    }
   }
 
   @Test
@@ -645,7 +711,7 @@ public class MongoDbOutputTest {
     }
 
     DBObject result = kettleRowToMongo(paths, rmi, row, vs,
-        MongoDbOutputData.MongoTopLevel.RECORD);
+        MongoDbOutputData.MongoTopLevel.RECORD, false);
 
     assertEquals(
         result.toString(),
@@ -701,7 +767,7 @@ public class MongoDbOutputTest {
     }
 
     DBObject result = kettleRowToMongo(paths, rmi, row, vs,
-        MongoDbOutputData.MongoTopLevel.ARRAY);
+        MongoDbOutputData.MongoTopLevel.ARRAY, false);
 
     assertEquals(
         result.toString(),
