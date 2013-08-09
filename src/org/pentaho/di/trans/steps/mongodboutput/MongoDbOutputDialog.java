@@ -1615,69 +1615,81 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
 
     Object[] dummyRow = new Object[mongoFields.size()];
     int i = 0;
-    for (MongoDbOutputMeta.MongoField field : mongoFields) {
-      // set up dummy row meta
-      ValueMetaInterface vm = new ValueMeta();
-      vm.setName(field.m_incomingFieldName);
-      vm.setType(ValueMetaInterface.TYPE_STRING);
-      r.addValueMeta(vm);
+    try {
+      boolean hasTopLevelJSONDocInsert = MongoDbOutputData
+          .scanForInsertTopLevelJSONDoc(mongoFields);
 
-      String val = ""; //$NON-NLS-1$
-      if (gotGenuineRowMeta
-          && actualR.indexOfValue(field.m_incomingFieldName) >= 0) {
-        int index = actualR.indexOfValue(field.m_incomingFieldName);
-        switch (actualR.getValueMeta(index).getType()) {
-        case ValueMetaInterface.TYPE_STRING:
-          if (field.m_JSON) {
-            val = "<JSON sub document>"; //$NON-NLS-1$
-            // turn this off for the purpose of doc structure
-            // visualization so that we don't screw up for the
-            // lack of a real JSON doc to parse :-)
-            field.m_JSON = false;
-          } else {
-            val = "<string val>"; //$NON-NLS-1$
+      for (MongoDbOutputMeta.MongoField field : mongoFields) {
+        // set up dummy row meta
+        ValueMetaInterface vm = new ValueMeta();
+        vm.setName(field.m_incomingFieldName);
+        vm.setType(ValueMetaInterface.TYPE_STRING);
+        r.addValueMeta(vm);
+
+        String val = ""; //$NON-NLS-1$
+        if (gotGenuineRowMeta
+            && actualR.indexOfValue(field.m_incomingFieldName) >= 0) {
+          int index = actualR.indexOfValue(field.m_incomingFieldName);
+          switch (actualR.getValueMeta(index).getType()) {
+          case ValueMetaInterface.TYPE_STRING:
+            if (field.m_JSON) {
+              if (!field.m_useIncomingFieldNameAsMongoFieldName
+                  && Const.isEmpty(field.m_mongoDocPath)) {
+                // we will actually have to parse some kind of JSON doc
+                // here in the case where the matching doc/doc to be inserted is
+                // a full top-level incoming JSON doc
+                val = "{\"IncomingJSONDoc\" : \"<document content>\"}";
+              } else {
+                val = "<JSON sub document>"; //$NON-NLS-1$
+                // turn this off for the purpose of doc structure
+                // visualization so that we don't screw up for the
+                // lack of a real JSON doc to parse :-)
+                field.m_JSON = false;
+              }
+            } else {
+              val = "<string val>"; //$NON-NLS-1$
+            }
+            break;
+          case ValueMetaInterface.TYPE_INTEGER:
+            val = "<integer val>"; //$NON-NLS-1$
+            break;
+          case ValueMetaInterface.TYPE_NUMBER:
+            val = "<number val>"; //$NON-NLS-1$
+            break;
+          case ValueMetaInterface.TYPE_BOOLEAN:
+            val = "<bool val>"; //$NON-NLS-1$
+            break;
+          case ValueMetaInterface.TYPE_DATE:
+            val = "<date val>"; //$NON-NLS-1$
+            break;
+          case ValueMetaInterface.TYPE_BINARY:
+            val = "<binary val>"; //$NON-NLS-1$
+            break;
+          default:
+            val = "<unsupported value type>"; //$NON-NLS-1$
           }
-          break;
-        case ValueMetaInterface.TYPE_INTEGER:
-          val = "<integer val>"; //$NON-NLS-1$
-          break;
-        case ValueMetaInterface.TYPE_NUMBER:
-          val = "<number val>"; //$NON-NLS-1$
-          break;
-        case ValueMetaInterface.TYPE_BOOLEAN:
-          val = "<bool val>"; //$NON-NLS-1$
-          break;
-        case ValueMetaInterface.TYPE_DATE:
-          val = "<date val>"; //$NON-NLS-1$
-          break;
-        case ValueMetaInterface.TYPE_BINARY:
-          val = "<binary val>"; //$NON-NLS-1$
-          break;
-        default:
-          val = "<unsupported value type>"; //$NON-NLS-1$
+        } else {
+          val = "<value>"; //$NON-NLS-1$
         }
-      } else {
-        val = "<value>"; //$NON-NLS-1$
+
+        dummyRow[i++] = val;
       }
 
-      dummyRow[i++] = val;
-    }
+      VariableSpace vs = new Variables();
+      MongoDbOutputData.MongoTopLevel topLevelStruct = MongoDbOutputData
+          .checkTopLevelConsistency(mongoFields, vs);
+      for (MongoDbOutputMeta.MongoField m : mongoFields) {
+        m.m_modifierOperationApplyPolicy = "Insert&Update"; //$NON-NLS-1$
+        m.init(vs);
+      }
 
-    VariableSpace vs = new Variables();
-    MongoDbOutputData.MongoTopLevel topLevelStruct = MongoDbOutputData
-        .checkTopLevelConsistency(mongoFields, vs);
-    for (MongoDbOutputMeta.MongoField m : mongoFields) {
-      m.m_modifierOperationApplyPolicy = "Insert&Update"; //$NON-NLS-1$
-      m.init(vs);
-    }
-    try {
       String toDisplay = ""; //$NON-NLS-1$
       String windowTitle = BaseMessages.getString(PKG,
           "MongoDbOutputDialog.PreviewDocStructure.Title"); //$NON-NLS-1$
       // if (!m_currentMeta.getModifierUpdate()) {
       if (!m_modifierUpdateBut.getSelection()) {
         DBObject result = MongoDbOutputData.kettleRowToMongo(mongoFields, r,
-            dummyRow, vs, topLevelStruct);
+            dummyRow, vs, topLevelStruct, hasTopLevelJSONDocInsert);
         toDisplay = prettyPrintDocStructure(result.toString());
       } else {
         DBObject query = MongoDbOutputData.getQueryObject(mongoFields, r,

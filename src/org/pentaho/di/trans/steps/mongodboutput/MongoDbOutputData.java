@@ -109,6 +109,50 @@ public class MongoDbOutputData extends BaseStepData implements
   protected Map<String, Object[]> m_primitiveLeafModifiers = new LinkedHashMap<String, Object[]>();
 
   /**
+   * True if the list of paths specifies an incoming Kettle field that contains
+   * a JSON doc that is intended to be inserted as is (i.e. not added to a field
+   * in the document structure defined by the mongo paths)
+   */
+  protected boolean m_hasTopLevelJSONDocInsert = false;
+
+  public static boolean scanForInsertTopLevelJSONDoc(
+      List<MongoDbOutputMeta.MongoField> fieldDefs) throws KettleException {
+
+    int countNonMatchFields = 0;
+    boolean hasTopLevelJSONDocInsert = false;
+
+    for (MongoDbOutputMeta.MongoField f : fieldDefs) {
+      if (f.m_JSON && !f.m_updateMatchField && Const.isEmpty(f.m_mongoDocPath)
+          && !f.m_useIncomingFieldNameAsMongoFieldName) {
+        hasTopLevelJSONDocInsert = true;
+      }
+
+      if (!f.m_updateMatchField) {
+        countNonMatchFields++;
+      }
+    }
+
+    // Invalid path specification would be one where there is a top level
+    // JSON doc to be inserted (as is) but other field paths have been defined.
+    // TODO we could allow exactly one top level JSON doc and then have other
+    // paths punch data into this document I guess (which is kind of the
+    // opposite of the current functionality that allows the document to be
+    // defined from the specified paths and then allows non top-level JSON docs
+    // to punched into this structure)
+
+    if (hasTopLevelJSONDocInsert && countNonMatchFields > 1) {
+      // TODO
+      throw new KettleException(
+          "Path specifications contains a top-level document in "
+              + "JSON format to be inserted as is, but there are other insert paths "
+              + "defined. When a top-level JSON document is to be inserted it must be "
+              + "the only non-match field defined in the path specifications");
+    }
+
+    return hasTopLevelJSONDocInsert;
+  }
+
+  /**
    * Set the field paths to use for creating the document structure
    * 
    * @param fields the field paths to use
@@ -514,7 +558,7 @@ public class MongoDbOutputData extends BaseStepData implements
     for (String path : m_setComplexArrays.keySet()) {
       List<MongoDbOutputMeta.MongoField> fds = m_setComplexArrays.get(path);
       DBObject valueToSet = kettleRowToMongo(fds, inputMeta, row, vars,
-          MongoTopLevel.ARRAY);
+          MongoTopLevel.ARRAY, false);
 
       DBObject fieldsToUpdateWithValues = null;
 
@@ -544,7 +588,7 @@ public class MongoDbOutputData extends BaseStepData implements
       }
 
       DBObject valueToSet = kettleRowToMongo(fds, inputMeta, row, vars,
-          topLevel);
+          topLevel, false);
 
       DBObject fieldsToUpdateWithValues = null;
 
@@ -635,6 +679,23 @@ public class MongoDbOutputData extends BaseStepData implements
           continue;
         }
 
+        if (field.m_JSON && Const.isEmpty(field.m_mongoDocPath)
+            && !field.m_useIncomingFieldNameAsMongoFieldName) {
+          // We have a query based on a complete incoming JSON doc -
+          // i.e. no field processing necessary
+
+          if (vm.isString()) {
+            String val = vm.getString(row[index]);
+            query = (BasicDBObject) JSON.parse(val);
+          } else {
+            throw new KettleException(
+                BaseMessages
+                    .getString(PKG,
+                        "MongoDbOutput.Messages.MatchFieldJSONButIncomingValueNotString"));
+          }
+          break;
+        }
+
         hasNonNullMatchValues = true;
 
         // query objects have fields using "dot" notation to reach into embedded
@@ -680,14 +741,37 @@ public class MongoDbOutputData extends BaseStepData implements
    * @param row the current incoming row
    * @param vars environment variables
    * @param topLevelStructure the top level structure of the Mongo document
+   * @param hasTopLevelJSONDocInsert true if the user-specified paths include a
+   *          single incoming Kettle field value that contains a JSON document
+   *          that is to be inserted as is
    * @return a DBObject encapsulating the document to insert/upsert or null if
    *         there are no non-null incoming fields
    * @throws KettleException if a problem occurs
    */
   protected static DBObject kettleRowToMongo(
       List<MongoDbOutputMeta.MongoField> fieldDefs, RowMetaInterface inputMeta,
-      Object[] row, VariableSpace vars, MongoTopLevel topLevelStructure)
-      throws KettleException {
+      Object[] row, VariableSpace vars, MongoTopLevel topLevelStructure,
+      boolean hasTopLevelJSONDocInsert) throws KettleException {
+
+    // the easy case
+    if (hasTopLevelJSONDocInsert) {
+      for (MongoDbOutputMeta.MongoField f : fieldDefs) {
+        if (f.m_JSON && Const.isEmpty(f.m_mongoDocPath)
+            && !f.m_useIncomingFieldNameAsMongoFieldName) {
+          String incomingFieldName = vars
+              .environmentSubstitute(f.m_incomingFieldName);
+          int index = inputMeta.indexOfValue(incomingFieldName);
+          ValueMetaInterface vm = inputMeta.getValueMeta(index);
+          if (!vm.isNull(row[index])) {
+            String jsonDoc = vm.getString(row[index]);
+            DBObject docToInsert = (DBObject) JSON.parse(jsonDoc);
+            return docToInsert;
+          } else {
+            return null;
+          }
+        }
+      }
+    }
 
     DBObject root = null;
     if (topLevelStructure == MongoTopLevel.RECORD) {

@@ -157,10 +157,12 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     }
 
     public void reset() {
-      if (m_tempPathList.size() > 0) {
+      if (m_tempPathList != null && m_tempPathList.size() > 0) {
         m_tempPathList.clear();
       }
-      m_tempPathList.addAll(m_pathList);
+      if (m_tempPathList != null) {
+        m_tempPathList.addAll(m_pathList);
+      }
     }
   }
 
