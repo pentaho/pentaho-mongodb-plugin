@@ -243,8 +243,10 @@ public class MongoUtils {
     WriteConcern concern = null;
 
     if (Const.isEmpty(writeConcern) && Const.isEmpty(wTimeout) && !journaled) {
-      concern = new WriteConcern(); // all defaults - timeout 0, journal =
-                                    // false, w = 1
+      // all defaults - timeout 0, journal = false, w = 1
+      concern = new WriteConcern();
+      concern.setWObject(new Integer(1));
+
       if (log != null) {
         log.logBasic(BaseMessages.getString(PKG,
             "MongoUtils.Message.ConfiguringWithDefaultWriteConcern"));
