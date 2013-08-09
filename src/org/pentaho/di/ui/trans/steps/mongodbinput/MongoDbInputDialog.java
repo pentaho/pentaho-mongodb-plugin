@@ -1297,7 +1297,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
   }
 
   private void getFields(MongoDbInputMeta meta) {
-    if (!Const.isEmpty(wHostname.getText()) && !Const.isEmpty(wPort.getText())
+    if (!Const.isEmpty(wHostname.getText())
         && !Const.isEmpty(wDbName.getText())
         && !Const.isEmpty(wCollection.getText())) {
       EnterNumberDialog end = new EnterNumberDialog(shell, 100,
@@ -1342,6 +1342,30 @@ public class MongoDbInputDialog extends BaseStepDialog implements
               "MongoDbInputDialog.ErrorMessage.ErrorDuringSampling"), e); //$NON-NLS-1$
         }
       }
+    } else {
+      // pop up an error dialog
+
+      String missingConDetails = "";
+      if (Const.isEmpty(wHostname.getText())) {
+        missingConDetails += " host name(s)";
+      }
+      if (Const.isEmpty(wDbName.getText())) {
+        missingConDetails += " database";
+      }
+      if (Const.isEmpty(wCollection.getText())) {
+        missingConDetails += " collection";
+      }
+
+      ShowMessageDialog smd = new ShowMessageDialog(
+          shell,
+          SWT.ICON_WARNING | SWT.OK,
+          BaseMessages.getString(PKG,
+              "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title"),
+          BaseMessages
+              .getString(
+                  PKG,
+                  "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails", missingConDetails)); //$NON-NLS-1$
+      smd.open();
     }
   }
 
@@ -1434,6 +1458,18 @@ public class MongoDbInputDialog extends BaseStepDialog implements
           conn = null;
         }
       }
+    } else {
+      // popup some feedback
+      ShowMessageDialog smd = new ShowMessageDialog(
+          shell,
+          SWT.ICON_WARNING | SWT.OK,
+          BaseMessages.getString(PKG,
+              "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title"),
+          BaseMessages
+              .getString(
+                  PKG,
+                  "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails", "host name(s)")); //$NON-NLS-1$
+      smd.open();
     }
 
     if (!Const.isEmpty(current)) {
@@ -1449,15 +1485,11 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     String realPass = Encr.decryptPasswordOptionallyEncrypted(transMeta
         .environmentSubstitute(wAuthPass.getText()));
 
-    if (Const.isEmpty(dB)) {
-      return;
-    }
-
     String current = wCollection.getText();
     wCollection.removeAll();
     MongoClient conn = null;
 
-    if (!Const.isEmpty(hostname)) {
+    if (!Const.isEmpty(hostname) && !Const.isEmpty(dB)) {
 
       MongoDbInputMeta meta = new MongoDbInputMeta();
       getInfo(meta);
@@ -1492,6 +1524,26 @@ public class MongoDbInputDialog extends BaseStepDialog implements
           conn = null;
         }
       }
+    } else {
+      // popup some feedback
+
+      String missingConnDetails = "";
+      if (Const.isEmpty(hostname)) {
+        missingConnDetails += "host name(s)";
+      }
+      if (Const.isEmpty(dB)) {
+        missingConnDetails += " database";
+      }
+      ShowMessageDialog smd = new ShowMessageDialog(
+          shell,
+          SWT.ICON_WARNING | SWT.OK,
+          BaseMessages.getString(PKG,
+              "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title"),
+          BaseMessages
+              .getString(
+                  PKG,
+                  "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails", missingConnDetails)); //$NON-NLS-1$
+      smd.open();
     }
 
     if (!Const.isEmpty(current)) {
@@ -1509,8 +1561,17 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       try {
         List<String> repSetTags = MongoUtils.getAllTags(meta, transMeta,
             MongoUtils.createCredentials(meta, transMeta), null);
-        this.setTagsTableFields(repSetTags);
 
+        if (repSetTags.size() == 0) {
+          ShowMessageDialog smd = new ShowMessageDialog(shell, SWT.ICON_WARNING
+              | SWT.OK, BaseMessages.getString(PKG,
+              "MongoDbInputDialog.Info.Message.NoTagSetsDefinedOnServer"),
+              BaseMessages.getString(PKG,
+                  "MongoDbInputDialog.Info.Message.NoTagSetsDefinedOnServer")); //$NON-NLS-1$
+          smd.open();
+        } else {
+          this.setTagsTableFields(repSetTags);
+        }
       } catch (Exception e) {
         logError(BaseMessages.getString(PKG,
             "MongoDbInputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
@@ -1521,6 +1582,18 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       } finally {
         // set m_currentTagState?
       }
+    } else {
+      // popup some feedback
+      ShowMessageDialog smd = new ShowMessageDialog(
+          shell,
+          SWT.ICON_WARNING | SWT.OK,
+          BaseMessages.getString(PKG,
+              "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title"),
+          BaseMessages
+              .getString(
+                  PKG,
+                  "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails", "host name(s)")); //$NON-NLS-1$
+      smd.open();
     }
   }
 
