@@ -127,6 +127,12 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
 
       m_mongoTopLevelStructure = MongoDbOutputData.checkTopLevelConsistency(
           m_meta.m_mongoFields, this);
+
+      // scan for top-level JSON document insert and validate
+      // field specification in this case.
+      m_data.m_hasTopLevelJSONDocInsert = MongoDbOutputData
+          .scanForInsertTopLevelJSONDoc(m_meta.m_mongoFields);
+
       if (m_mongoTopLevelStructure == MongoDbOutputData.MongoTopLevel.INCONSISTENT) {
         throw new KettleException(BaseMessages.getString(PKG,
             "MongoDbOutput.Messages.Error.InconsistentMongoTopLevel")); //$NON-NLS-1$
@@ -212,7 +218,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
 
             insertUpdate = MongoDbOutputData.kettleRowToMongo(
                 m_data.m_userFields, getInputRowMeta(), row, this,
-                m_mongoTopLevelStructure);
+                m_mongoTopLevelStructure, m_data.m_hasTopLevelJSONDocInsert);
             if (log.isDebug()) {
               logDebug(BaseMessages.getString(PKG,
                   "MongoDbOutput.Messages.Debug.InsertUpsertObject", //$NON-NLS-1$
@@ -240,13 +246,13 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
 
         DBObject mongoInsert = MongoDbOutputData.kettleRowToMongo(
             m_data.m_userFields, getInputRowMeta(), row, this,
-            m_mongoTopLevelStructure);
+            m_mongoTopLevelStructure, m_data.m_hasTopLevelJSONDocInsert);
 
         if (mongoInsert != null) {
           m_batch.add(mongoInsert);
         }
         if (m_batch.size() == m_batchInsertSize) {
-          logBasic(BaseMessages.getString(PKG,
+          logDetailed(BaseMessages.getString(PKG,
               "MongoDbOutput.Messages.CommitingABatch")); //$NON-NLS-1$
           doBatch();
         }
@@ -350,7 +356,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       if (cmd != null) {
         ServerAddress s = cmd.getServerUsed();
         if (s != null) {
-          logBasic(BaseMessages.getString(PKG,
+          logDetailed(BaseMessages.getString(PKG,
               "MongoDbOutput.Messages.WroteBatchToServer", s.toString())); //$NON-NLS-1$
         }
       }
