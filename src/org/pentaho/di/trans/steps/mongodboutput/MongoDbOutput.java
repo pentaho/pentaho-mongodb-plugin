@@ -313,7 +313,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       }
     }
 
-    if ((retrys > 5 || isStopped()) && lastEx != null) {
+    if ((retrys > m_writeRetries || isStopped()) && lastEx != null) {
       throw new KettleException(lastEx);
     }
   }
@@ -339,7 +339,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       } catch (MongoException me) {
         lastEx = me;
         retrys++;
-        if (retrys <= 5) {
+        if (retrys <= m_writeRetries) {
           logError(BaseMessages.getString(PKG,
               "MongoDbOutput.Messages.Error.ErrorWritingToMongo", //$NON-NLS-1$
               me.toString()));
@@ -366,7 +366,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       }
     }
 
-    if ((retrys > 5 || isStopped()) && lastEx != null) {
+    if ((retrys > m_writeRetries || isStopped()) && lastEx != null) {
       throw new KettleException(lastEx);
     }
 
