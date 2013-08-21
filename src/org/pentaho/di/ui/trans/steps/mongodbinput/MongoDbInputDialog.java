@@ -438,30 +438,6 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       }
     });
 
-    wDbName.addSelectionListener(new SelectionAdapter() {
-      @Override
-      public void widgetSelected(SelectionEvent e) {
-        setupCollectionNamesForDB();
-      }
-
-      @Override
-      public void widgetDefaultSelected(SelectionEvent e) {
-        setupCollectionNamesForDB();
-      }
-    });
-
-    wDbName.addFocusListener(new FocusListener() {
-      @Override
-      public void focusGained(FocusEvent e) {
-
-      }
-
-      @Override
-      public void focusLost(FocusEvent e) {
-        setupCollectionNamesForDB();
-      }
-    });
-
     // Collection input ...
     //
     Label wlCollection = new Label(wInputOptionsComp, SWT.RIGHT);
@@ -939,7 +915,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
             ColumnInfo.COLUMN_TYPE_TEXT, false),
         new ColumnInfo(BaseMessages.getString(PKG,
             "MongoDbInputDialog.Fields.SAMPLE_ARRAYINFO"), //$NON-NLS-1$
-            ColumnInfo.COLUMN_TYPE_CCOMBO, false),
+            ColumnInfo.COLUMN_TYPE_TEXT, false),
         new ColumnInfo(BaseMessages.getString(PKG,
             "MongoDbInputDialog.Fields.SAMPLE_PERCENTAGE"), //$NON-NLS-1$
             ColumnInfo.COLUMN_TYPE_TEXT, false),
