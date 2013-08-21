@@ -974,7 +974,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
             ColumnInfo.COLUMN_TYPE_TEXT, false),
         new ColumnInfo(BaseMessages.getString(PKG,
             "MongoDbInputDialog.Fields.SAMPLE_ARRAYINFO"), //$NON-NLS-1$
-            ColumnInfo.COLUMN_TYPE_CCOMBO, false),
+            ColumnInfo.COLUMN_TYPE_TEXT, false),
         new ColumnInfo(BaseMessages.getString(PKG,
             "MongoDbInputDialog.Fields.SAMPLE_PERCENTAGE"), //$NON-NLS-1$
             ColumnInfo.COLUMN_TYPE_TEXT, false),
