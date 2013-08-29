@@ -1136,7 +1136,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
           m_username);
     }
     if (!Const.isEmpty(m_password)) {
-      rep.saveStepAttribute(id_transformation, id_step, 0, "password", //$NON-NLS-1$
+      rep.saveStepAttribute(id_transformation, id_step, 0, "mongo_password", //$NON-NLS-1$
           Encr.encryptPasswordIfNotUsingVariables(m_password));
     }
 
