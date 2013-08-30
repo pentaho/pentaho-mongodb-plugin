@@ -897,6 +897,9 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     m_port = XMLHandler.getTagValue(stepnode, "mongo_port"); //$NON-NLS-1$
     m_username = XMLHandler.getTagValue(stepnode, "mongo_user"); //$NON-NLS-1$
     m_password = XMLHandler.getTagValue(stepnode, "mongo_password"); //$NON-NLS-1$
+    if (!Const.isEmpty(m_password)) {
+      m_password = Encr.decryptPasswordOptionallyEncrypted(m_password);
+    }
     m_dbName = XMLHandler.getTagValue(stepnode, "mongo_db"); //$NON-NLS-1$
     m_collection = XMLHandler.getTagValue(stepnode, "mongo_collection"); //$NON-NLS-1$
     m_batchInsertSize = XMLHandler.getTagValue(stepnode, "batch_insert_size"); //$NON-NLS-1$
@@ -1006,6 +1009,9 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
         "use_all_replica_members"); //$NON-NLS-1$
     m_username = rep.getStepAttributeString(id_step, 0, "mongo_user"); //$NON-NLS-1$
     m_password = rep.getStepAttributeString(id_step, 0, "mongo_password"); //$NON-NLS-1$
+    if (!Const.isEmpty(m_password)) {
+      m_password = Encr.decryptPasswordOptionallyEncrypted(m_password);
+    }
     m_dbName = rep.getStepAttributeString(id_step, 0, "mongo_db"); //$NON-NLS-1$
     m_collection = rep.getStepAttributeString(id_step, 0, "mongo_collection"); //$NON-NLS-1$
     m_batchInsertSize = rep.getStepAttributeString(id_step, 0,
