@@ -922,6 +922,9 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     m_port = XMLHandler.getTagValue(stepnode, "mongo_port"); //$NON-NLS-1$
     m_username = XMLHandler.getTagValue(stepnode, "mongo_user"); //$NON-NLS-1$
     m_password = XMLHandler.getTagValue(stepnode, "mongo_password"); //$NON-NLS-1$
+    if (!Const.isEmpty(m_password)) {
+      m_password = Encr.decryptPasswordOptionallyEncrypted(m_password);
+    }
 
     m_kerberos = false;
     String useKerberos = XMLHandler.getTagValue(stepnode, "auth_kerberos"); //$NON-NLS-1$
@@ -1038,6 +1041,9 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
         "use_all_replica_members"); //$NON-NLS-1$
     m_username = rep.getStepAttributeString(id_step, 0, "mongo_user"); //$NON-NLS-1$
     m_password = rep.getStepAttributeString(id_step, 0, "mongo_password"); //$NON-NLS-1$
+    if (!Const.isEmpty(m_password)) {
+      m_password = Encr.decryptPasswordOptionallyEncrypted(m_password);
+    }
     m_kerberos = rep.getStepAttributeBoolean(id_step, "auth_kerberos"); //$NON-NLS-1$
     m_dbName = rep.getStepAttributeString(id_step, 0, "mongo_db"); //$NON-NLS-1$
     m_collection = rep.getStepAttributeString(id_step, 0, "mongo_collection"); //$NON-NLS-1$
