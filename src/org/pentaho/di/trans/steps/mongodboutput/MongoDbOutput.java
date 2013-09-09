@@ -23,6 +23,8 @@
 package org.pentaho.di.trans.steps.mongodboutput;
 
 import java.net.UnknownHostException;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +40,8 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.mongo.AuthContext;
+import org.pentaho.mongo.MongoUtils;
 
 import com.mongodb.CommandResult;
 import com.mongodb.DBObject;
@@ -78,186 +82,202 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
   @Override
   public boolean processRow(StepMetaInterface smi, StepDataInterface sdi)
       throws KettleException {
+    AuthContext context = MongoUtils.createAuthContext(m_meta, this);
+    try {
+      return /* allow autoboxing */ context.doAs(new PrivilegedExceptionAction<Boolean>() {
 
-    Object[] row = getRow();
+        @Override
+        public Boolean run() throws KettleException {
 
-    if (row == null) {
-      // no more output
-
-      // check any remaining buffered objects
-      if (m_batch != null && m_batch.size() > 0) {
-        doBatch();
-      }
-
-      // INDEXING - http://www.mongodb.org/display/DOCS/Indexes
-      // Indexing is computationally expensive - it needs to be
-      // done after all data is inserted and done in the BACKGROUND.
-
-      // UNIQUE indexes (prevent duplicates on the
-      // keys in the index) and SPARSE indexes (don't index docs that
-      // don't have the key field) - current limitation is that SPARSE
-      // indexes can only have a single field
-
-      List<MongoDbOutputMeta.MongoIndex> indexes = m_meta.getMongoIndexes();
-      if (indexes != null && indexes.size() > 0) {
-        logBasic(BaseMessages.getString(PKG,
-            "MongoDbOutput.Messages.ApplyingIndexOpps")); //$NON-NLS-1$
-        m_data.applyIndexes(indexes, log, m_meta.getTruncate());
-      }
-
-      disconnect();
-      setOutputDone();
-      return false;
-    }
-
-    if (first) {
-      first = false;
-
-      m_batchInsertSize = 100;
-
-      String batchInsert = environmentSubstitute(m_meta.getBatchInsertSize());
-      if (!Const.isEmpty(batchInsert)) {
-        m_batchInsertSize = Integer.parseInt(batchInsert);
-      }
-      m_batch = new ArrayList<DBObject>(m_batchInsertSize);
-
-      // output the same as the input
-      m_data.setOutputRowMeta(getInputRowMeta());
-
-      m_mongoTopLevelStructure = MongoDbOutputData.checkTopLevelConsistency(
-          m_meta.m_mongoFields, this);
-      // scan for top-level JSON document insert and validate
-      // field specification in this case.
-      m_data.m_hasTopLevelJSONDocInsert = MongoDbOutputData
-          .scanForInsertTopLevelJSONDoc(m_meta.m_mongoFields);
-
-      if (m_mongoTopLevelStructure == MongoDbOutputData.MongoTopLevel.INCONSISTENT) {
-        throw new KettleException(BaseMessages.getString(PKG,
-            "MongoDbOutput.Messages.Error.InconsistentMongoTopLevel")); //$NON-NLS-1$
-      }
-
-      // first check our incoming fields against our meta data for fields to
-      // insert
-      RowMetaInterface rmi = getInputRowMeta();
-      List<MongoDbOutputMeta.MongoField> mongoFields = m_meta.getMongoFields();
-      List<String> notToBeInserted = new ArrayList<String>();
-
-      for (int i = 0; i < rmi.size(); i++) {
-        ValueMetaInterface vm = rmi.getValueMeta(i);
-        boolean ok = false;
-        for (MongoDbOutputMeta.MongoField field : mongoFields) {
-          String mongoMatch = environmentSubstitute(field.m_incomingFieldName);
-          if (vm.getName().equals(mongoMatch)) {
-            ok = true;
-            break;
-          }
-        }
-
-        if (!ok) {
-          notToBeInserted.add(vm.getName());
-        }
-      }
-
-      if (notToBeInserted.size() == rmi.size()) {
-        throw new KettleException(BaseMessages.getString(PKG,
-            "MongoDbOutput.Messages.Error.NotInsertingAnyFields")); //$NON-NLS-1$
-      }
-
-      if (notToBeInserted.size() > 0) {
-        StringBuffer b = new StringBuffer();
-        for (String s : notToBeInserted) {
-          b.append(s).append(" "); //$NON-NLS-1$
-        }
-
-        logBasic(BaseMessages.getString(PKG,
-            "MongoDbOutput.Messages.FieldsNotToBeInserted"), b.toString()); //$NON-NLS-1$
-      }
-
-      // copy and initialize mongo fields
-      m_data.setMongoFields(m_meta.getMongoFields());
-      m_data.init(this);
-
-      // check truncate
-      if (m_meta.getTruncate()) {
-        try {
-          logBasic(BaseMessages.getString(PKG,
-              "MongoDbOutput.Messages.TruncatingCollection")); //$NON-NLS-1$
-          m_data.getCollection().drop();
-
-          // re-establish the collection
-          String collection = environmentSubstitute(m_meta.getCollection());
-          m_data.createCollection(collection);
-          m_data.setCollection(m_data.getDB().getCollection(collection));
-        } catch (Exception m) {
-          disconnect();
-          throw new KettleException(m.getMessage(), m);
-        }
-      }
-    }
-
-    if (!isStopped()) {
-
-      if (m_meta.getUpsert()) {
-        DBObject updateQuery = m_data.getQueryObject(m_data.m_userFields,
-            getInputRowMeta(), row, this, m_mongoTopLevelStructure);
-
-        if (log.isDebug()) {
-          logDebug(BaseMessages.getString(PKG,
-              "MongoDbOutput.Messages.Debug.QueryForUpsert", updateQuery)); //$NON-NLS-1$
-        }
-
-        if (updateQuery != null) {
-          // i.e. we have some non-null incoming query field values
-          DBObject insertUpdate = null;
-
-          // get the record to update the match with
-          if (!m_meta.getModifierUpdate()) {
-            // complete record replace or insert
-
-            insertUpdate = MongoDbOutputData.kettleRowToMongo(
-                m_data.m_userFields, getInputRowMeta(), row, this,
-                m_mongoTopLevelStructure, m_data.m_hasTopLevelJSONDocInsert);
-            if (log.isDebug()) {
-              logDebug(BaseMessages.getString(PKG,
-                  "MongoDbOutput.Messages.Debug.InsertUpsertObject", //$NON-NLS-1$
-                  insertUpdate));
+          Object[] row = getRow();
+      
+          if (row == null) {
+            // no more output
+      
+            // check any remaining buffered objects
+            if (m_batch != null && m_batch.size() > 0) {
+              doBatch();
             }
-
-          } else {
-
-            // specific field update or insert
-            insertUpdate = m_data.getModifierUpdateObject(m_data.m_userFields,
-                getInputRowMeta(), row, this, m_mongoTopLevelStructure);
-            if (log.isDebug()) {
-              logDebug(BaseMessages.getString(PKG,
-                  "MongoDbOutput.Messages.Debug.ModifierUpdateObject", //$NON-NLS-1$
-                  insertUpdate));
+      
+            // INDEXING - http://www.mongodb.org/display/DOCS/Indexes
+            // Indexing is computationally expensive - it needs to be
+            // done after all data is inserted and done in the BACKGROUND.
+      
+            // UNIQUE indexes (prevent duplicates on the
+            // keys in the index) and SPARSE indexes (don't index docs that
+            // don't have the key field) - current limitation is that SPARSE
+            // indexes can only have a single field
+      
+            List<MongoDbOutputMeta.MongoIndex> indexes = m_meta.getMongoIndexes();
+            if (indexes != null && indexes.size() > 0) {
+              logBasic(BaseMessages.getString(PKG,
+                  "MongoDbOutput.Messages.ApplyingIndexOpps")); //$NON-NLS-1$
+              m_data.applyIndexes(indexes, log, m_meta.getTruncate());
+            }
+      
+            disconnect();
+            setOutputDone();
+            return false;
+          }
+      
+          if (first) {
+            first = false;
+      
+            m_batchInsertSize = 100;
+      
+            String batchInsert = environmentSubstitute(m_meta.getBatchInsertSize());
+            if (!Const.isEmpty(batchInsert)) {
+              m_batchInsertSize = Integer.parseInt(batchInsert);
+            }
+            m_batch = new ArrayList<DBObject>(m_batchInsertSize);
+      
+            // output the same as the input
+            m_data.setOutputRowMeta(getInputRowMeta());
+      
+            m_mongoTopLevelStructure = MongoDbOutputData.checkTopLevelConsistency(
+                m_meta.m_mongoFields, MongoDbOutput.this);
+            // scan for top-level JSON document insert and validate
+            // field specification in this case.
+            m_data.m_hasTopLevelJSONDocInsert = MongoDbOutputData
+                .scanForInsertTopLevelJSONDoc(m_meta.m_mongoFields);
+      
+            if (m_mongoTopLevelStructure == MongoDbOutputData.MongoTopLevel.INCONSISTENT) {
+              throw new KettleException(BaseMessages.getString(PKG,
+                  "MongoDbOutput.Messages.Error.InconsistentMongoTopLevel")); //$NON-NLS-1$
+            }
+      
+            // first check our incoming fields against our meta data for fields to
+            // insert
+            RowMetaInterface rmi = getInputRowMeta();
+            List<MongoDbOutputMeta.MongoField> mongoFields = m_meta.getMongoFields();
+            List<String> notToBeInserted = new ArrayList<String>();
+      
+            for (int i = 0; i < rmi.size(); i++) {
+              ValueMetaInterface vm = rmi.getValueMeta(i);
+              boolean ok = false;
+              for (MongoDbOutputMeta.MongoField field : mongoFields) {
+                String mongoMatch = environmentSubstitute(field.m_incomingFieldName);
+                if (vm.getName().equals(mongoMatch)) {
+                  ok = true;
+                  break;
+                }
+              }
+      
+              if (!ok) {
+                notToBeInserted.add(vm.getName());
+              }
+            }
+      
+            if (notToBeInserted.size() == rmi.size()) {
+              throw new KettleException(BaseMessages.getString(PKG,
+                  "MongoDbOutput.Messages.Error.NotInsertingAnyFields")); //$NON-NLS-1$
+            }
+      
+            if (notToBeInserted.size() > 0) {
+              StringBuffer b = new StringBuffer();
+              for (String s : notToBeInserted) {
+                b.append(s).append(" "); //$NON-NLS-1$
+              }
+      
+              logBasic(BaseMessages.getString(PKG,
+                  "MongoDbOutput.Messages.FieldsNotToBeInserted"), b.toString()); //$NON-NLS-1$
+            }
+      
+            // copy and initialize mongo fields
+            m_data.setMongoFields(m_meta.getMongoFields());
+            m_data.init(MongoDbOutput.this);
+      
+            // check truncate
+            if (m_meta.getTruncate()) {
+              try {
+                logBasic(BaseMessages.getString(PKG,
+                    "MongoDbOutput.Messages.TruncatingCollection")); //$NON-NLS-1$
+                m_data.getCollection().drop();
+      
+                // re-establish the collection
+                String collection = environmentSubstitute(m_meta.getCollection());
+                m_data.createCollection(collection);
+                m_data.setCollection(m_data.getDB().getCollection(collection));
+              } catch (Exception m) {
+                disconnect();
+                throw new KettleException(m.getMessage(), m);
+              }
             }
           }
-
-          if (insertUpdate != null) {
-            commitUpsert(updateQuery, insertUpdate);
+      
+          if (!isStopped()) {
+      
+            if (m_meta.getUpsert()) {
+              DBObject updateQuery = m_data.getQueryObject(m_data.m_userFields,
+                  getInputRowMeta(), row, MongoDbOutput.this, m_mongoTopLevelStructure);
+      
+              if (log.isDebug()) {
+                logDebug(BaseMessages.getString(PKG,
+                    "MongoDbOutput.Messages.Debug.QueryForUpsert", updateQuery)); //$NON-NLS-1$
+              }
+      
+              if (updateQuery != null) {
+                // i.e. we have some non-null incoming query field values
+                DBObject insertUpdate = null;
+      
+                // get the record to update the match with
+                if (!m_meta.getModifierUpdate()) {
+                  // complete record replace or insert
+      
+                  insertUpdate = MongoDbOutputData.kettleRowToMongo(
+                      m_data.m_userFields, getInputRowMeta(), row, MongoDbOutput.this,
+                      m_mongoTopLevelStructure, m_data.m_hasTopLevelJSONDocInsert);
+                  if (log.isDebug()) {
+                    logDebug(BaseMessages.getString(PKG,
+                        "MongoDbOutput.Messages.Debug.InsertUpsertObject", //$NON-NLS-1$
+                        insertUpdate));
+                  }
+      
+                } else {
+      
+                  // specific field update or insert
+                  insertUpdate = m_data.getModifierUpdateObject(m_data.m_userFields,
+                      getInputRowMeta(), row, MongoDbOutput.this, m_mongoTopLevelStructure);
+                  if (log.isDebug()) {
+                    logDebug(BaseMessages.getString(PKG,
+                        "MongoDbOutput.Messages.Debug.ModifierUpdateObject", //$NON-NLS-1$
+                        insertUpdate));
+                  }
+                }
+      
+                if (insertUpdate != null) {
+                  commitUpsert(updateQuery, insertUpdate);
+                }
+              }
+            } else {
+              // straight insert
+      
+              DBObject mongoInsert = MongoDbOutputData.kettleRowToMongo(
+                  m_data.m_userFields, getInputRowMeta(), row, MongoDbOutput.this,
+                  m_mongoTopLevelStructure, m_data.m_hasTopLevelJSONDocInsert);
+      
+              if (mongoInsert != null) {
+                m_batch.add(mongoInsert);
+              }
+              if (m_batch.size() == m_batchInsertSize) {
+                logDetailed(BaseMessages.getString(PKG,
+                    "MongoDbOutput.Messages.CommitingABatch")); //$NON-NLS-1$
+                doBatch();
+              }
+            }
           }
+      
+          return true;
         }
+      });
+    } catch (PrivilegedActionException e) {
+      Throwable cause = e.getException();
+      if (cause instanceof KettleException) {
+        throw (KettleException) cause;
       } else {
-        // straight insert
-
-        DBObject mongoInsert = MongoDbOutputData.kettleRowToMongo(
-            m_data.m_userFields, getInputRowMeta(), row, this,
-            m_mongoTopLevelStructure, m_data.m_hasTopLevelJSONDocInsert);
-
-        if (mongoInsert != null) {
-          m_batch.add(mongoInsert);
-        }
-        if (m_batch.size() == m_batchInsertSize) {
-          logDetailed(BaseMessages.getString(PKG,
-              "MongoDbOutput.Messages.CommitingABatch")); //$NON-NLS-1$
-          doBatch();
-        }
+        throw new KettleException("Unexpected error", e.getException());
       }
     }
-
-    return true;
   }
 
   protected void commitUpsert(DBObject updateQuery, DBObject insertUpdate)

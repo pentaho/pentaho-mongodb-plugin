@@ -18,6 +18,8 @@
 
 package org.pentaho.di.ui.trans.steps.mongodbinput.models;
 
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -35,6 +37,7 @@ import org.pentaho.di.core.util.StringUtil;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
+import org.pentaho.mongo.AuthContext;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.MongoUtils;
 import org.pentaho.mongo.NamedReadPreference;
@@ -548,27 +551,19 @@ public class MongoDbModel extends XulEventSourceAdapter {
       return dbs;
     }
 
-    MongoClient conn = null;
-    MongoDbInputMeta meta = new MongoDbInputMeta(); 
+    final MongoDbInputMeta meta = new MongoDbInputMeta();
+    final TransMeta transMeta = new TransMeta();
     saveMeta(meta);
     try {
-      conn = MongoDbInputData.initConnection(meta, new TransMeta(), null);
-      List<String> dbNames = conn.getDatabaseNames();
-
+      List<String> dbNames = MongoUtils.getDatabaseNames(meta, transMeta);
       for (String s : dbNames) {
         dbs.add(s);
       }
-
+      return dbs;
     } catch (Exception e) {
       log.logError("Unexpected error retrieving database names from MongoDb. Check your connection details.", meta);
       throw new MongoDbException("Unexpected error retrieving database names from MongoDb. Check your connection details.", e);
-    }finally{
-      if (conn != null){
-        conn.close();
-        conn = null;
-      }
     }
-    return dbs;
   }
 
   /**
@@ -578,7 +573,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
    * @return Vector<String> list of collection names
    * @throws Exception Should anything go wrong connecting to MongoDB, it will be reported with this exception
    */
-  public Vector<String> getCollectionNamesFromMongo() throws MongoDbException{
+  public Vector<String> getCollectionNamesFromMongo() throws MongoDbException {
     Vector<String> newCollections = new Vector<String>();
     
     if (Const.isEmpty(dbName) || Const.isEmpty(hostname)) {
@@ -586,37 +581,18 @@ public class MongoDbModel extends XulEventSourceAdapter {
       return newCollections;
     }
 
-    MongoClient conn = null;
-    MongoDbInputMeta meta = new MongoDbInputMeta(); 
+    MongoDbInputMeta meta = new MongoDbInputMeta();
     saveMeta(meta);
     try {
-      conn = MongoDbInputData.initConnection(meta, new TransMeta(), null);
-      DB theDB = conn.getDB(dbName);
-
-      if (!Const.isEmpty(authenticationUser) || !Const.isEmpty(authenticationPassword)) {
-        CommandResult comResult = theDB.authenticateCommand(authenticationUser,
-                                                            authenticationPassword.toCharArray());
-        if (!comResult.ok()) {
-          log.logBasic("Failed to authenticate user {0}.", authenticationUser);
-          throw new MongoDbException("Failed to autheticate the user. Check your credentials.");
-        }
-      }
-
-      Set<String> collections = theDB.getCollectionNames();
+      Set<String> collections = MongoUtils.getCollectionsNames(meta, new TransMeta(), dbName, authenticationUser, authenticationPassword);
       for (String c : collections) {
         newCollections.add(c);
       }
-
+      return newCollections;
     } catch (Exception e) {
       log.logError("Unexpected error retrieving collection names from MongoDb. Check that your database name is valid.", meta);
       throw new MongoDbException("Unexpected error retrieving collection names from MongoDb. Check that your database name is valid.", e);
-    }finally{
-      if (conn!=null){
-        conn.close();
-        conn = null;
-      }
     }
-    return newCollections;
   }
   
   /**

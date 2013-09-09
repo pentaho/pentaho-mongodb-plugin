@@ -22,6 +22,8 @@
 
 package org.pentaho.di.trans.steps.mongodboutput;
 
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -69,6 +71,8 @@ import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
+import org.pentaho.mongo.AuthContext;
+import org.pentaho.mongo.MongoUtils;
 import org.pentaho.mongo.NamedReadPreference;
 
 import com.mongodb.CommandResult;
@@ -1360,52 +1364,66 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
 
   private void setupCollectionNamesForDB(boolean quiet) {
 
-    String hostname = transMeta
+    final String hostname = transMeta
         .environmentSubstitute(m_hostnameField.getText());
-    String dB = transMeta.environmentSubstitute(m_dbNameField.getText());
-    String username = transMeta
+    final String dB = transMeta.environmentSubstitute(m_dbNameField.getText());
+    final String username = transMeta
         .environmentSubstitute(m_usernameField.getText());
-    String realPass = Encr.decryptPasswordOptionallyEncrypted(transMeta
+    final String realPass = Encr.decryptPasswordOptionallyEncrypted(transMeta
         .environmentSubstitute(m_passField.getText()));
 
     String current = m_collectionField.getText();
     m_collectionField.removeAll();
-    MongoClient conn = null;
 
     if (!Const.isEmpty(hostname) && !Const.isEmpty(dB)) {
 
-      MongoDbOutputMeta meta = new MongoDbOutputMeta();
+      final MongoDbOutputMeta meta = new MongoDbOutputMeta();
       getInfo(meta);
       try {
-        conn = MongoDbOutputData.connect(meta, transMeta, null);
-        DB theDB = conn.getDB(dB);
+        AuthContext context = MongoUtils.createAuthContext(meta, transMeta);
+        Set<String> collections = context.doAs(new PrivilegedExceptionAction<Set<String>>() {
 
-        if (!Const.isEmpty(username) || !Const.isEmpty(realPass)) {
-          CommandResult comResult = theDB.authenticateCommand(username,
-              realPass.toCharArray());
-          if (!comResult.ok()) {
-            throw new Exception(BaseMessages.getString(PKG,
-                "MongoDbOutput.Messages.Error.UnableToAuthenticate", //$NON-NLS-1$
-                comResult.getErrorMessage()));
+          @Override
+          public Set<String> run() throws Exception {
+            MongoClient conn = null;
+            try {
+              conn = MongoDbOutputData.connect(meta, transMeta, null);
+              DB theDB = conn.getDB(dB);
+
+              if (!Const.isEmpty(username) || !Const.isEmpty(realPass)) {
+                CommandResult comResult = theDB.authenticateCommand(username,
+                    realPass.toCharArray());
+                if (!comResult.ok()) {
+                  throw new Exception(BaseMessages.getString(PKG,
+                      "MongoDbOutput.Messages.Error.UnableToAuthenticate", //$NON-NLS-1$
+                      comResult.getErrorMessage()));
+                }
+              }
+
+              return theDB.getCollectionNames();
+            } finally {
+              if (conn != null) {
+                conn.close();
+              }
+            }
+            
           }
-        }
+        });
 
-        Set<String> collections = theDB.getCollectionNames();
         for (String c : collections) {
           m_collectionField.add(c);
         }
       } catch (Exception e) {
+        // Unwrap the PrivilegedActionException if it was thrown
+        if (e instanceof PrivilegedActionException) {
+          e = ((PrivilegedActionException) e).getException();
+        }
         logError(BaseMessages.getString(PKG,
             "MongoDbOutputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
         new ErrorDialog(shell, BaseMessages.getString(PKG,
             "MongoDbOutputDialog.ErrorMessage." + "UnableToConnect"), //$NON-NLS-1$ //$NON-NLS-2$
             BaseMessages.getString(PKG,
                 "MongoDbOutputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
-      } finally {
-        if (conn != null) {
-          conn.close();
-          conn = null;
-        }
       }
     } else {
       // popup some feedback
@@ -1488,13 +1506,26 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     String hostname = transMeta
         .environmentSubstitute(m_hostnameField.getText());
 
-    MongoClient conn = null;
     if (!Const.isEmpty(hostname)) {
-      MongoDbOutputMeta meta = new MongoDbOutputMeta();
-      getInfo(meta);
       try {
-        conn = MongoDbOutputData.connect(meta, transMeta, null);
-        List<String> dbNames = conn.getDatabaseNames();
+        final MongoDbOutputMeta meta = new MongoDbOutputMeta();
+        getInfo(meta);
+        AuthContext context = MongoUtils.createAuthContext(meta, transMeta);
+        List<String> dbNames = context.doAs(new PrivilegedExceptionAction<List<String>>() {
+          
+          @Override
+          public List<String> run() throws Exception {
+            MongoClient conn = null;
+            try {
+              conn = MongoDbOutputData.connect(meta, transMeta, null);
+              return conn.getDatabaseNames();
+            } finally {
+              if (conn != null) {
+                conn.close();
+              }
+            }
+          }
+        });
 
         for (String s : dbNames) {
           m_dbNameField.add(s);
@@ -1507,11 +1538,6 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
             "MongoDbOutputDialog.ErrorMessage." + "UnableToConnect"), //$NON-NLS-1$ //$NON-NLS-2$
             BaseMessages.getString(PKG,
                 "MongoDbOutputDialog.ErrorMessage.UnableToConnect"), e); //$NON-NLS-1$
-      } finally {
-        if (conn != null) {
-          conn.close();
-          conn = null;
-        }
       }
     } else {
       // popup some feedback

@@ -23,6 +23,8 @@
 package org.pentaho.di.trans.steps.mongodbinput;
 
 import java.math.BigDecimal;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -49,6 +51,7 @@ import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
+import org.pentaho.mongo.AuthContext;
 import org.pentaho.mongo.MongoUtils;
 
 import com.mongodb.AggregationOutput;
@@ -1186,95 +1189,112 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     return result.results().iterator();
   }
 
-  public static boolean discoverFields(MongoDbInputMeta meta,
-      VariableSpace vars, int numDocsToSample) throws KettleException {
-
-    if (numDocsToSample < 1) {
-      numDocsToSample = 100; // default
-    }
-
-    DBCursor cursor = null;
-    MongoClient mongo = null;
-    String db = vars.environmentSubstitute(meta.getDbName());
-    String collection = vars.environmentSubstitute(meta.getCollection());
-
-    List<MongoField> discoveredFields = new ArrayList<MongoField>();
-    Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
+  public static boolean discoverFields(final MongoDbInputMeta meta,
+      final VariableSpace vars, final int docsToSample) throws KettleException {
     try {
-      mongo = initConnection(meta, vars, null);
-      if (Const.isEmpty(db)) {
-        throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
-            "MongoInput.ErrorMessage.NoDBSpecified")); //$NON-NLS-1$
-      }
-      DB database = mongo.getDB(db);
+      AuthContext context = MongoUtils.createAuthContext(meta, vars);
+      return context.doAs(new PrivilegedExceptionAction<Boolean>() {
 
-      String realUser = vars
-          .environmentSubstitute(meta.getAuthenticationUser());
-      String realPass = Encr.decryptPasswordOptionallyEncrypted(vars
-          .environmentSubstitute(meta.getAuthenticationPassword()));
+        @Override
+        public Boolean run() throws KettleException {
+          int numDocsToSample = docsToSample;
+          if (numDocsToSample < 1) {
+            numDocsToSample = 100; // default
+          }
 
-      if (!Const.isEmpty(realUser) || !Const.isEmpty(realPass)) {
-        if (!database.authenticate(realUser, realPass.toCharArray())) {
-          throw new KettleException(BaseMessages.getString(
-              MongoDbInputMeta.PKG,
-              "MongoDbInput.ErrorAuthenticating.Exception")); //$NON-NLS-1$
+          DBCursor cursor = null;
+          MongoClient mongo = null;
+          String db = vars.environmentSubstitute(meta.getDbName());
+          String collection = vars.environmentSubstitute(meta.getCollection());
+
+          List<MongoField> discoveredFields = new ArrayList<MongoField>();
+          Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
+          try {
+            mongo = initConnection(meta, vars, null);
+            if (Const.isEmpty(db)) {
+              throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
+                  "MongoInput.ErrorMessage.NoDBSpecified")); //$NON-NLS-1$
+            }
+            DB database = mongo.getDB(db);
+
+            String realUser = vars
+                .environmentSubstitute(meta.getAuthenticationUser());
+            String realPass = Encr.decryptPasswordOptionallyEncrypted(vars
+                .environmentSubstitute(meta.getAuthenticationPassword()));
+
+            if (!meta.getUseKerberosAuthentication()) {
+              if (!Const.isEmpty(realUser) || !Const.isEmpty(realPass)) {
+                if (!database.authenticate(realUser, realPass.toCharArray())) {
+                  throw new KettleException(BaseMessages.getString(
+                      MongoDbInputMeta.PKG,
+                      "MongoDbInput.ErrorAuthenticating.Exception")); //$NON-NLS-1$
+                }
+              }
+            }
+            if (Const.isEmpty(collection)) {
+              throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
+                  "MongoInput.ErrorMessage.NoCollectionSpecified")); //$NON-NLS-1$
+            }
+            DBCollection dbcollection = database.getCollection(collection);
+
+            String query = vars.environmentSubstitute(meta.getJsonQuery());
+            String fields = vars.environmentSubstitute(meta.getFieldsName());
+
+            cursor = null;
+            Iterator<DBObject> pipeSample = null;
+
+            if (meta.getQueryIsPipeline()) {
+              pipeSample = setUpPipelineSample(query, numDocsToSample, dbcollection);
+            } else {
+              if (Const.isEmpty(query) && Const.isEmpty(fields)) {
+                cursor = dbcollection.find().limit(numDocsToSample);
+              } else {
+                DBObject dbObject = (DBObject) JSON.parse(Const.isEmpty(query) ? "{}" //$NON-NLS-1$
+                    : query);
+                DBObject dbObject2 = (DBObject) JSON.parse(fields);
+                cursor = dbcollection.find(dbObject, dbObject2)
+                    .limit(numDocsToSample);
+              }
+            }
+
+            int actualCount = 0;
+            while (cursor != null ? cursor.hasNext() : pipeSample.hasNext()) {
+              actualCount++;
+              DBObject nextDoc = (cursor != null ? cursor.next() : pipeSample.next());
+              docToFields(nextDoc, fieldLookup);
+            }
+
+            postProcessPaths(fieldLookup, discoveredFields, actualCount);
+
+            // return true if query resulted in documents being returned and fields
+            // getting extracted
+            if (discoveredFields.size() > 0) {
+              meta.setMongoFields(discoveredFields);
+
+              return true;
+            }
+          } catch (Exception e) {
+            throw new KettleException(e);
+          } finally {
+            if (cursor != null) {
+              cursor.close();
+            }
+
+            if (mongo != null) {
+              mongo.close();
+            }
+          }
+
+          return false;
         }
-      }
-      if (Const.isEmpty(collection)) {
-        throw new KettleException(BaseMessages.getString(MongoDbInputMeta.PKG,
-            "MongoInput.ErrorMessage.NoCollectionSpecified")); //$NON-NLS-1$
-      }
-      DBCollection dbcollection = database.getCollection(collection);
-
-      String query = vars.environmentSubstitute(meta.getJsonQuery());
-      String fields = vars.environmentSubstitute(meta.getFieldsName());
-
-      cursor = null;
-      Iterator<DBObject> pipeSample = null;
-
-      if (meta.getQueryIsPipeline()) {
-        pipeSample = setUpPipelineSample(query, numDocsToSample, dbcollection);
+      });
+    } catch (PrivilegedActionException ex) {
+      if (ex.getException() instanceof KettleException) {
+        throw (KettleException) ex.getException();
       } else {
-        if (Const.isEmpty(query) && Const.isEmpty(fields)) {
-          cursor = dbcollection.find().limit(numDocsToSample);
-        } else {
-          DBObject dbObject = (DBObject) JSON.parse(Const.isEmpty(query) ? "{}" //$NON-NLS-1$
-              : query);
-          DBObject dbObject2 = (DBObject) JSON.parse(fields);
-          cursor = dbcollection.find(dbObject, dbObject2)
-              .limit(numDocsToSample);
-        }
-      }
-
-      int actualCount = 0;
-      while (cursor != null ? cursor.hasNext() : pipeSample.hasNext()) {
-        actualCount++;
-        DBObject nextDoc = (cursor != null ? cursor.next() : pipeSample.next());
-        docToFields(nextDoc, fieldLookup);
-      }
-
-      postProcessPaths(fieldLookup, discoveredFields, actualCount);
-
-      // return true if query resulted in documents being returned and fields
-      // getting extracted
-      if (discoveredFields.size() > 0) {
-        meta.setMongoFields(discoveredFields);
-
-        return true;
-      }
-    } catch (Exception e) {
-      throw new KettleException(e);
-    } finally {
-      if (cursor != null) {
-        cursor.close();
-      }
-
-      if (mongo != null) {
-        mongo.close();
+        throw new KettleException("Unable to discover fields from MongoDB", ex);
       }
     }
-
-    return false;
   }
 
   protected static List<DBObject> jsonPipelineToDBObjectList(String jsonPipeline)

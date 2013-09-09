@@ -23,9 +23,15 @@
 package org.pentaho.mongo;
 
 import java.net.UnknownHostException;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.encryption.Encr;
@@ -34,10 +40,13 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMeta;
 
 import com.mongodb.BasicDBList;
+import com.mongodb.CommandResult;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
@@ -68,6 +77,8 @@ public class MongoUtils {
   public static final String REPL_SET_SETTINGS = "settings"; //$NON-NLS-1$
   public static final String REPL_SET_LAST_ERROR_MODES = "getLastErrorModes"; //$NON-NLS-1$
   public static final String REPL_SET_MEMBERS = "members"; //$NON-NLS-1$
+
+  private static final KerberosUtil KERBEROS_UTIL = new KerberosUtil();
 
   /**
    * Create a credentials object
@@ -887,6 +898,134 @@ public class MongoUtils {
     return replSetMembers;
   }
 
+  /**
+   * Creates an authenticated context for the MongoDb Input step.
+   * 
+   * @param meta
+   * @param varSpace
+   * @return
+   * @throws KettleException Error logging in as the provided user.
+   */
+  public static AuthContext createAuthContext(MongoDbInputMeta meta, VariableSpace varSpace) throws KettleException {
+    return createAuthContext(meta.getUseKerberosAuthentication(), varSpace.environmentSubstitute(meta.getAuthenticationUser()));
+  }
+
+  /**
+   * Creates an authenticated context for the MongoDb Output step.
+   * 
+   * @param meta
+   * @param varSpace
+   * @return
+   * @throws KettleException Error logging in as the provided user.
+   */
+  public static AuthContext createAuthContext(MongoDbOutputMeta meta, VariableSpace varSpace)  throws KettleException {
+    return createAuthContext(meta.getUseKerberosAuthentication(), varSpace.environmentSubstitute(meta.getUsername()));
+  }
+
+  private static AuthContext createAuthContext(boolean useKerberosAuth, String principal) throws KettleException {
+    LoginContext context = null;
+    if (useKerberosAuth) {
+      try {
+        context = KERBEROS_UTIL.loginAs(principal);
+      } catch (LoginException ex) {
+        throw new KettleException("Unable to authenticate as '" + principal + "'", ex);
+      }
+    }
+    return new AuthContext(context);
+  }
+
+  /**
+   * Retrieve all database names found in MongoDB as visible by the
+   * authenticated user.
+   * 
+   * @param meta
+   *          Input meta with connection information
+   * @param varSpace
+   *          Variable space to substitute variables with
+   * @return A list of database names found in MongoDB
+   * @throws KettleException
+   */
+  public static List<String> getDatabaseNames(final MongoDbInputMeta meta, final VariableSpace varSpace) throws KettleException {
+    try {
+      AuthContext context = MongoUtils.createAuthContext(meta, varSpace);
+      return context.doAs(new PrivilegedExceptionAction<List<String>>() {
+
+        @Override
+        public List<String> run() throws Exception {
+          MongoClient conn = null;
+          try {
+            conn = MongoDbInputData.initConnection(meta, varSpace, null);
+            return conn.getDatabaseNames();
+          } finally {
+            if (conn != null) {
+              conn.close();
+            }
+          }
+        }
+      });
+    } catch (PrivilegedActionException ex) {
+      if (ex.getCause() instanceof KettleException) {
+        throw (KettleException) ex.getCause();
+      } else {
+        throw new KettleException("Unable to retrieve database names from MongoDB", ex.getCause());
+      }
+    }
+  }
+
+  /**
+   * Get the set of collections for a MongoDB database.
+   * 
+   * @param meta
+   *          Input meta with connection information
+   * @param varSpace
+   *          Variable space to substitute variables with
+   * @param dB
+   *          Name of database
+   * @param username
+   *          Username to request collections on behalf of
+   * @param realPass
+   *          Password of user
+   * @return Set of collections in the database requested.
+   * @throws KettleException
+   *           If an error occurs.
+   */
+  public static Set<String> getCollectionsNames(final MongoDbInputMeta meta, final TransMeta varSpace, final String dB,
+      final String username, final String realPass) throws KettleException {
+    try {
+      AuthContext context = MongoUtils.createAuthContext(meta, varSpace);
+      return context.doAs(new PrivilegedExceptionAction<Set<String>>() {
+        @Override
+        public Set<String> run() throws Exception {
+          MongoClient conn = null;
+          try {
+            conn = MongoDbInputData.initConnection(meta, varSpace, null);
+            DB theDB = conn.getDB(dB);
+
+            if (!Const.isEmpty(username) || !Const.isEmpty(realPass)) {
+              CommandResult comResult = theDB.authenticateCommand(username, realPass.toCharArray());
+              if (!comResult.ok()) {
+                throw new Exception(BaseMessages.getString(PKG, "MongoDbInput.ErrorAuthenticating.Exception", //$NON-NLS-1$
+                    comResult.getErrorMessage()));
+              }
+            }
+
+            return theDB.getCollectionNames();
+          } finally {
+            if (conn != null) {
+              conn.close();
+            }
+          }
+        }
+      });
+    } catch (PrivilegedActionException ex) {
+      if (ex.getCause() instanceof KettleException) {
+        throw (KettleException) ex.getCause();
+      } else {
+        throw new KettleException("Unable to retrieve collection names for database " + dB + " from MongoDB", ex.getCause());
+      }
+    }
+  }
+
   public static void main(String[] args) {
     try {
       String hostPort = args[0];
@@ -912,4 +1051,5 @@ public class MongoUtils {
       ex.printStackTrace();
     }
   }
+
 }
