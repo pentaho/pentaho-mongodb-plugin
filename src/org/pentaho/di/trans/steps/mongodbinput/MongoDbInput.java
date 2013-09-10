@@ -22,6 +22,8 @@
 
 package org.pentaho.di.trans.steps.mongodbinput;
 
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.List;
 
 import org.pentaho.di.core.Const;
@@ -36,6 +38,8 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.mongo.AuthContext;
+import org.pentaho.mongo.MongoUtils;
 
 import com.mongodb.AggregationOutput;
 import com.mongodb.DBObject;
@@ -63,79 +67,95 @@ public class MongoDbInput extends BaseStep implements StepInterface {
   public boolean processRow(StepMetaInterface smi, StepDataInterface sdi)
       throws KettleException {
 
-    if (meta.getExecuteForEachIncomingRow()
-        && m_currentInputRowDrivingQuery == null) {
-      m_currentInputRowDrivingQuery = getRow();
+    AuthContext context = MongoUtils.createAuthContext(meta, this);
+    try {
+      return /* allow autoboxing */ context.doAs(new PrivilegedExceptionAction<Boolean>() {
 
-      if (m_currentInputRowDrivingQuery == null) {
-        // no more input, no more queries to make
-        setOutputDone();
-        return false;
-      }
+        @Override
+        public Boolean run() throws KettleException {
+          if (meta.getExecuteForEachIncomingRow()
+              && m_currentInputRowDrivingQuery == null) {
+            m_currentInputRowDrivingQuery = getRow();
 
-      if (!first) {
-        initQuery();
-      }
-    }
+            if (m_currentInputRowDrivingQuery == null) {
+              // no more input, no more queries to make
+              setOutputDone();
+              return false;
+            }
 
-    if (first) {
-      data.outputRowMeta = new RowMeta();
-      meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
+            if (!first) {
+              initQuery();
+            }
+          }
 
-      initQuery();
-      first = false;
+          if (first) {
+            data.outputRowMeta = new RowMeta();
+            meta.getFields(data.outputRowMeta, getStepname(), null, null, MongoDbInput.this);
 
-      data.init();
-    }
+            initQuery();
+            first = false;
 
-    boolean hasNext = ((meta.getQueryIsPipeline() ? data.m_pipelineResult
-        .hasNext() : data.cursor.hasNext()) && !isStopped());
-    if (hasNext) {
-      DBObject nextDoc = null;
-      Object row[] = null;
-      if (meta.getQueryIsPipeline()) {
-        nextDoc = data.m_pipelineResult.next();
-      } else {
-        nextDoc = data.cursor.next();
-      }
+            data.init();
+          }
 
-      if (!meta.getQueryIsPipeline() && !m_serverDetermined) {
-        ServerAddress s = data.cursor.getServerAddress();
-        if (s != null) {
-          m_serverDetermined = true;
-          logBasic(BaseMessages.getString(PKG,
-              "MongoDbInput.Message.QueryPulledDataFrom", s.toString())); //$NON-NLS-1$
+          boolean hasNext = ((meta.getQueryIsPipeline() ? data.m_pipelineResult
+              .hasNext() : data.cursor.hasNext()) && !isStopped());
+          if (hasNext) {
+            DBObject nextDoc = null;
+            Object row[] = null;
+            if (meta.getQueryIsPipeline()) {
+              nextDoc = data.m_pipelineResult.next();
+            } else {
+              nextDoc = data.cursor.next();
+            }
+
+            if (!meta.getQueryIsPipeline() && !m_serverDetermined) {
+              ServerAddress s = data.cursor.getServerAddress();
+              if (s != null) {
+                m_serverDetermined = true;
+                logBasic(BaseMessages.getString(PKG,
+                    "MongoDbInput.Message.QueryPulledDataFrom", s.toString())); //$NON-NLS-1$
+              }
+            }
+
+            if (meta.getOutputJson() || meta.getMongoFields() == null
+                || meta.getMongoFields().size() == 0) {
+              String json = nextDoc.toString();
+              row = RowDataUtil.allocateRowData(data.outputRowMeta.size());
+              int index = 0;
+
+              row[index++] = json;
+              putRow(data.outputRowMeta, row);
+            } else {
+              Object[][] outputRows = data.mongoDocumentToKettle(nextDoc, MongoDbInput.this);
+
+              // there may be more than one row if the paths contain an array
+              // unwind
+              for (int i = 0; i < outputRows.length; i++) {
+                putRow(data.outputRowMeta, outputRows[i]);
+              }
+            }
+          } else {
+            if (!meta.getExecuteForEachIncomingRow()) {
+              setOutputDone();
+
+              return false;
+            } else {
+              m_currentInputRowDrivingQuery = null; // finished with this row
+            }
+          }
+
+          return true;
         }
-      }
-
-      if (meta.getOutputJson() || meta.getMongoFields() == null
-          || meta.getMongoFields().size() == 0) {
-        String json = nextDoc.toString();
-        row = RowDataUtil.allocateRowData(data.outputRowMeta.size());
-        int index = 0;
-
-        row[index++] = json;
-        putRow(data.outputRowMeta, row);
+      });
+    } catch (PrivilegedActionException e) {
+      Throwable cause = e.getException();
+      if (cause instanceof KettleException) {
+        throw (KettleException) cause;
       } else {
-        Object[][] outputRows = data.mongoDocumentToKettle(nextDoc, this);
-
-        // there may be more than one row if the paths contain an array
-        // unwind
-        for (int i = 0; i < outputRows.length; i++) {
-          putRow(data.outputRowMeta, outputRows[i]);
-        }
-      }
-    } else {
-      if (!meta.getExecuteForEachIncomingRow()) {
-        setOutputDone();
-
-        return false;
-      } else {
-        m_currentInputRowDrivingQuery = null; // finished with this row
+        throw new KettleException("Unexpected error", e.getException());
       }
     }
-
-    return true;
   }
 
   protected void initQuery() throws KettleException {
