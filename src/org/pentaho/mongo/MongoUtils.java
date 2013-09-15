@@ -44,6 +44,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMeta;
+import org.pentaho.mongo.KerberosUtil.JaasAuthenticationMode;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.CommandResult;
@@ -77,8 +78,6 @@ public class MongoUtils {
   public static final String REPL_SET_SETTINGS = "settings"; //$NON-NLS-1$
   public static final String REPL_SET_LAST_ERROR_MODES = "getLastErrorModes"; //$NON-NLS-1$
   public static final String REPL_SET_MEMBERS = "members"; //$NON-NLS-1$
-
-  private static final KerberosUtil KERBEROS_UTIL = new KerberosUtil();
 
   /**
    * Create a credentials object
@@ -907,7 +906,7 @@ public class MongoUtils {
    * @throws KettleException Error logging in as the provided user.
    */
   public static AuthContext createAuthContext(MongoDbInputMeta meta, VariableSpace varSpace) throws KettleException {
-    return createAuthContext(meta.getUseKerberosAuthentication(), varSpace.environmentSubstitute(meta.getAuthenticationUser()));
+    return createAuthContext(varSpace, meta.getUseKerberosAuthentication(), varSpace.environmentSubstitute(meta.getAuthenticationUser()));
   }
 
   /**
@@ -919,17 +918,13 @@ public class MongoUtils {
    * @throws KettleException Error logging in as the provided user.
    */
   public static AuthContext createAuthContext(MongoDbOutputMeta meta, VariableSpace varSpace)  throws KettleException {
-    return createAuthContext(meta.getUseKerberosAuthentication(), varSpace.environmentSubstitute(meta.getUsername()));
+    return createAuthContext(varSpace, meta.getUseKerberosAuthentication(), varSpace.environmentSubstitute(meta.getUsername()));
   }
 
-  private static AuthContext createAuthContext(boolean useKerberosAuth, String principal) throws KettleException {
+  private static AuthContext createAuthContext(VariableSpace varSpace, boolean useKerberosAuth, String principal) throws KettleException {
     LoginContext context = null;
     if (useKerberosAuth) {
-      try {
-        context = KERBEROS_UTIL.loginAs(principal);
-      } catch (LoginException ex) {
-        throw new KettleException("Unable to authenticate as '" + principal + "'", ex);
-      }
+      context = KettleKerberosHelper.login(varSpace, principal);
     }
     return new AuthContext(context);
   }
