@@ -26,12 +26,13 @@ import java.net.UnknownHostException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -144,39 +145,11 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
 
             // first check our incoming fields against our meta data for fields to
             // insert
+            // this fields is came to step input
             RowMetaInterface rmi = getInputRowMeta();
+            // this fields we are going to use for mongo output
             List<MongoDbOutputMeta.MongoField> mongoFields = m_meta.getMongoFields();
-            List<String> notToBeInserted = new ArrayList<String>();
-
-            for ( int i = 0; i < rmi.size(); i++ ) {
-              ValueMetaInterface vm = rmi.getValueMeta( i );
-              boolean ok = false;
-              for ( MongoDbOutputMeta.MongoField field : mongoFields ) {
-                String mongoMatch = environmentSubstitute( field.m_incomingFieldName );
-                if ( vm.getName().equals( mongoMatch ) ) {
-                  ok = true;
-                  break;
-                }
-              }
-
-              if ( !ok ) {
-                notToBeInserted.add( vm.getName() );
-              }
-            }
-
-            if ( notToBeInserted.size() == rmi.size() ) {
-              throw new KettleException( BaseMessages.getString( PKG,
-                  "MongoDbOutput.Messages.Error.NotInsertingAnyFields" ) ); //$NON-NLS-1$
-            }
-
-            if ( notToBeInserted.size() > 0 ) {
-              StringBuffer b = new StringBuffer();
-              for ( String s : notToBeInserted ) {
-                b.append( s ).append( " " ); //$NON-NLS-1$
-              }
-
-              logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.FieldsNotToBeInserted" ), b.toString() ); //$NON-NLS-1$
-            }
+            checkInputFieldsMatch( rmi, mongoFields );
 
             // copy and initialize mongo fields
             m_data.setMongoFields( m_meta.getMongoFields() );
@@ -456,4 +429,47 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
 
     super.dispose( smi, sdi );
   }
+  
+  final void checkInputFieldsMatch( RowMetaInterface rmi, List<MongoDbOutputMeta.MongoField> mongoFields ) throws KettleException{
+      Set<String> expected = new HashSet<String>( mongoFields.size(), 1 );
+      Set<String> actual = new HashSet<String>( rmi.getFieldNames().length, 1 );
+      for (MongoDbOutputMeta.MongoField field : mongoFields) {
+          String mongoMatch = environmentSubstitute(field.m_incomingFieldName);
+          expected.add( mongoMatch );
+      }
+      for (int i = 0; i < rmi.size(); i++) {
+      	String metaFieldName = rmi.getValueMeta(i).getName();
+      	actual.add( metaFieldName );
+      }
+
+      //check that all expected fields is available in step input meta
+      if ( !actual.containsAll( expected ) ){
+      	//in this case some fields willn't be found in input step meta
+      	expected.removeAll( actual );
+      	StringBuffer b = new StringBuffer();
+      	for ( String name : expected ){
+      		b.append("'").append( name ).append("', ");
+      	}
+      	throw new KettleException(BaseMessages.getString(PKG, 
+      			"MongoDbOutput.Messages.MongoField.Error.FieldsNotFoundInMetadata",
+      			b.toString() ));
+      }
+      
+      boolean found = actual.removeAll( expected );
+      if ( !found ){
+      	throw new KettleException(BaseMessages.getString(PKG,
+                  "MongoDbOutput.Messages.Error.NotInsertingAnyFields")); //$NON-NLS-1$
+      }
+      
+      if ( !actual.isEmpty() ){
+      	//we have some fields that will not be inserted.
+      	StringBuffer b = new StringBuffer();
+      	for ( String name : actual ){
+      		b.append("'").append( name ).append("', ");
+      	}
+      	//just put a log record on it
+      	logBasic(BaseMessages.getString(PKG,
+                  "MongoDbOutput.Messages.FieldsNotToBeInserted", b.toString() ) );
+      }
+  }  
 }
