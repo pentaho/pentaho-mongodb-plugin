@@ -694,24 +694,6 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
     fd.top = new FormAttachment(m_updateBut, margin);
     fd.left = new FormAttachment(middle, 0);
     m_upsertBut.setLayoutData(fd);
-    // m_upsertBut.addSelectionListener(new SelectionAdapter() {
-    // @Override
-    // public void widgetSelected(SelectionEvent e) {
-    // m_currentMeta.setChanged();
-    // m_modifierUpdateBut.setEnabled(m_upsertBut.getSelection());
-    // m_readPreference.setEnabled(m_modifierUpdateBut.getEnabled()
-    // && m_modifierUpdateBut.getSelection());
-    // m_multiBut.setEnabled(m_upsertBut.getSelection());
-    // if (!m_upsertBut.getSelection()) {
-    // m_modifierUpdateBut.setSelection(false);
-    // m_multiBut.setSelection(false);
-    // }
-    // m_multiBut.setEnabled(m_modifierUpdateBut.getSelection());
-    // if (!m_multiBut.getEnabled()) {
-    // m_multiBut.setSelection(false);
-    // }
-    // }
-    // });
 
     // multi line
     Label multiLab = new Label(wOutputComp, SWT.RIGHT);
