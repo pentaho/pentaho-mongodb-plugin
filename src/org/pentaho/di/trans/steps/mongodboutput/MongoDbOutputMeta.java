@@ -1,19 +1,19 @@
 /*!
-* Copyright 2010 - 2013 Pentaho Corporation.  All rights reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*
-*/
+ * Copyright 2010 - 2013 Pentaho Corporation.  All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 
 package org.pentaho.di.trans.steps.mongodboutput;
 
@@ -56,7 +56,7 @@ import org.w3c.dom.Node;
  */
 @Step(id = "MongoDbOutput", image = "MongoDB.png", name = "MongoDB Output", description = "Writes to a Mongo DB collection", categoryDescription = "Big Data")
 public class MongoDbOutputMeta extends BaseStepMeta implements
-    StepMetaInterface {
+  StepMetaInterface {
 
   private static Class<?> PKG = MongoDbOutputMeta.class; // for i18n purposes
 
@@ -190,8 +190,8 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     public String toString() {
       StringBuffer buff = new StringBuffer();
       buff.append(m_pathToFields + " (unique = " //$NON-NLS-1$
-          + new Boolean(m_unique).toString() + " sparse = " //$NON-NLS-1$
-          + new Boolean(m_sparse).toString() + ")"); //$NON-NLS-1$
+        + new Boolean(m_unique).toString() + " sparse = " //$NON-NLS-1$
+        + new Boolean(m_sparse).toString() + ")"); //$NON-NLS-1$
 
       return buff.toString();
     }
@@ -220,6 +220,9 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
 
   /** Kerberos authentication? */
   private boolean m_kerberos;
+
+  /** True if updates (rather than inserts) are to be performed */
+  protected boolean m_update;
 
   /** True if upserts are to be performed */
   protected boolean m_upsert;
@@ -525,18 +528,36 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
   }
 
   /**
-   * Set whether to upsert rather than insert
+   * Set whether updates (rather than inserts) are to be performed
    * 
-   * @param upsert true if we'll upsert rather than insert
+   * @param update
+   */
+  public void setUpdate(boolean update) {
+    m_update = update;
+  }
+
+  /**
+   * Get whether updates (rather than inserts) are to be performed
+   * 
+   * @return true if updates are to be performed
+   */
+  public boolean getUpdate() {
+    return m_update;
+  }
+
+  /**
+   * Set whether to upsert rather than update
+   * 
+   * @param upsert true if we'll upsert rather than update
    */
   public void setUpsert(boolean upsert) {
     m_upsert = upsert;
   }
 
   /**
-   * Get whether to upsert rather than insert
+   * Get whether to upsert rather than update
    * 
-   * @return true if we'll upsert rather than insert
+   * @return true if we'll upsert rather than update
    */
   public boolean getUpsert() {
     return m_upsert;
@@ -737,35 +758,33 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
 
   @Override
   public void check(List<CheckResultInterface> remarks, TransMeta transMeta,
-      StepMeta stepMeta, RowMetaInterface prev, String[] input,
-      String[] output, RowMetaInterface info) {
+    StepMeta stepMeta, RowMetaInterface prev, String[] input, String[] output,
+    RowMetaInterface info) {
 
     CheckResult cr;
 
     if ((prev == null) || (prev.size() == 0)) {
-      cr = new CheckResult(
-          CheckResult.TYPE_RESULT_WARNING,
-          BaseMessages
-              .getString(PKG,
-                  "MongoDbOutput.Messages.Error.NotReceivingFieldsFromPreviousSteps"), //$NON-NLS-1$
-          stepMeta);
+      cr = new CheckResult(CheckResult.TYPE_RESULT_WARNING,
+        BaseMessages.getString(PKG,
+          "MongoDbOutput.Messages.Error.NotReceivingFieldsFromPreviousSteps"), //$NON-NLS-1$
+        stepMeta);
       remarks.add(cr);
     } else {
       cr = new CheckResult(CheckResult.TYPE_RESULT_OK, BaseMessages.getString(
-          PKG, "MongoDbOutput.Messages.ReceivingFields", prev.size()), stepMeta); //$NON-NLS-1$
+        PKG, "MongoDbOutput.Messages.ReceivingFields", prev.size()), stepMeta); //$NON-NLS-1$
       remarks.add(cr);
     }
 
     // See if we have input streams leading to this step!
     if (input.length > 0) {
       cr = new CheckResult(CheckResult.TYPE_RESULT_OK, BaseMessages.getString(
-          PKG, "MongoDbOutput.Messages.ReceivingInfo"), stepMeta); //$NON-NLS-1$
+        PKG, "MongoDbOutput.Messages.ReceivingInfo"), stepMeta); //$NON-NLS-1$
       remarks.add(cr);
     } else {
       cr = new CheckResult(CheckResult.TYPE_RESULT_ERROR,
-          BaseMessages.getString(PKG,
-              "MongoDbOutput.Messages.Error.NoInputReceivedFromOtherSteps"), //$NON-NLS-1$
-          stepMeta);
+        BaseMessages.getString(PKG,
+          "MongoDbOutput.Messages.Error.NoInputReceivedFromOtherSteps"), //$NON-NLS-1$
+        stepMeta);
       remarks.add(cr);
     }
 
@@ -773,11 +792,11 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
 
   @Override
   public StepInterface getStep(StepMeta stepMeta,
-      StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta,
-      Trans trans) {
+    StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta,
+    Trans trans) {
 
     return new MongoDbOutput(stepMeta, stepDataInterface, copyNr, transMeta,
-        trans);
+      trans);
   }
 
   @Override
@@ -791,66 +810,67 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
 
     if (!Const.isEmpty(m_hostnames)) {
       retval.append("\n    ").append( //$NON-NLS-1$
-          XMLHandler.addTagValue("mongo_host", m_hostnames)); //$NON-NLS-1$
+        XMLHandler.addTagValue("mongo_host", m_hostnames)); //$NON-NLS-1$
     }
     if (!Const.isEmpty(m_port)) {
       retval.append("\n    ").append( //$NON-NLS-1$
-          XMLHandler.addTagValue("mongo_port", m_port)); //$NON-NLS-1$
+        XMLHandler.addTagValue("mongo_port", m_port)); //$NON-NLS-1$
     }
 
     retval
-        .append("    ").append(XMLHandler.addTagValue("use_all_replica_members", m_useAllReplicaSetMembers)); //$NON-NLS-1$ //$NON-NLS-2$
+      .append("    ").append(XMLHandler.addTagValue("use_all_replica_members", m_useAllReplicaSetMembers)); //$NON-NLS-1$ //$NON-NLS-2$
 
     if (!Const.isEmpty(m_username)) {
       retval.append("\n    ").append( //$NON-NLS-1$
-          XMLHandler.addTagValue("mongo_user", m_username)); //$NON-NLS-1$
+        XMLHandler.addTagValue("mongo_user", m_username)); //$NON-NLS-1$
     }
     if (!Const.isEmpty(m_password)) {
       retval.append("\n    ").append( //$NON-NLS-1$
-          XMLHandler.addTagValue("mongo_password", //$NON-NLS-1$
-              Encr.encryptPasswordIfNotUsingVariables(m_password)));
+        XMLHandler.addTagValue("mongo_password", //$NON-NLS-1$
+          Encr.encryptPasswordIfNotUsingVariables(m_password)));
     }
 
     retval.append("    ").append( //$NON-NLS-1$
-        XMLHandler.addTagValue("auth_kerberos", m_kerberos)); //$NON-NLS-1$
+      XMLHandler.addTagValue("auth_kerberos", m_kerberos)); //$NON-NLS-1$
 
     if (!Const.isEmpty(m_dbName)) {
       retval.append("\n    ").append( //$NON-NLS-1$
-          XMLHandler.addTagValue("mongo_db", m_dbName)); //$NON-NLS-1$
+        XMLHandler.addTagValue("mongo_db", m_dbName)); //$NON-NLS-1$
     }
     if (!Const.isEmpty(m_collection)) {
       retval.append("\n    ").append( //$NON-NLS-1$
-          XMLHandler.addTagValue("mongo_collection", m_collection)); //$NON-NLS-1$
+        XMLHandler.addTagValue("mongo_collection", m_collection)); //$NON-NLS-1$
     }
     if (!Const.isEmpty(m_batchInsertSize)) {
       retval.append("\n    ").append( //$NON-NLS-1$
-          XMLHandler.addTagValue("batch_insert_size", m_batchInsertSize)); //$NON-NLS-1$
+        XMLHandler.addTagValue("batch_insert_size", m_batchInsertSize)); //$NON-NLS-1$
     }
 
     retval.append("    ").append( //$NON-NLS-1$
-        XMLHandler.addTagValue("connect_timeout", m_connectTimeout)); //$NON-NLS-1$
+      XMLHandler.addTagValue("connect_timeout", m_connectTimeout)); //$NON-NLS-1$
     retval.append("    ").append( //$NON-NLS-1$
-        XMLHandler.addTagValue("socket_timeout", m_socketTimeout)); //$NON-NLS-1$
+      XMLHandler.addTagValue("socket_timeout", m_socketTimeout)); //$NON-NLS-1$
     retval.append("    ").append( //$NON-NLS-1$
-        XMLHandler.addTagValue("read_preference", m_readPreference)); //$NON-NLS-1$
+      XMLHandler.addTagValue("read_preference", m_readPreference)); //$NON-NLS-1$
     retval.append("    ").append( //$NON-NLS-1$
-        XMLHandler.addTagValue("write_concern", m_writeConcern)); //$NON-NLS-1$
+      XMLHandler.addTagValue("write_concern", m_writeConcern)); //$NON-NLS-1$
     retval.append("    ").append( //$NON-NLS-1$
-        XMLHandler.addTagValue("w_timeout", m_wTimeout)); //$NON-NLS-1$
+      XMLHandler.addTagValue("w_timeout", m_wTimeout)); //$NON-NLS-1$
     retval.append("    ").append( //$NON-NLS-1$
-        XMLHandler.addTagValue("journaled_writes", m_journal)); //$NON-NLS-1$
+      XMLHandler.addTagValue("journaled_writes", m_journal)); //$NON-NLS-1$
 
     retval.append("\n    ").append( //$NON-NLS-1$
-        XMLHandler.addTagValue("truncate", m_truncate)); //$NON-NLS-1$
+      XMLHandler.addTagValue("truncate", m_truncate)); //$NON-NLS-1$
+    retval.append("\n    ").append(XMLHandler.addTagValue("update", m_update)); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append("\n    ").append(XMLHandler.addTagValue("upsert", m_upsert)); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append("\n    ").append(XMLHandler.addTagValue("multi", m_multi)); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append("\n    ").append( //$NON-NLS-1$
-        XMLHandler.addTagValue("modifier_update", m_modifierUpdate)); //$NON-NLS-1$
+      XMLHandler.addTagValue("modifier_update", m_modifierUpdate)); //$NON-NLS-1$
 
     retval.append("    ").append( //$NON-NLS-1$
-        XMLHandler.addTagValue("write_retries", m_writeRetries)); //$NON-NLS-1$
+      XMLHandler.addTagValue("write_retries", m_writeRetries)); //$NON-NLS-1$
     retval.append("    ").append( //$NON-NLS-1$
-        XMLHandler.addTagValue("write_retry_delay", m_writeRetryDelay)); //$NON-NLS-1$
+      XMLHandler.addTagValue("write_retry_delay", m_writeRetryDelay)); //$NON-NLS-1$
 
     if (m_mongoFields != null && m_mongoFields.size() > 0) {
       retval.append("\n    ").append(XMLHandler.openTag("mongo_fields")); //$NON-NLS-1$ //$NON-NLS-2$
@@ -859,25 +879,24 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
         retval.append("\n      ").append(XMLHandler.openTag("mongo_field")); //$NON-NLS-1$ //$NON-NLS-2$
 
         retval.append("\n         ").append( //$NON-NLS-1$
-            XMLHandler.addTagValue("incoming_field_name", //$NON-NLS-1$
-                field.m_incomingFieldName));
+          XMLHandler.addTagValue("incoming_field_name", //$NON-NLS-1$
+            field.m_incomingFieldName));
         retval.append("\n         ").append( //$NON-NLS-1$
-            XMLHandler.addTagValue("mongo_doc_path", field.m_mongoDocPath)); //$NON-NLS-1$
+          XMLHandler.addTagValue("mongo_doc_path", field.m_mongoDocPath)); //$NON-NLS-1$
         retval.append("\n         ").append( //$NON-NLS-1$
-            XMLHandler.addTagValue(
-                "use_incoming_field_name_as_mongo_field_name", //$NON-NLS-1$
-                field.m_useIncomingFieldNameAsMongoFieldName));
+          XMLHandler.addTagValue("use_incoming_field_name_as_mongo_field_name", //$NON-NLS-1$
+            field.m_useIncomingFieldNameAsMongoFieldName));
         retval.append("\n         ").append( //$NON-NLS-1$
-            XMLHandler.addTagValue("update_match_field", //$NON-NLS-1$
-                field.m_updateMatchField));
+          XMLHandler.addTagValue("update_match_field", //$NON-NLS-1$
+            field.m_updateMatchField));
         retval.append("\n         ").append( //$NON-NLS-1$
-            XMLHandler.addTagValue("modifier_update_operation", //$NON-NLS-1$
-                field.m_modifierUpdateOperation));
+          XMLHandler.addTagValue("modifier_update_operation", //$NON-NLS-1$
+            field.m_modifierUpdateOperation));
         retval.append("\n         ").append( //$NON-NLS-1$
-            XMLHandler.addTagValue("modifier_policy", //$NON-NLS-1$
-                field.m_modifierOperationApplyPolicy));
+          XMLHandler.addTagValue("modifier_policy", //$NON-NLS-1$
+            field.m_modifierOperationApplyPolicy));
         retval.append("\n         ").append( //$NON-NLS-1$
-            XMLHandler.addTagValue("json_field", field.m_JSON)); //$NON-NLS-1$
+          XMLHandler.addTagValue("json_field", field.m_JSON)); //$NON-NLS-1$
 
         retval.append("\n      ").append(XMLHandler.closeTag("mongo_field")); //$NON-NLS-1$ //$NON-NLS-2$
       }
@@ -892,13 +911,13 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
         retval.append("\n      ").append(XMLHandler.openTag("mongo_index")); //$NON-NLS-1$ //$NON-NLS-2$
 
         retval.append("\n         ").append( //$NON-NLS-1$
-            XMLHandler.addTagValue("path_to_fields", index.m_pathToFields)); //$NON-NLS-1$
+          XMLHandler.addTagValue("path_to_fields", index.m_pathToFields)); //$NON-NLS-1$
         retval.append("\n         ").append( //$NON-NLS-1$
-            XMLHandler.addTagValue("drop", index.m_drop)); //$NON-NLS-1$
+          XMLHandler.addTagValue("drop", index.m_drop)); //$NON-NLS-1$
         retval.append("\n         ").append( //$NON-NLS-1$
-            XMLHandler.addTagValue("unique", index.m_unique)); //$NON-NLS-1$
+          XMLHandler.addTagValue("unique", index.m_unique)); //$NON-NLS-1$
         retval.append("\n         ").append( //$NON-NLS-1$
-            XMLHandler.addTagValue("sparse", index.m_sparse)); //$NON-NLS-1$
+          XMLHandler.addTagValue("sparse", index.m_sparse)); //$NON-NLS-1$
 
         retval.append("\n      ").append(XMLHandler.closeTag("mongo_index")); //$NON-NLS-1$ //$NON-NLS-2$
       }
@@ -911,7 +930,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
 
   @Override
   public void loadXML(Node stepnode, List<DatabaseMeta> databases,
-      Map<String, Counter> counters) throws KettleXMLException {
+    Map<String, Counter> counters) throws KettleXMLException {
 
     m_hostnames = XMLHandler.getTagValue(stepnode, "mongo_host"); //$NON-NLS-1$
     m_port = XMLHandler.getTagValue(stepnode, "mongo_port"); //$NON-NLS-1$
@@ -942,11 +961,24 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     }
 
     m_truncate = XMLHandler.getTagValue(stepnode, "truncate").equalsIgnoreCase( //$NON-NLS-1$
-        "Y"); //$NON-NLS-1$
+      "Y"); //$NON-NLS-1$
+
+    // for backwards compatibility with older ktrs
+    String update = XMLHandler.getTagValue(stepnode, "update");
+    if (!Const.isEmpty(update)) {
+      m_update = update.equalsIgnoreCase("Y"); //$NON-NLS-1$ 
+    }
+
     m_upsert = XMLHandler.getTagValue(stepnode, "upsert").equalsIgnoreCase("Y"); //$NON-NLS-1$ //$NON-NLS-2$
     m_multi = XMLHandler.getTagValue(stepnode, "multi").equalsIgnoreCase("Y"); //$NON-NLS-1$ //$NON-NLS-2$
     m_modifierUpdate = XMLHandler.getTagValue(stepnode, "modifier_update") //$NON-NLS-1$
-        .equalsIgnoreCase("Y"); //$NON-NLS-1$
+      .equalsIgnoreCase("Y"); //$NON-NLS-1$
+
+    // for backwards compatibility with older ktrs (to maintain correct
+    // operation)
+    if (m_upsert || m_multi) {
+      m_update = true;
+    }
 
     m_useAllReplicaSetMembers = false; // default to false for backwards
     // compatibility
@@ -960,7 +992,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
       m_writeRetries = writeRetries;
     }
     String writeRetryDelay = XMLHandler.getTagValue(stepnode,
-        "write_retry_delay"); //$NON-NLS-1$
+      "write_retry_delay"); //$NON-NLS-1$
     if (!Const.isEmpty(writeRetryDelay)) {
       m_writeRetryDelay = writeRetryDelay;
     }
@@ -975,18 +1007,17 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
 
         MongoField newField = new MongoField();
         newField.m_incomingFieldName = XMLHandler.getTagValue(fieldNode,
-            "incoming_field_name"); //$NON-NLS-1$
+          "incoming_field_name"); //$NON-NLS-1$
         newField.m_mongoDocPath = XMLHandler.getTagValue(fieldNode,
-            "mongo_doc_path"); //$NON-NLS-1$
+          "mongo_doc_path"); //$NON-NLS-1$
         newField.m_useIncomingFieldNameAsMongoFieldName = XMLHandler
-            .getTagValue(fieldNode,
-                "use_incoming_field_name_as_mongo_field_name") //$NON-NLS-1$
-            .equalsIgnoreCase("Y"); //$NON-NLS-1$
+          .getTagValue(fieldNode, "use_incoming_field_name_as_mongo_field_name") //$NON-NLS-1$
+          .equalsIgnoreCase("Y"); //$NON-NLS-1$
         newField.m_updateMatchField = XMLHandler.getTagValue(fieldNode,
-            "update_match_field").equalsIgnoreCase("Y"); //$NON-NLS-1$ //$NON-NLS-2$
+          "update_match_field").equalsIgnoreCase("Y"); //$NON-NLS-1$ //$NON-NLS-2$
 
         newField.m_modifierUpdateOperation = XMLHandler.getTagValue(fieldNode,
-            "modifier_update_operation"); //$NON-NLS-1$
+          "modifier_update_operation"); //$NON-NLS-1$
         String policy = XMLHandler.getTagValue(fieldNode, "modifier_policy"); //$NON-NLS-1$
         if (!Const.isEmpty(policy)) {
           newField.m_modifierOperationApplyPolicy = policy;
@@ -1012,13 +1043,13 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
         MongoIndex newIndex = new MongoIndex();
 
         newIndex.m_pathToFields = XMLHandler.getTagValue(fieldNode,
-            "path_to_fields"); //$NON-NLS-1$
+          "path_to_fields"); //$NON-NLS-1$
         newIndex.m_drop = XMLHandler.getTagValue(fieldNode, "drop") //$NON-NLS-1$
-            .equalsIgnoreCase("Y"); //$NON-NLS-1$
+          .equalsIgnoreCase("Y"); //$NON-NLS-1$
         newIndex.m_unique = XMLHandler.getTagValue(fieldNode, "unique") //$NON-NLS-1$
-            .equalsIgnoreCase("Y"); //$NON-NLS-1$
+          .equalsIgnoreCase("Y"); //$NON-NLS-1$
         newIndex.m_sparse = XMLHandler.getTagValue(fieldNode, "sparse") //$NON-NLS-1$
-            .equalsIgnoreCase("Y"); //$NON-NLS-1$
+          .equalsIgnoreCase("Y"); //$NON-NLS-1$
 
         m_mongoIndexes.add(newIndex);
       }
@@ -1027,13 +1058,13 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
 
   @Override
   public void readRep(Repository rep, ObjectId id_step,
-      List<DatabaseMeta> databases, Map<String, Counter> counters)
-      throws KettleException {
+    List<DatabaseMeta> databases, Map<String, Counter> counters)
+    throws KettleException {
 
     m_hostnames = rep.getStepAttributeString(id_step, 0, "mongo_host"); //$NON-NLS-1$
     m_port = rep.getStepAttributeString(id_step, 0, "mongo_port"); //$NON-NLS-1$
     m_useAllReplicaSetMembers = rep.getStepAttributeBoolean(id_step, 0,
-        "use_all_replica_members"); //$NON-NLS-1$
+      "use_all_replica_members"); //$NON-NLS-1$
     m_username = rep.getStepAttributeString(id_step, 0, "mongo_user"); //$NON-NLS-1$
     m_password = rep.getStepAttributeString(id_step, 0, "mongo_password"); //$NON-NLS-1$
     if (!Const.isEmpty(m_password)) {
@@ -1043,7 +1074,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     m_dbName = rep.getStepAttributeString(id_step, 0, "mongo_db"); //$NON-NLS-1$
     m_collection = rep.getStepAttributeString(id_step, 0, "mongo_collection"); //$NON-NLS-1$
     m_batchInsertSize = rep.getStepAttributeString(id_step, 0,
-        "batch_insert_size"); //$NON-NLS-1$
+      "batch_insert_size"); //$NON-NLS-1$
 
     m_connectTimeout = rep.getStepAttributeString(id_step, "connect_timeout"); //$NON-NLS-1$
     m_socketTimeout = rep.getStepAttributeString(id_step, "socket_timeout"); //$NON-NLS-1$
@@ -1053,10 +1084,15 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
     m_journal = rep.getStepAttributeBoolean(id_step, 0, "journaled_writes"); //$NON-NLS-1$
 
     m_truncate = rep.getStepAttributeBoolean(id_step, 0, "truncate"); //$NON-NLS-1$
+    m_update = rep.getStepAttributeBoolean(id_step, 0, "update"); //$NON-NLS-1$
     m_upsert = rep.getStepAttributeBoolean(id_step, 0, "upsert"); //$NON-NLS-1$
     m_multi = rep.getStepAttributeBoolean(id_step, 0, "multi"); //$NON-NLS-1$
     m_modifierUpdate = rep.getStepAttributeBoolean(id_step, 0,
-        "modifier_update"); //$NON-NLS-1$
+      "modifier_update"); //$NON-NLS-1$
+
+    if (m_upsert || m_multi) {
+      m_update = true;
+    }
 
     int nrfields = rep.countNrStepAttributes(id_step, "incoming_field_name"); //$NON-NLS-1$
 
@@ -1065,7 +1101,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
       m_writeRetries = writeRetries;
     }
     String writeRetryDelay = rep.getStepAttributeString(id_step,
-        "write_retry_delay"); //$NON-NLS-1$
+      "write_retry_delay"); //$NON-NLS-1$
     if (!Const.isEmpty(writeRetryDelay)) {
       m_writeRetryDelay = writeRetryDelay;
     }
@@ -1077,19 +1113,19 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
         MongoField newField = new MongoField();
 
         newField.m_incomingFieldName = rep.getStepAttributeString(id_step, i,
-            "incoming_field_name"); //$NON-NLS-1$
+          "incoming_field_name"); //$NON-NLS-1$
         newField.m_mongoDocPath = rep.getStepAttributeString(id_step, i,
-            "mongo_doc_path"); //$NON-NLS-1$
+          "mongo_doc_path"); //$NON-NLS-1$
 
         newField.m_useIncomingFieldNameAsMongoFieldName = rep
-            .getStepAttributeBoolean(id_step, i,
-                "use_incoming_field_name_as_mongo_field_name"); //$NON-NLS-1$
+          .getStepAttributeBoolean(id_step, i,
+            "use_incoming_field_name_as_mongo_field_name"); //$NON-NLS-1$
         newField.m_updateMatchField = rep.getStepAttributeBoolean(id_step, i,
-            "update_match_field"); //$NON-NLS-1$
+          "update_match_field"); //$NON-NLS-1$
         newField.m_modifierUpdateOperation = rep.getStepAttributeString(
-            id_step, i, "modifier_update_operation"); //$NON-NLS-1$
+          id_step, i, "modifier_update_operation"); //$NON-NLS-1$
         String policy = rep.getStepAttributeString(id_step, i,
-            "modifier_policy"); //$NON-NLS-1$
+          "modifier_policy"); //$NON-NLS-1$
         if (!Const.isEmpty(policy)) {
           newField.m_modifierOperationApplyPolicy = policy;
         }
@@ -1107,7 +1143,7 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
         MongoIndex newIndex = new MongoIndex();
 
         newIndex.m_pathToFields = rep.getStepAttributeString(id_step, i,
-            "path_to_fields"); //$NON-NLS-1$
+          "path_to_fields"); //$NON-NLS-1$
         newIndex.m_drop = rep.getStepAttributeBoolean(id_step, i, "drop"); //$NON-NLS-1$
         newIndex.m_unique = rep.getStepAttributeBoolean(id_step, i, "unique"); //$NON-NLS-1$
         newIndex.m_sparse = rep.getStepAttributeBoolean(id_step, i, "sparse"); //$NON-NLS-1$
@@ -1119,84 +1155,89 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
 
   @Override
   public void saveRep(Repository rep, ObjectId id_transformation,
-      ObjectId id_step) throws KettleException {
+    ObjectId id_step) throws KettleException {
 
     if (!Const.isEmpty(m_hostnames)) {
       rep.saveStepAttribute(id_transformation, id_step, 0, "mongo_host", //$NON-NLS-1$
-          m_hostnames);
+        m_hostnames);
     }
     if (!Const.isEmpty(m_port)) {
-      rep.saveStepAttribute(id_transformation, id_step, 0, "mongo_port", m_port); //$NON-NLS-1$
+      rep
+        .saveStepAttribute(id_transformation, id_step, 0, "mongo_port", m_port); //$NON-NLS-1$
     }
 
     rep.saveStepAttribute(id_transformation, id_step,
-        "use_all_replica_members", m_useAllReplicaSetMembers); //$NON-NLS-1$
+      "use_all_replica_members", m_useAllReplicaSetMembers); //$NON-NLS-1$
 
     if (!Const.isEmpty(m_username)) {
       rep.saveStepAttribute(id_transformation, id_step, 0, "mongo_user", //$NON-NLS-1$
-          m_username);
+        m_username);
     }
     if (!Const.isEmpty(m_password)) {
       rep.saveStepAttribute(id_transformation, id_step, 0, "mongo_password", //$NON-NLS-1$
-          Encr.encryptPasswordIfNotUsingVariables(m_password));
+        Encr.encryptPasswordIfNotUsingVariables(m_password));
     }
 
     rep.saveStepAttribute(id_transformation, id_step, "auth_kerberos", //$NON-NLS-1$
-        m_kerberos);
+      m_kerberos);
 
     if (!Const.isEmpty(m_dbName)) {
-      rep.saveStepAttribute(id_transformation, id_step, 0, "mongo_db", m_dbName); //$NON-NLS-1$
+      rep
+        .saveStepAttribute(id_transformation, id_step, 0, "mongo_db", m_dbName); //$NON-NLS-1$
     }
     if (!Const.isEmpty(m_collection)) {
       rep.saveStepAttribute(id_transformation, id_step, 0, "mongo_collection", //$NON-NLS-1$
-          m_collection);
+        m_collection);
     }
     if (!Const.isEmpty(m_batchInsertSize)) {
       rep.saveStepAttribute(id_transformation, id_step, 0, "batch_insert_size", //$NON-NLS-1$
-          m_batchInsertSize);
+        m_batchInsertSize);
     }
 
     rep.saveStepAttribute(id_transformation, id_step, "connect_timeout", //$NON-NLS-1$
-        m_connectTimeout);
+      m_connectTimeout);
     rep.saveStepAttribute(id_transformation, id_step, "socket_timeout", //$NON-NLS-1$
-        m_socketTimeout);
+      m_socketTimeout);
     rep.saveStepAttribute(id_transformation, id_step, "read_preference", //$NON-NLS-1$
-        m_readPreference);
+      m_readPreference);
     rep.saveStepAttribute(id_transformation, id_step, "write_concern", //$NON-NLS-1$
-        m_writeConcern);
+      m_writeConcern);
     rep.saveStepAttribute(id_transformation, id_step, "w_timeout", m_wTimeout); //$NON-NLS-1$
     rep.saveStepAttribute(id_transformation, id_step, "journaled_writes", //$NON-NLS-1$
-        m_journal);
+      m_journal);
 
-    rep.saveStepAttribute(id_transformation, id_step, 0, "truncate", m_truncate); //$NON-NLS-1$
+    rep
+      .saveStepAttribute(id_transformation, id_step, 0, "truncate", m_truncate); //$NON-NLS-1$
+
+    rep.saveStepAttribute(id_transformation, id_step, 0, "update", m_update); //$NON-NLS-1$
     rep.saveStepAttribute(id_transformation, id_step, 0, "upsert", m_upsert); //$NON-NLS-1$
     rep.saveStepAttribute(id_transformation, id_step, 0, "multi", m_multi); //$NON-NLS-1$
     rep.saveStepAttribute(id_transformation, id_step, 0, "modifier_update", //$NON-NLS-1$
-        m_modifierUpdate);
+      m_modifierUpdate);
     rep.saveStepAttribute(id_transformation, id_step, 0, "write_retries", //$NON-NLS-1$
-        m_writeRetries);
+      m_writeRetries);
     rep.saveStepAttribute(id_transformation, id_step, 0, "write_retry_delay", //$NON-NLS-1$
-        m_writeRetryDelay);
+      m_writeRetryDelay);
 
     if (m_mongoFields != null && m_mongoFields.size() > 0) {
       for (int i = 0; i < m_mongoFields.size(); i++) {
         MongoField field = m_mongoFields.get(i);
 
         rep.saveStepAttribute(id_transformation, id_step, i,
-            "incoming_field_name", field.m_incomingFieldName); //$NON-NLS-1$
+          "incoming_field_name", field.m_incomingFieldName); //$NON-NLS-1$
         rep.saveStepAttribute(id_transformation, id_step, i, "mongo_doc_path", //$NON-NLS-1$
-            field.m_mongoDocPath);
+          field.m_mongoDocPath);
         rep.saveStepAttribute(id_transformation, id_step, i,
-            "use_incoming_field_name_as_mongo_field_name", //$NON-NLS-1$
-            field.m_useIncomingFieldNameAsMongoFieldName);
+          "use_incoming_field_name_as_mongo_field_name", //$NON-NLS-1$
+          field.m_useIncomingFieldNameAsMongoFieldName);
         rep.saveStepAttribute(id_transformation, id_step, i,
-            "update_match_field", field.m_updateMatchField); //$NON-NLS-1$
+          "update_match_field", field.m_updateMatchField); //$NON-NLS-1$
         rep.saveStepAttribute(id_transformation, id_step, i,
-            "modifier_update_operation", field.m_modifierUpdateOperation); //$NON-NLS-1$
+          "modifier_update_operation", field.m_modifierUpdateOperation); //$NON-NLS-1$
         rep.saveStepAttribute(id_transformation, id_step, i, "modifier_policy", //$NON-NLS-1$
-            field.m_modifierOperationApplyPolicy);
+          field.m_modifierOperationApplyPolicy);
         rep.saveStepAttribute(id_transformation, id_step, i, "json_field", //$NON-NLS-1$
-            field.m_JSON);
+          field.m_JSON);
       }
     }
 
@@ -1205,13 +1246,13 @@ public class MongoDbOutputMeta extends BaseStepMeta implements
         MongoIndex mongoIndex = m_mongoIndexes.get(i);
 
         rep.saveStepAttribute(id_transformation, id_step, i, "path_to_fields", //$NON-NLS-1$
-            mongoIndex.m_pathToFields);
+          mongoIndex.m_pathToFields);
         rep.saveStepAttribute(id_transformation, id_step, i, "drop", //$NON-NLS-1$
-            mongoIndex.m_drop);
+          mongoIndex.m_drop);
         rep.saveStepAttribute(id_transformation, id_step, i, "unique", //$NON-NLS-1$
-            mongoIndex.m_unique);
+          mongoIndex.m_unique);
         rep.saveStepAttribute(id_transformation, id_step, i, "sparse", //$NON-NLS-1$
-            mongoIndex.m_sparse);
+          mongoIndex.m_sparse);
       }
     }
   }
