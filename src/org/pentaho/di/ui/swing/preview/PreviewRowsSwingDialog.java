@@ -17,7 +17,6 @@
 
 package org.pentaho.di.ui.swing.preview;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -26,9 +25,7 @@ import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.ui.xul.common.preview.AbstractPreviewRowsXulDialog;
 import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.XulSettingsManager;
-import org.pentaho.ui.xul.components.XulTreeCol;
 import org.pentaho.ui.xul.containers.XulTree;
-import org.pentaho.ui.xul.containers.XulTreeCols;
 import org.pentaho.ui.xul.containers.XulTreeRow;
 import org.pentaho.ui.xul.swing.SwingBindingFactory;
 import org.pentaho.ui.xul.swing.SwingXulLoader;
