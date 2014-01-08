@@ -18,13 +18,8 @@
 package org.pentaho.di.ui.trans.steps.mongodbinput.models;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import org.eclipse.swt.widgets.TableItem;
-import org.pentaho.di.core.Const;
-import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
-import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData.MongoField;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 import org.pentaho.ui.xul.util.AbstractModelList;
 

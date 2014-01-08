@@ -30,8 +30,8 @@ import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaFactory;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.i18n.BaseMessages;
@@ -1076,13 +1076,9 @@ public class MongoDbOutputData extends BaseStepData implements
       paths.add(mf);
 
       RowMetaInterface rmi = new RowMeta();
-      ValueMetaInterface vm = new ValueMeta();
-      vm.setName("field1"); //$NON-NLS-1$
-      vm.setType(ValueMetaInterface.TYPE_STRING);
+      ValueMetaInterface vm = ValueMetaFactory.createValueMeta( "field1", ValueMetaInterface.TYPE_STRING ); //$NON-NLS-1$
       rmi.addValueMeta(vm);
-      vm = new ValueMeta();
-      vm.setName("field2"); //$NON-NLS-1$
-      vm.setType(ValueMetaInterface.TYPE_STRING);
+      vm = ValueMetaFactory.createValueMeta( "field2", ValueMetaInterface.TYPE_STRING ); //$NON-NLS-1$
       rmi.addValueMeta(vm);
 
       Object[] row = new Object[2];
