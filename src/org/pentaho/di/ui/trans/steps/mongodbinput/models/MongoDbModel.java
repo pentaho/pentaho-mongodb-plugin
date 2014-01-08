@@ -17,8 +17,6 @@
 
 package org.pentaho.di.ui.trans.steps.mongodbinput.models;
 
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -31,12 +29,10 @@ import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.parameters.DuplicateParamException;
 import org.pentaho.di.core.parameters.NamedParams;
 import org.pentaho.di.core.parameters.NamedParamsDefault;
-import org.pentaho.di.core.parameters.UnknownParamException;
 import org.pentaho.di.core.util.StringUtil;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
-import org.pentaho.mongo.AuthContext;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.MongoUtils;
 import org.pentaho.mongo.NamedReadPreference;
@@ -44,10 +40,7 @@ import org.pentaho.ui.xul.XulEventSourceAdapter;
 import org.pentaho.ui.xul.stereotype.Bindable;
 import org.pentaho.ui.xul.util.AbstractModelList;
 
-import com.mongodb.CommandResult;
-import com.mongodb.DB;
 import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
 import com.mongodb.util.JSON;
 
 public class MongoDbModel extends XulEventSourceAdapter {
@@ -447,7 +440,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
       try {
         description = trans.getParameterDescription(parameter);
         
-        if (description.equalsIgnoreCase(this.AUTO_GENERATED_PARAMETER)){
+        if (description.equalsIgnoreCase(AUTO_GENERATED_PARAMETER)){
           if (variablesUsed.contains(parameter)){
             params.addParameterDefinition(parameter, 
                 trans.getParameterDefault(parameter), 

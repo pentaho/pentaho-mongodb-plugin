@@ -17,8 +17,6 @@
 
 package org.pentaho.di.ui.trans.steps.mongodbinput;
 
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -61,6 +59,7 @@ import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
+import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.core.dialog.EnterNumberDialog;
 import org.pentaho.di.ui.core.dialog.EnterTextDialog;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
@@ -72,14 +71,10 @@ import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.dialog.TransPreviewProgressDialog;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
-import org.pentaho.mongo.AuthContext;
 import org.pentaho.mongo.MongoUtils;
 import org.pentaho.mongo.NamedReadPreference;
 
-import com.mongodb.CommandResult;
-import com.mongodb.DB;
 import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
 import com.mongodb.util.JSON;
 
 public class MongoDbInputDialog extends BaseStepDialog implements
@@ -124,12 +119,15 @@ public class MongoDbInputDialog extends BaseStepDialog implements
   private TableView m_tagsView;
   private ColumnInfo[] m_colInf;
 
-  private CCombo m_tagsCombo;
 
   private Button m_executeForEachRowBut;
 
   private final MongoDbInputMeta input;
+  
+  /* Only referenced in commented code, commenting also
+  private CCombo m_tagsCombo;
   private String m_currentTagsState = ""; //$NON-NLS-1$
+  */
 
   public MongoDbInputDialog(Shell parent, Object in, TransMeta tr, String sname) {
     super(parent, (BaseStepMeta) in, tr, sname);
@@ -850,7 +848,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     wJsonQuery = new StyledTextComp(transMeta, wQueryComp, SWT.MULTI | SWT.LEFT
         | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL, ""); //$NON-NLS-1$
-    props.setLook(wJsonQuery, props.WIDGET_STYLE_FIXED);
+    props.setLook(wJsonQuery, PropsUI.WIDGET_STYLE_FIXED);
     wJsonQuery.addModifyListener(lsMod);
 
     /*
@@ -1276,7 +1274,6 @@ public class MongoDbInputDialog extends BaseStepDialog implements
   private boolean checkForUnresolved(MongoDbInputMeta meta, String title) {
 
     String query = transMeta.environmentSubstitute(meta.getJsonQuery());
-    String fields = transMeta.environmentSubstitute(meta.getFieldsName());
 
     boolean notOk = (query.contains("${") || query.contains("?{")); //$NON-NLS-1$ //$NON-NLS-2$
 
@@ -1570,7 +1567,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       smd.open();
     }
   }
-
+  /* Only referenced in commented code, commenting out also
   private void deleteSelectedFromView() {
     if (m_tagsView.nrNonEmpty() > 0 && m_tagsView.getSelectionIndex() >= 0) {
       int selectedI = m_tagsView.getSelectionIndex();
@@ -1600,8 +1597,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       m_tagsView.removeEmptyRows();
       m_tagsView.setRowNums();
     }
-  }
-
+  } 
+  
   private void addTagsToTable() {
     if (!Const.isEmpty(m_tagsCombo.getText())) {
       TableItem item = new TableItem(m_tagsView.table, SWT.NONE);
@@ -1621,7 +1618,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       m_currentTagsState = ""; //$NON-NLS-1$
       m_tagsCombo.setText(""); //$NON-NLS-1$
     }
-  }
+  }*/
 
   private void testUserSpecifiedTagSetsAgainstReplicaSet() {
     if (m_tagsView.nrNonEmpty() > 0) {

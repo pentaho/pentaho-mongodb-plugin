@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.encryption.Encr;
@@ -432,8 +431,6 @@ public class MongoUtils {
 
     String hostsPorts = meta.getHostnames();
     String singlePort = meta.getPort();
-    String username = meta.getUsername();
-    String password = meta.getPassword();
     String connTimeout = meta.getConnectTimeout();
     String sockTimeout = meta.getSocketTimeout();
     String readPreference = meta.getReadPreference();
@@ -467,8 +464,6 @@ public class MongoUtils {
       throws KettleException {
     String hostsPorts = meta.getHostnames();
     String singlePort = meta.getPort();
-    String username = meta.getAuthenticationUser();
-    String password = meta.getAuthenticationPassword();
     String connTimeout = meta.getConnectTimeout();
     String sockTimeout = meta.getSocketTimeout();
     String readPreference = meta.getReadPreference();

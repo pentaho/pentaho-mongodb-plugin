@@ -42,6 +42,7 @@ import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaFactory;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
@@ -130,7 +131,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     /** The index that this field is in the output row structure */
     protected int m_outputIndex;
 
-    private ValueMeta m_tempValueMeta;
+    private ValueMetaInterface m_tempValueMeta;
 
     private List<String> m_pathParts;
     private List<String> m_tempParts;
@@ -182,8 +183,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       }
 
       m_tempParts = new ArrayList<String>();
-      m_tempValueMeta = new ValueMeta();
-      m_tempValueMeta.setType(ValueMeta.getType(m_kettleType));
+      m_tempValueMeta = ValueMetaFactory.createValueMeta( ValueMeta.getType(m_kettleType) );
       m_outputIndex = outputIndex;
     }
 

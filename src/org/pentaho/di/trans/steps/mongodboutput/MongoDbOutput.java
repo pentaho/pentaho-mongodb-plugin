@@ -183,7 +183,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
             if (!isStopped()) {
 
               if (m_meta.getUpdate()) {
-                DBObject updateQuery = m_data.getQueryObject(
+                DBObject updateQuery = MongoDbOutputData.getQueryObject(
                   m_data.m_userFields, getInputRowMeta(), row,
                   MongoDbOutput.this, m_mongoTopLevelStructure);
 

@@ -244,7 +244,6 @@ public class MongoDbInput extends BaseStep implements StepInterface {
   }
 
   @Override
-  @SuppressWarnings("deprecation")
   public boolean init(StepMetaInterface stepMetaInterface,
       StepDataInterface stepDataInterface) {
     if (super.init(stepMetaInterface, stepDataInterface)) {
