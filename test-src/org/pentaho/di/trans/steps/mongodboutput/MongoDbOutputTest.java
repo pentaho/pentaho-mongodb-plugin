@@ -56,6 +56,7 @@ import org.pentaho.di.core.row.value.ValueMetaPluginType;
 import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.variables.Variables;
+import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputData.MongoTopLevel;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -74,6 +75,74 @@ public class MongoDbOutputTest {
   public static void beforeClass() throws KettlePluginException {
     PluginRegistry.addPluginType( ValueMetaPluginType.getInstance() );
     PluginRegistry.init();
+  }
+
+  @Test
+  public void testCheckTopLevelConsistencyPathsAreConsistentRecord() throws KettleException {
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+    MongoDbOutputMeta.MongoField mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "field1";
+    mf.m_mongoDocPath = "";
+    mf.m_useIncomingFieldNameAsMongoFieldName = true;
+    paths.add( mf );
+
+    mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "field2";
+    mf.m_mongoDocPath = "";
+    mf.m_useIncomingFieldNameAsMongoFieldName = true;
+    paths.add( mf );
+
+    MongoTopLevel topLevel = MongoDbOutputData.checkTopLevelConsistency( paths, new Variables() );
+    assertTrue( topLevel == MongoTopLevel.RECORD );
+  }
+
+  @Test
+  public void testCheckTopLevelConsistencyPathsAreConsistentArray() throws KettleException {
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+    MongoDbOutputMeta.MongoField mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "field1";
+    mf.m_mongoDocPath = "[0]";
+    mf.m_useIncomingFieldNameAsMongoFieldName = true;
+    paths.add( mf );
+
+    mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "field2";
+    mf.m_mongoDocPath = "[0]";
+    mf.m_useIncomingFieldNameAsMongoFieldName = true;
+    paths.add( mf );
+
+    MongoTopLevel topLevel = MongoDbOutputData.checkTopLevelConsistency( paths, new Variables() );
+    assertTrue( topLevel == MongoTopLevel.ARRAY );
+  }
+
+  @Test
+  public void testCheckTopLevelConsistencyPathsAreInconsistent() throws KettleException {
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+    MongoDbOutputMeta.MongoField mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "field1";
+    mf.m_mongoDocPath = "";
+    mf.m_useIncomingFieldNameAsMongoFieldName = true;
+    paths.add( mf );
+
+    mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "field2";
+    mf.m_mongoDocPath = "[0]";
+    mf.m_useIncomingFieldNameAsMongoFieldName = true;
+    paths.add( mf );
+
+    MongoTopLevel topLevel = MongoDbOutputData.checkTopLevelConsistency( paths, new Variables() );
+
+    assertTrue( topLevel == MongoTopLevel.INCONSISTENT );
+  }
+
+  @Test( expected = KettleException.class )
+  public void testCheckTopLevelConsistencyNoFieldsDefined() throws KettleException {
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+    MongoDbOutputData.checkTopLevelConsistency( paths, new Variables() );
   }
 
   @Test
