@@ -18,6 +18,7 @@
 package org.pentaho.di.ui.trans.steps.mongodbinput;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -48,7 +49,6 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.Props;
-import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.i18n.BaseMessages;
@@ -71,8 +71,10 @@ import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.dialog.TransPreviewProgressDialog;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
-import org.pentaho.mongo.MongoUtils;
 import org.pentaho.mongo.NamedReadPreference;
+import org.pentaho.mongo.wrapper.MongoClientWrapper;
+import org.pentaho.mongo.wrapper.MongoClientWrapperFactory;
+import org.pentaho.mongo.wrapper.field.MongoField;
 
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
@@ -1159,10 +1161,10 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     int numNonEmpty = m_fieldsView.nrNonEmpty();
     if (numNonEmpty > 0) {
-      List<MongoDbInputData.MongoField> outputFields = new ArrayList<MongoDbInputData.MongoField>();
+      List<MongoField> outputFields = new ArrayList<MongoField>();
       for (int i = 0; i < numNonEmpty; i++) {
         TableItem item = m_fieldsView.getNonEmpty(i);
-        MongoDbInputData.MongoField newField = new MongoDbInputData.MongoField();
+        MongoField newField = new MongoField();
 
         newField.m_fieldName = item.getText(1).trim();
         newField.m_fieldPath = item.getText(2).trim();
@@ -1228,13 +1230,13 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     m_tagsView.optWidth(true);
   }
 
-  private void setFieldTableFields(List<MongoDbInputData.MongoField> fields) {
+  private void setFieldTableFields(List<MongoField> fields) {
     if (fields == null) {
       return;
     }
 
     m_fieldsView.clearAll();
-    for (MongoDbInputData.MongoField f : fields) {
+    for (MongoField f : fields) {
       TableItem item = new TableItem(m_fieldsView.table, SWT.NONE);
 
       if (!Const.isEmpty(f.m_fieldName)) {
@@ -1434,7 +1436,13 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       MongoDbInputMeta meta = new MongoDbInputMeta();
       getInfo(meta);
       try {
-        List<String> dbNames = MongoUtils.getDatabaseNames(meta, transMeta);
+        MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
+        List<String> dbNames = new ArrayList<String>();
+        try {
+          dbNames = wrapper.getDatabaseNames();
+        } finally {
+          wrapper.dispose();
+        }
 
         for (String s : dbNames) {
           wDbName.add(s);
@@ -1467,12 +1475,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements
   }
 
   private void setupCollectionNamesForDB() {
-
     final String hostname = transMeta.environmentSubstitute(wHostname.getText());
     final String dB = transMeta.environmentSubstitute(wDbName.getText());
-    final String username = transMeta.environmentSubstitute(wAuthUser.getText());
-    final String realPass = Encr.decryptPasswordOptionallyEncrypted(transMeta
-        .environmentSubstitute(wAuthPass.getText()));
 
     String current = wCollection.getText();
     wCollection.removeAll();
@@ -1482,7 +1486,13 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       final MongoDbInputMeta meta = new MongoDbInputMeta();
       getInfo(meta);
       try {
-        Set<String> collections = MongoUtils.getCollectionsNames(meta, transMeta, dB, username, realPass);
+        MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
+        Set<String> collections = new HashSet<String>();
+        try {
+          collections = wrapper.getCollectionsNames( dB );
+        } finally {
+          wrapper.dispose();
+        }
 
         for (String c : collections) {
           wCollection.add(c);
@@ -1530,8 +1540,13 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       getInfo(meta);
 
       try {
-        List<String> repSetTags = MongoUtils.getAllTags(meta, transMeta,
-            MongoUtils.createCredentials(meta, transMeta), null);
+        MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
+        List<String> repSetTags = new ArrayList<String>();
+        try {
+          repSetTags = wrapper.getAllTags();
+        } finally {
+          wrapper.dispose();
+        }
 
         if (repSetTags.size() == 0) {
           ShowMessageDialog smd = new ShowMessageDialog(shell, SWT.ICON_WARNING
@@ -1648,14 +1663,15 @@ public class MongoDbInputDialog extends BaseStepDialog implements
           if (!Const.isEmpty(hostname)) {
             MongoDbInputMeta meta = new MongoDbInputMeta();
             getInfo(meta);
-
-            List<DBObject> satisfy = MongoUtils
-                .getReplicaSetMembersThatSatisfyTagSets(tagSets, meta,
-                    transMeta, MongoUtils.createCredentials(meta, transMeta),
-                    null);
+            MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
+            List<String> satisfy = new ArrayList<String>();
+            try {
+              satisfy = wrapper.getReplicaSetMembersThatSatisfyTagSets( tagSets );
+            } finally {
+              wrapper.dispose();
+            }
 
             if (satisfy.size() == 0) {
-
               logBasic(BaseMessages
                   .getString(PKG,
                       "MongoDbInputDialog.Info.Message.NoReplicaSetMembersMatchTagSets")); //$NON-NLS-1$
@@ -1673,7 +1689,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
               StringBuilder builder = new StringBuilder();
               builder.append("\n"); //$NON-NLS-1$
               for (int i = 0; i < satisfy.size(); i++) {
-                builder.append(satisfy.get(i).toString()).append("\n"); //$NON-NLS-1$
+                builder.append(satisfy.get(i)).append("\n"); //$NON-NLS-1$
               }
 
               ShowMessageDialog smd = new ShowMessageDialog(

@@ -36,6 +36,7 @@ import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaPluginType;
 import org.pentaho.di.core.variables.Variables;
+import org.pentaho.mongo.wrapper.field.MongoField;
 
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
@@ -62,8 +63,8 @@ public class MongoDbInputTest {
 
   @Test
   public void testDeterminePaths() {
-    Map<String, MongoDbInputData.MongoField> fieldLookup = new HashMap<String, MongoDbInputData.MongoField>();
-    List<MongoDbInputData.MongoField> discoveredFields = new ArrayList<MongoDbInputData.MongoField>();
+    Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
+    List<MongoField> discoveredFields = new ArrayList<MongoField>();
 
     Object mongoO = JSON.parse(s_testData);
     assertTrue(mongoO instanceof DBObject);
@@ -76,7 +77,7 @@ public class MongoDbInputTest {
     // check types
     int stringCount = 0;
     int numCount = 0;
-    for (MongoDbInputData.MongoField m : discoveredFields) {
+    for (MongoField m : discoveredFields) {
       if (ValueMeta.getType(m.m_kettleType) == ValueMetaInterface.TYPE_STRING) {
         stringCount++;
       }
@@ -92,8 +93,8 @@ public class MongoDbInputTest {
 
   @Test
   public void testDeterminePathsWithDisparateTypes() {
-    Map<String, MongoDbInputData.MongoField> fieldLookup = new HashMap<String, MongoDbInputData.MongoField>();
-    List<MongoDbInputData.MongoField> discoveredFields = new ArrayList<MongoDbInputData.MongoField>();
+    Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
+    List<MongoField> discoveredFields = new ArrayList<MongoField>();
 
     Object mongoO = JSON.parse(s_testData);
     assertTrue(mongoO instanceof DBObject);
@@ -115,8 +116,8 @@ public class MongoDbInputTest {
   @Test
   public void testGetAllFields() throws KettleException {
 
-    Map<String, MongoDbInputData.MongoField> fieldLookup = new HashMap<String, MongoDbInputData.MongoField>();
-    List<MongoDbInputData.MongoField> discoveredFields = new ArrayList<MongoDbInputData.MongoField>();
+    Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
+    List<MongoField> discoveredFields = new ArrayList<MongoField>();
 
     Object mongoO = JSON.parse(s_testData);
     assertTrue(mongoO instanceof DBObject);
@@ -126,7 +127,7 @@ public class MongoDbInputTest {
     Collections.sort(discoveredFields);
 
     RowMetaInterface rowMeta = new RowMeta();
-    for (MongoDbInputData.MongoField m : discoveredFields) {
+    for (MongoField m : discoveredFields) {
       ValueMetaInterface vm = new ValueMeta(m.m_fieldName,
           ValueMeta.getType(m.m_kettleType));
       rowMeta.addValueMeta(vm);
@@ -152,15 +153,15 @@ public class MongoDbInputTest {
     Object mongoO = JSON.parse(s_testData);
     assertTrue(mongoO instanceof DBObject);
 
-    List<MongoDbInputData.MongoField> discoveredFields = new ArrayList<MongoDbInputData.MongoField>();
-    MongoDbInputData.MongoField mm = new MongoDbInputData.MongoField();
+    List<MongoField> discoveredFields = new ArrayList<MongoField>();
+    MongoField mm = new MongoField();
     mm.m_fieldName = "test";
     mm.m_fieldPath = "$.iDontExist";
     mm.m_kettleType = "String";
     discoveredFields.add(mm);
 
     RowMetaInterface rowMeta = new RowMeta();
-    for (MongoDbInputData.MongoField m : discoveredFields) {
+    for (MongoField m : discoveredFields) {
       ValueMetaInterface vm = new ValueMeta(m.m_fieldName,
           ValueMeta.getType(m.m_kettleType));
       rowMeta.addValueMeta(vm);
@@ -183,16 +184,16 @@ public class MongoDbInputTest {
     Object mongoO = JSON.parse(s_testData3);
     assertTrue(mongoO instanceof DBObject);
 
-    List<MongoDbInputData.MongoField> fields = new ArrayList<MongoDbInputData.MongoField>();
+    List<MongoField> fields = new ArrayList<MongoField>();
 
-    MongoDbInputData.MongoField mm = new MongoDbInputData.MongoField();
+    MongoField mm = new MongoField();
     mm.m_fieldName = "test";
     mm.m_fieldPath = "$.one.two[*].rec1.f1";
     mm.m_kettleType = "String";
 
     fields.add(mm);
     RowMetaInterface rowMeta = new RowMeta();
-    for (MongoDbInputData.MongoField m : fields) {
+    for (MongoField m : fields) {
       ValueMetaInterface vm = new ValueMeta(m.m_fieldName,
           ValueMeta.getType(m.m_kettleType));
       rowMeta.addValueMeta(vm);
@@ -222,22 +223,22 @@ public class MongoDbInputTest {
     Object mongoO = JSON.parse(s_testData3);
     assertTrue(mongoO instanceof DBObject);
 
-    List<MongoDbInputData.MongoField> fields = new ArrayList<MongoDbInputData.MongoField>();
+    List<MongoField> fields = new ArrayList<MongoField>();
 
-    MongoDbInputData.MongoField mm = new MongoDbInputData.MongoField();
+    MongoField mm = new MongoField();
     mm.m_fieldName = "test";
     mm.m_fieldPath = "$.one.two[*].rec1.f1";
     mm.m_kettleType = "String";
     fields.add(mm);
 
-    mm = new MongoDbInputData.MongoField();
+    mm = new MongoField();
     mm.m_fieldName = "test2";
     mm.m_fieldPath = "$.name";
     mm.m_kettleType = "String";
     fields.add(mm);
 
     RowMetaInterface rowMeta = new RowMeta();
-    for (MongoDbInputData.MongoField m : fields) {
+    for (MongoField m : fields) {
       ValueMetaInterface vm = new ValueMeta(m.m_fieldName,
           ValueMeta.getType(m.m_kettleType));
       rowMeta.addValueMeta(vm);
@@ -274,22 +275,22 @@ public class MongoDbInputTest {
     Object mongoO = JSON.parse(s_testData3);
     assertTrue(mongoO instanceof DBObject);
 
-    List<MongoDbInputData.MongoField> fields = new ArrayList<MongoDbInputData.MongoField>();
+    List<MongoField> fields = new ArrayList<MongoField>();
 
-    MongoDbInputData.MongoField mm = new MongoDbInputData.MongoField();
+    MongoField mm = new MongoField();
     mm.m_fieldName = "test";
     mm.m_fieldPath = "$.one.two[*].rec1.f1";
     mm.m_kettleType = "String";
     fields.add(mm);
 
-    mm = new MongoDbInputData.MongoField();
+    mm = new MongoField();
     mm.m_fieldName = "test2";
     mm.m_fieldPath = "$.one.two[*].rec6.nonExistent";
     mm.m_kettleType = "String";
     fields.add(mm);
 
     RowMetaInterface rowMeta = new RowMeta();
-    for (MongoDbInputData.MongoField m : fields) {
+    for (MongoField m : fields) {
       ValueMetaInterface vm = new ValueMeta(m.m_fieldName,
           ValueMeta.getType(m.m_kettleType));
       rowMeta.addValueMeta(vm);

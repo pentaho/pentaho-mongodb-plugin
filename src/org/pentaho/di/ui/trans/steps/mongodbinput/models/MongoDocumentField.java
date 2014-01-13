@@ -23,7 +23,7 @@ import java.util.List;
 
 import org.pentaho.di.core.Const;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
-import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData.MongoField;
+import org.pentaho.mongo.wrapper.field.MongoField;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 import org.pentaho.ui.xul.util.AbstractModelList;
 
