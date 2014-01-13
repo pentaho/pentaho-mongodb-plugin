@@ -27,6 +27,7 @@ import java.util.Set;
 
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
@@ -63,8 +64,11 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
   /** The batch size to use for insert operation */
   protected int m_batchInsertSize = 100;
 
-  /** Holds a batch */
+  /** Holds a batch of rows converted to documents */
   protected List<DBObject> m_batch;
+
+  /** Holds an original batch of rows (corresponding to the converted documents) */
+  protected List<Object[]> m_batchRows;
 
   protected int m_writeRetries = MongoDbOutputMeta.RETRIES;
   protected int m_writeRetryDelay = MongoDbOutputMeta.RETRY_DELAY;
@@ -123,6 +127,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
               m_batchInsertSize = Integer.parseInt( batchInsert );
             }
             m_batch = new ArrayList<DBObject>( m_batchInsertSize );
+            m_batchRows = new ArrayList<Object[]>();
 
             // output the same as the input
             m_data.setOutputRowMeta( getInputRowMeta() );
@@ -201,7 +206,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
                 }
 
                 if ( insertUpdate != null ) {
-                  commitUpdate( updateQuery, insertUpdate );
+                  commitUpdate( updateQuery, insertUpdate, row );
                 }
               }
             } else {
@@ -213,6 +218,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
 
               if ( mongoInsert != null ) {
                 m_batch.add( mongoInsert );
+                m_batchRows.add( row );
               }
               if ( m_batch.size() == m_batchInsertSize ) {
                 logDetailed( BaseMessages.getString( PKG, "MongoDbOutput.Messages.CommitingABatch" ) ); //$NON-NLS-1$
@@ -234,7 +240,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
     }
   }
 
-  protected void commitUpdate( DBObject updateQuery, DBObject insertUpdate ) throws KettleException {
+  protected void commitUpdate( DBObject updateQuery, DBObject insertUpdate, Object[] row ) throws KettleException {
 
     int retrys = 0;
     MongoException lastEx = null;
@@ -270,7 +276,9 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
           logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Message.Retry", m_writeRetryDelay ) ); //$NON-NLS-1$
           try {
             Thread.sleep( m_writeRetryDelay * 1000 );
+            // CHECKSTYLE:OFF
           } catch ( InterruptedException e ) {
+            // CHECKSTYLE:ON
           }
         }
       }
@@ -281,19 +289,27 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
     }
 
     if ( ( retrys > m_writeRetries || isStopped() ) && lastEx != null ) {
-      throw new KettleException( lastEx );
+
+      // Send this one to the error stream if doing error handling
+      if ( getStepMeta().isDoingErrorHandling() ) {
+        putError( getInputRowMeta(), row, 1, lastEx.getMessage(), "", "MongoDbOutput" );
+      } else {
+        throw new KettleException( lastEx );
+      }
     }
   }
 
-  protected void doBatch() throws KettleException {
-    int retrys = 0;
-    MongoException lastEx = null;
+  protected CommandResult batchRetryUsingSave( boolean lastRetry ) throws MongoException, KettleStepException {
 
-    while ( retrys <= m_writeRetries && !isStopped() ) {
-      WriteResult result = null;
-      CommandResult cmd = null;
+    WriteResult result = null;
+    CommandResult cmd = null;
+    int count = 0;
+    logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.CurrentBatchSize", m_batch.size() ) );
+    for ( int i = m_batch.size() - 1; i >= 0; i-- ) {
+      DBObject toTry = m_batch.get( i );
+      Object[] correspondingRow = m_batchRows.get( i );
       try {
-        result = m_data.getCollection().insert( m_batch );
+        result = m_data.getCollection().save( toTry );
         cmd = result.getLastError();
 
         if ( cmd != null && !cmd.ok() ) {
@@ -302,16 +318,68 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
 
           cmd.throwOnError();
         }
+
+        m_batch.remove( i );
+        m_batchRows.remove( i );
+        count++;
+      } catch ( MongoException ex ) {
+        if ( !lastRetry ) {
+          logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.SuccessfullySavedXDocuments", count ) );
+          throw ex;
+        }
+
+        m_batch.remove( i );
+        m_batchRows.remove( i );
+
+        // Send this one to the error stream if doing error handling
+        if ( getStepMeta().isDoingErrorHandling() ) {
+          putError( getInputRowMeta(), correspondingRow, 1, ex.getMessage(), "", "MongoDbOutput" );
+        } else {
+          throw ex;
+        }
+      }
+    }
+
+    logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.SuccessfullySavedXDocuments", count ) );
+
+    return cmd;
+  }
+
+  protected void doBatch() throws KettleException {
+    int retries = 0;
+    MongoException lastEx = null;
+
+    while ( retries <= m_writeRetries && !isStopped() ) {
+      WriteResult result = null;
+      CommandResult cmd = null;
+      try {
+        if ( retries == 0 ) {
+          result = m_data.getCollection().insert( m_batch );
+          cmd = result.getLastError();
+
+          if ( cmd != null && !cmd.ok() ) {
+            String message = cmd.getErrorMessage();
+            logError( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.MongoReported", message ) ); //$NON-NLS-1$
+
+            cmd.throwOnError();
+          }
+        } else {
+          // fall back to save
+          logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.SavingIndividualDocsInCurrentBatch" ) );
+          cmd = batchRetryUsingSave( retries == m_writeRetries );
+        }
       } catch ( MongoException me ) {
         lastEx = me;
-        retrys++;
-        if ( retrys <= m_writeRetries ) {
+        retries++;
+        if ( retries <= m_writeRetries ) {
           logError( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.ErrorWritingToMongo", //$NON-NLS-1$
               me.toString() ) );
           logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Message.Retry", m_writeRetryDelay ) ); //$NON-NLS-1$
           try {
             Thread.sleep( m_writeRetryDelay * 1000 );
+            // CHECKSTYLE:OFF
           } catch ( InterruptedException e ) {
+            // CHECKSTYLE:ON
           }
         }
         // throw new KettleException(me.getMessage(), me);
@@ -329,11 +397,12 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       }
     }
 
-    if ( ( retrys > m_writeRetries || isStopped() ) && lastEx != null ) {
+    if ( ( retries > m_writeRetries || isStopped() ) && lastEx != null ) {
       throw new KettleException( lastEx );
     }
 
     m_batch.clear();
+    m_batchRows.clear();
   }
 
   @Override
@@ -346,6 +415,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
         try {
           m_writeRetries = Integer.parseInt( m_meta.getWriteRetries() );
         } catch ( NumberFormatException ex ) {
+          m_writeRetries = MongoDbOutputMeta.RETRIES;
         }
       }
 
@@ -353,6 +423,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
         try {
           m_writeRetryDelay = Integer.parseInt( m_meta.getWriteRetryDelay() );
         } catch ( NumberFormatException ex ) {
+          m_writeRetryDelay = MongoDbOutputMeta.RETRY_DELAY;
         }
       }
 
@@ -433,7 +504,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
   }
 
   final void checkInputFieldsMatch( RowMetaInterface rmi, List<MongoDbOutputMeta.MongoField> mongoFields )
-    throws KettleException {
+      throws KettleException {
     Set<String> expected = new HashSet<String>( mongoFields.size(), 1 );
     Set<String> actual = new HashSet<String>( rmi.getFieldNames().length, 1 );
     for ( MongoDbOutputMeta.MongoField field : mongoFields ) {
