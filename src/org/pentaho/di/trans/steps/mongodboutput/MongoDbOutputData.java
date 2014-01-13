@@ -37,15 +37,13 @@ import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
-import org.pentaho.mongo.MongoUtils;
+import org.pentaho.mongo.wrapper.MongoClientWrapper;
+import org.pentaho.mongo.wrapper.collection.MongoCollectionWrapper;
+import org.pentaho.mongo.wrapper.cursor.MongoCursorWrapper;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.util.JSON;
 
@@ -74,13 +72,10 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
   protected RowMetaInterface m_outputRowMeta;
 
   /** Main entry point to the mongo driver */
-  protected MongoClient m_mongo;
-
-  /** DB object for the user-selected database */
-  protected DB m_db;
+  protected MongoClientWrapper clientWrapper;
 
   /** Collection object for the user-specified document collection */
-  protected DBCollection m_collection;
+  protected MongoCollectionWrapper m_collection;
 
   protected List<MongoDbOutputMeta.MongoField> m_userFields;
 
@@ -176,88 +171,22 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
   }
 
   /**
-   * Create a connection to a Mongo server based on parameters supplied in the step meta data
-   * 
-   * @param meta
-   *          the step meta data
-   * @param vars
-   *          variables to use
-   * @param log
-   *          for logging
-   * @return a configured MongoClient object
-   * @throws KettleException
-   *           if a problem occurs
-   */
-  public static MongoClient connect( MongoDbOutputMeta meta, VariableSpace vars, LogChannelInterface log )
-    throws KettleException {
-
-    return MongoUtils.initConnection( meta, vars, MongoUtils.createCredentials( meta, vars ), log );
-  }
-
-  /**
-   * Connect to mongo and retrieve any custom getLastError modes defined in the local.system.replset collection
-   * 
-   * @param meta
-   *          the MongoDbOutputMeta containing settings to use
-   * @param vars
-   *          environment variables
-   * @param log
-   *          for logging
-   * @return a list containing any custom getLastError modes
-   * @throws KettleException
-   *           if a connection or authentication error occurs
-   */
-  public static List<String> getLastErrorModes( MongoDbOutputMeta meta, VariableSpace vars, LogChannelInterface log )
-    throws KettleException {
-
-    return MongoUtils.getLastErrorModes( meta, vars, MongoUtils.createCredentials( meta, vars ), log );
-  }
-
-  /**
-   * Disconnect from Mongo
-   */
-  public static void disconnect( MongoClient mongo ) {
-    if ( mongo != null ) {
-      mongo.close();
-    }
-  }
-
-  /**
    * Get the current connection or null if not connected
    * 
    * @return the connection or null
    */
-  public MongoClient getConnection() {
-    return m_mongo;
+  public MongoClientWrapper getConnection() {
+    return clientWrapper;
   }
 
   /**
    * Set the current connection
    * 
-   * @param mongo
+   * @param clientWrapper
    *          the connection to use
    */
-  public void setConnection( MongoClient mongo ) {
-    m_mongo = mongo;
-  }
-
-  /**
-   * Set the database to use
-   * 
-   * @param db
-   *          the DB object
-   */
-  public void setDB( DB db ) {
-    m_db = db;
-  }
-
-  /**
-   * Get the database
-   * 
-   * @return the database
-   */
-  public DB getDB() {
-    return m_db;
+  public void setConnection( MongoClientWrapper clientWrapper ) {
+    this.clientWrapper = clientWrapper;
   }
 
   /**
@@ -268,12 +197,12 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    * @throws Exception
    *           if a problem occurs
    */
-  public void createCollection( String collectionName ) throws Exception {
-    if ( m_db == null ) {
+  public void createCollection( String db, String collectionName ) throws Exception {
+    if ( clientWrapper == null ) {
       throw new Exception( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.NoDatabaseSet" ) ); //$NON-NLS-1$
     }
 
-    m_db.createCollection( collectionName, null );
+    clientWrapper.createCollection( db, collectionName );
   }
 
   /**
@@ -282,7 +211,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    * @param col
    *          the collection to use
    */
-  public void setCollection( DBCollection col ) {
+  public void setCollection( MongoCollectionWrapper col ) {
     m_collection = col;
   }
 
@@ -291,7 +220,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    * 
    * @return the collection in use
    */
-  public DBCollection getCollection() {
+  public MongoCollectionWrapper getCollection() {
     return m_collection;
   }
 
@@ -327,9 +256,10 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    *          necessary
    * @throws MongoException
    *           if something goes wrong
+   * @throws KettleException 
    */
   public void applyIndexes( List<MongoDbOutputMeta.MongoIndex> indexes, LogChannelInterface log, boolean truncate )
-    throws MongoException {
+    throws MongoException, KettleException {
 
     for ( MongoDbOutputMeta.MongoIndex index : indexes ) {
       String[] indexParts = index.m_pathToFields.split( "," ); //$NON-NLS-1$
@@ -439,7 +369,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
     if ( checkForMatch ) {
       DBObject query = getQueryObject( fieldDefs, inputMeta, row, vars, topLevelStructure );
 
-      DBCursor cursor = getCollection().find( query ).limit( 1 );
+      MongoCursorWrapper cursor = getCollection().find( query ).limit( 1 );
       if ( cursor.hasNext() ) {
         isUpdate = true;
       }

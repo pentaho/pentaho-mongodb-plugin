@@ -19,6 +19,7 @@ package org.pentaho.di.ui.trans.steps.mongodbinput.models;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
@@ -34,8 +35,9 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.mongo.MongoDbException;
-import org.pentaho.mongo.MongoUtils;
 import org.pentaho.mongo.NamedReadPreference;
+import org.pentaho.mongo.wrapper.MongoClientWrapper;
+import org.pentaho.mongo.wrapper.MongoClientWrapperFactory;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 import org.pentaho.ui.xul.stereotype.Bindable;
 import org.pentaho.ui.xul.util.AbstractModelList;
@@ -70,6 +72,8 @@ public class MongoDbModel extends XulEventSourceAdapter {
   private String m_connectTimeout = ""; // default - never time out
 
   private String m_socketTimeout = ""; // default - never time out
+  
+  private boolean m_kerberos = false;
 
   /** primary, primaryPreferred, secondary, secondaryPreferred, nearest */
   private String m_readPreference = NamedReadPreference.PRIMARY.getName();
@@ -322,6 +326,27 @@ public class MongoDbModel extends XulEventSourceAdapter {
     
     firePropertyChange("m_useAllReplicaSetMembers", prevVal, new Boolean(u));
   }
+  
+  /**
+   * Set whether to use kerberos authentication
+   * 
+   * @param k true if kerberos is to be used
+   */
+  public void setUseKerberosAuthentication(boolean k) {
+    Boolean prevVal = new Boolean(this.m_kerberos);
+    m_kerberos = k;
+    
+    firePropertyChange("m_kerberos", prevVal, new Boolean(k));
+  }
+
+  /**
+   * Get whether to use kerberos authentication
+   * 
+   * @return true if kerberos is to be used
+   */
+  public boolean getUseKerberosAuthentication() {
+    return m_kerberos;
+  }
 
   /**
    * Get whether to include all members in the replica set for querying
@@ -487,6 +512,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     meta.setReadPreference(this.m_readPreference);
     meta.setSocketTimeout(this.m_socketTimeout);
     meta.setMongoFields(MongoDocumentField.convertFromList(this.getFields()));
+    meta.setUseKerberosAuthentication( m_kerberos );
     meta.setUseAllReplicaSetMembers(this.m_useAllReplicaSetMembers);
     meta.setReadPrefTagSets(MongoTag.convertFromList(this.tags));
   }
@@ -508,6 +534,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     setSocketTimeout(m.getSocketTimeout());
     MongoDocumentField.convertList(m.getMongoFields(), getFields());
     setUseAllReplicaMembers(m.getUseAllReplicaSetMembers());
+    setUseKerberosAuthentication( m.getUseKerberosAuthentication() );
     MongoTag.convertList(m.getReadPrefTagSets(), getTags());
   }
   
@@ -547,7 +574,14 @@ public class MongoDbModel extends XulEventSourceAdapter {
     final TransMeta transMeta = new TransMeta();
     saveMeta(meta);
     try {
-      List<String> dbNames = MongoUtils.getDatabaseNames(meta, transMeta);
+      MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
+      List<String> dbNames = null;
+      try {
+        dbNames = wrapper.getDatabaseNames();
+      } finally {
+        wrapper.dispose();
+      }
+      
       for (String s : dbNames) {
         dbs.add(s);
       }
@@ -576,7 +610,14 @@ public class MongoDbModel extends XulEventSourceAdapter {
     MongoDbInputMeta meta = new MongoDbInputMeta();
     saveMeta(meta);
     try {
-      Set<String> collections = MongoUtils.getCollectionsNames(meta, new TransMeta(), dbName, authenticationUser, authenticationPassword);
+      MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, new TransMeta(), log );
+      Set<String> collections = new HashSet<String>();
+      try {
+        collections = wrapper.getCollectionsNames( dbName );
+      } finally {
+        wrapper.dispose();
+      }
+      
       for (String c : collections) {
         newCollections.add(c);
       }
@@ -652,7 +693,13 @@ public class MongoDbModel extends XulEventSourceAdapter {
     saveMeta(meta);
 
     try {
-      List<String> repSetTags = MongoUtils.getAllTags(meta, new TransMeta(), MongoUtils.createCredentials(meta, new TransMeta()), null);
+      List<String> repSetTags = new ArrayList<String>();
+      MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, new TransMeta(), log );
+      try {
+        repSetTags = wrapper.getAllTags();
+      } finally {
+        wrapper.dispose();
+      }
 
       switch(mergeStrategy){
         case 0:
@@ -714,8 +761,13 @@ public class MongoDbModel extends XulEventSourceAdapter {
     saveMeta(meta);
 
     try {
-      List<DBObject> result = MongoUtils.getReplicaSetMembersThatSatisfyTagSets
-                                        (mongoTagSets, meta, new TransMeta(), MongoUtils.createCredentials(meta, new TransMeta()), null);
+      MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, new TransMeta(), log );
+      List<String> result = new ArrayList<String>();
+      try {
+        result = wrapper.getReplicaSetMembersThatSatisfyTagSets( mongoTagSets );
+      } finally {
+        wrapper.dispose();
+      }
       
       if(result.size()==0){
         log.logBasic("No replica set members match tag sets.");
@@ -723,8 +775,8 @@ public class MongoDbModel extends XulEventSourceAdapter {
       }
 
       tagSets = new ArrayList<String>();
-      for (DBObject dbObject : result) {
-        tagSets.add(dbObject.toString());
+      for (String dbObject : result) {
+        tagSets.add(dbObject);
       }
 
     } catch (Exception e) {
