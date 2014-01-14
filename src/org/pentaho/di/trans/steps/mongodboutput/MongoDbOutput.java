@@ -117,6 +117,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
         m_batchInsertSize = Integer.parseInt( batchInsert );
       }
       m_batch = new ArrayList<DBObject>( m_batchInsertSize );
+      m_batchRows = new ArrayList<Object[]>();
 
       // output the same as the input
       m_data.setOutputRowMeta( getInputRowMeta() );
@@ -152,49 +153,6 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
           disconnect();
           throw new KettleException( m.getMessage(), m );
         }
-      }
-    }
-
-    String batchInsert = environmentSubstitute( m_meta.getBatchInsertSize() );
-    if ( !Const.isEmpty( batchInsert ) ) {
-      m_batchInsertSize = Integer.parseInt( batchInsert );
-    }
-    m_batch = new ArrayList<DBObject>( m_batchInsertSize );
-    m_batchRows = new ArrayList<Object[]>();
-
-    // output the same as the input
-    m_data.setOutputRowMeta( getInputRowMeta() );
-
-    // scan for top-level JSON document insert and validate
-    // field specification in this case.
-    m_data.m_hasTopLevelJSONDocInsert = MongoDbOutputData.scanForInsertTopLevelJSONDoc( m_meta.m_mongoFields );
-
-    // first check our incoming fields against our meta data for
-    // fields to
-    // insert
-    // this fields is came to step input
-    RowMetaInterface rmi = getInputRowMeta();
-    // this fields we are going to use for mongo output
-    List<MongoDbOutputMeta.MongoField> mongoFields = m_meta.getMongoFields();
-    checkInputFieldsMatch( rmi, mongoFields );
-
-    // copy and initialize mongo fields
-    m_data.setMongoFields( m_meta.getMongoFields() );
-    m_data.init( MongoDbOutput.this );
-
-    // check truncate
-    if ( m_meta.getTruncate() ) {
-      try {
-        logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.TruncatingCollection" ) ); //$NON-NLS-1$
-        m_data.getCollection().drop();
-
-        // re-establish the collection
-        String collection = environmentSubstitute( m_meta.getCollection() );
-        m_data.createCollection( m_meta.getDbName(), collection );
-        m_data.setCollection( m_data.getConnection().getCollection( m_meta.getDbName(), collection ) );
-      } catch ( Exception m ) {
-        disconnect();
-        throw new KettleException( m.getMessage(), m );
       }
     }
 
