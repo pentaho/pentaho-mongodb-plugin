@@ -18,8 +18,8 @@
 package org.pentaho.di.trans.steps.mongodboutput;
 
 import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -47,7 +47,6 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.Props;
-import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -66,13 +65,10 @@ import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
-import org.pentaho.mongo.AuthContext;
-import org.pentaho.mongo.MongoUtils;
 import org.pentaho.mongo.NamedReadPreference;
+import org.pentaho.mongo.wrapper.MongoClientWrapper;
+import org.pentaho.mongo.wrapper.MongoClientWrapperFactory;
 
-import com.mongodb.CommandResult;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 
@@ -1117,10 +1113,10 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     meta.setHostnames( m_hostnameField.getText() );
     meta.setPort( m_portField.getText() );
     meta.setUseAllReplicaSetMembers( m_useAllReplicaSetMembersBut.getSelection() );
-    meta.setUsername( m_usernameField.getText() );
-    meta.setPassword( m_passField.getText() );
+    meta.setAuthenticationUser( m_usernameField.getText() );
+    meta.setAuthenticationPassword( m_passField.getText() );
     meta.setUseKerberosAuthentication( m_kerberosBut.getSelection() );
-    meta.setDBName( m_dbNameField.getText() );
+    meta.setDbName( m_dbNameField.getText() );
     meta.setCollection( m_collectionField.getText() );
     meta.setBatchInsertSize( m_batchInsertSizeField.getText() );
     meta.setUpdate( m_updateBut.getSelection() );
@@ -1211,11 +1207,11 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     m_hostnameField.setText( Const.NVL( m_currentMeta.getHostnames(), "" ) ); //$NON-NLS-1$
     m_portField.setText( Const.NVL( m_currentMeta.getPort(), "" ) ); //$NON-NLS-1$
     m_useAllReplicaSetMembersBut.setSelection( m_currentMeta.getUseAllReplicaSetMembers() );
-    m_usernameField.setText( Const.NVL( m_currentMeta.getUsername(), "" ) ); //$NON-NLS-1$
-    m_passField.setText( Const.NVL( m_currentMeta.getPassword(), "" ) ); //$NON-NLS-1$
+    m_usernameField.setText( Const.NVL( m_currentMeta.getAuthenticationUser(), "" ) ); //$NON-NLS-1$
+    m_passField.setText( Const.NVL( m_currentMeta.getAuthenticationPassword(), "" ) ); //$NON-NLS-1$
     m_kerberosBut.setSelection( m_currentMeta.getUseKerberosAuthentication() );
     m_passField.setEnabled( !m_kerberosBut.getSelection() );
-    m_dbNameField.setText( Const.NVL( m_currentMeta.getDBName(), "" ) ); //$NON-NLS-1$
+    m_dbNameField.setText( Const.NVL( m_currentMeta.getDbName(), "" ) ); //$NON-NLS-1$
     m_collectionField.setText( Const.NVL( m_currentMeta.getCollection(), "" ) ); //$NON-NLS-1$
     m_batchInsertSizeField.setText( Const.NVL( m_currentMeta.getBatchInsertSize(), "" ) ); //$NON-NLS-1$
     m_updateBut.setSelection( m_currentMeta.getUpdate() );
@@ -1303,12 +1299,8 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
   }
 
   private void setupCollectionNamesForDB( boolean quiet ) {
-
     final String hostname = transMeta.environmentSubstitute( m_hostnameField.getText() );
     final String dB = transMeta.environmentSubstitute( m_dbNameField.getText() );
-    final String username = transMeta.environmentSubstitute( m_usernameField.getText() );
-    final String realPass =
-        Encr.decryptPasswordOptionallyEncrypted( transMeta.environmentSubstitute( m_passField.getText() ) );
 
     String current = m_collectionField.getText();
     m_collectionField.removeAll();
@@ -1318,34 +1310,13 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
       final MongoDbOutputMeta meta = new MongoDbOutputMeta();
       getInfo( meta );
       try {
-        AuthContext context = MongoUtils.createAuthContext( meta, transMeta );
-        Set<String> collections = context.doAs( new PrivilegedExceptionAction<Set<String>>() {
-
-          @Override
-          public Set<String> run() throws Exception {
-            MongoClient conn = null;
-            try {
-              conn = MongoDbOutputData.connect( meta, transMeta, null );
-              DB theDB = conn.getDB( dB );
-
-              if ( !Const.isEmpty( username ) || !Const.isEmpty( realPass ) ) {
-                CommandResult comResult = theDB.authenticateCommand( username, realPass.toCharArray() );
-                if ( !comResult.ok() ) {
-                  throw new Exception( BaseMessages.getString( PKG,
-                      "MongoDbOutput.Messages.Error.UnableToAuthenticate", //$NON-NLS-1$
-                      comResult.getErrorMessage() ) );
-                }
-              }
-
-              return theDB.getCollectionNames();
-            } finally {
-              if ( conn != null ) {
-                conn.close();
-              }
-            }
-
-          }
-        } );
+        MongoClientWrapper clientWrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
+        Set<String> collections = new HashSet<String>();
+        try {
+          collections = clientWrapper.getCollectionsNames( dB );
+        } finally {
+          clientWrapper.dispose();
+        }
 
         for ( String c : collections ) {
           m_collectionField.add( c );
@@ -1388,7 +1359,13 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
       MongoDbOutputMeta meta = new MongoDbOutputMeta();
       getInfo( meta );
       try {
-        List<String> custom = MongoDbOutputData.getLastErrorModes( meta, transMeta, null );
+        MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
+        List<String> custom = new ArrayList<String>();
+        try {
+          custom = wrapper.getLastErrorModes();
+        } finally {
+          wrapper.dispose();
+        }
 
         if ( custom.size() > 0 ) {
           String current = m_writeConcern.getText();
@@ -1426,23 +1403,13 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
       try {
         final MongoDbOutputMeta meta = new MongoDbOutputMeta();
         getInfo( meta );
-        AuthContext context = MongoUtils.createAuthContext( meta, transMeta );
-        List<String> dbNames = context.doAs( new PrivilegedExceptionAction<List<String>>() {
-
-          @Override
-          public List<String> run() throws Exception {
-            MongoClient conn = null;
-            try {
-              conn = MongoDbOutputData.connect( meta, transMeta, null );
-              return conn.getDatabaseNames();
-            } finally {
-              if ( conn != null ) {
-                conn.close();
-              }
-            }
-          }
-        } );
-
+        List<String> dbNames = new ArrayList<String>();
+        MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
+        try {
+          dbNames = wrapper.getDatabaseNames();
+        } finally {
+          wrapper.dispose();
+        }
         for ( String s : dbNames ) {
           m_dbNameField.add( s );
         }
@@ -1697,49 +1664,9 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
       try {
         MongoDbOutputMeta meta = new MongoDbOutputMeta();
         getInfo( meta );
-        conn = MongoDbOutputData.connect( meta, transMeta, null );
-
-        // Mongo mongo = new Mongo(hostname, port);
-        DB db = conn.getDB( dbName );
-
-        if ( db == null ) {
-          throw new Exception( BaseMessages.getString( PKG, "MongoDbOutputDialog.ErrorMessage.NonExistentDB", dbName ) ); //$NON-NLS-1$
-        }
-
-        String realUser = transMeta.environmentSubstitute( m_usernameField.getText() );
-        String realPass =
-            Encr.decryptPasswordOptionallyEncrypted( transMeta.environmentSubstitute( m_passField.getText() ) );
-
-        if ( !Const.isEmpty( realUser ) || !Const.isEmpty( realPass ) ) {
-          CommandResult comResult = db.authenticateCommand( realUser, realPass.toCharArray() );
-          if ( !comResult.ok() ) {
-            throw new Exception( BaseMessages.getString( PKG, "MongoDbOutputDialog.ErrorMessage.UnableToAuthenticate", //$NON-NLS-1$
-                comResult.getErrorMessage() ) );
-          }
-        }
-
-        if ( Const.isEmpty( collection ) ) {
-          throw new Exception( BaseMessages.getString( PKG, "MongoDbOutputDialog.ErrorMessage.NoCollectionSpecified" ) ); //$NON-NLS-1$
-        }
-
-        if ( !db.collectionExists( collection ) ) {
-          db.createCollection( collection, null );
-        }
-
-        DBCollection coll = db.getCollection( collection );
-        if ( coll == null ) {
-          throw new Exception( BaseMessages.getString( PKG,
-              "MongoDbOutputDialog.ErrorMessage.UnableToGetInfoForCollection", //$NON-NLS-1$
-              collection ) );
-        }
-
-        List<DBObject> collInfo = coll.getIndexInfo();
+        MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
         StringBuffer result = new StringBuffer();
-        if ( collInfo == null || collInfo.size() == 0 ) {
-          result.append( BaseMessages.getString( PKG, "MongoDbOutputDialog.ErrorMessage.UnableToGetInfoForCollection", //$NON-NLS-1$
-              collection ) );
-        }
-        for ( DBObject index : collInfo ) {
+        for ( String index : wrapper.getIndexInfo( dbName, collection ) ) {
           result.append( index ).append( "\n\n" ); //$NON-NLS-1$
         }
 
