@@ -18,7 +18,9 @@
 package org.pentaho.reporting.ui.datasources.mongodb;
 
 import org.junit.Test;
+import org.pentaho.di.core.logging.KettleLogStore;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.di.ui.trans.steps.mongodbinput.MongoDbInputXulDialog;
 
@@ -32,6 +34,8 @@ public class MongoDbDatasourceDialogTest {
 
   public static void main(String[] args) {
 
+    KettleLogStore.init();
+
     MongoDbInputMeta meta = new MongoDbInputMeta();
     meta.setJsonQuery("{CITY:\"NYC\"}");
     meta.setAuthenticationPassword("password");
@@ -43,8 +47,12 @@ public class MongoDbDatasourceDialogTest {
     meta.setReadPreference("Secondary preferred");
     meta.setFieldsName("{id:true}");
     meta.setQueryIsPipeline(true);
-    
-    MongoDbInputXulDialog dlg = new MongoDbInputXulDialog(null, meta, new TransMeta(), "mongo_source");
+
+    TransMeta trans = new TransMeta();
+    StepMeta stepMeta = new StepMeta("mongo_source", meta);
+    trans.addStep(stepMeta);
+
+      MongoDbInputXulDialog dlg = new MongoDbInputXulDialog(null, meta, trans, "mongo_source");
     
     if (dlg.open()!= null){
       System.out.println("Host name(s): ".concat(meta.getHostnames()!=null?meta.getHostnames():""));
