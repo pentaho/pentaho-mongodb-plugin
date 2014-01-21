@@ -46,6 +46,9 @@
 									<label value="${auth-password}" />
 									<textbox id="authPassword" width="350"/>
 								</row>
+                                <row>
+                                    <checkbox id="isUseKerberosAuthentication" label="${use-kerberos}"/>
+                                </row>
 								<row>
 									<label value="${connection-timeout}" />
 									<textbox id="connectionTimeout" width="350"/>
