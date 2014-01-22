@@ -52,6 +52,7 @@
     <dependency org="org.owasp.esapi" name="esapi" rev="2.0.1" conf="test->default"/>
 
     <dependency org="org.jboss.shrinkwrap" name="shrinkwrap-impl-base" rev="1.0.0-alpha-12" conf="test->default" />
+    <dependency org="pentaho-kettle" name="kettle-engine-test" rev="${dependency.kettle.revision}" transitive="false" conf="test->default" />
 
     <!--  internal dependencies -->
 
