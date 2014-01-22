@@ -44,6 +44,7 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.mongodb.MongoDbMeta;
+import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.mongo.wrapper.field.MongoField;
 import org.w3c.dom.Node;
 
@@ -92,6 +93,11 @@ public class MongoDbInputMeta extends MongoDbMeta {
   @Override
   public void loadXML( Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters )
     throws KettleXMLException {
+    readData( stepnode );
+  }
+  
+  @Override
+  public void loadXML( Node stepnode, List<DatabaseMeta> databases, IMetaStore metaStore ) throws KettleXMLException {
     readData( stepnode );
   }
 
@@ -224,7 +230,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
         builder.append( s );
         if ( i != getReadPrefTagSets().size() - 1 ) {
-          builder.append( s ).append( "#@#" ); //$NON-NLS-1$
+          builder.append( "#@#" ); //$NON-NLS-1$
         }
       }
       return builder.toString();
@@ -294,6 +300,12 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
     return retval.toString();
   }
+  
+  @Override
+  public void readRep( Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases )
+    throws KettleException {
+    readRep( rep, id_step, databases, null );
+  }
 
   @Override
   public void readRep( Repository rep, ObjectId id_step, List<DatabaseMeta> databases, Map<String, Counter> counters )
@@ -352,6 +364,12 @@ public class MongoDbInputMeta extends MongoDbMeta {
       throw new KettleException( BaseMessages.getString( PKG,
           "MongoDbInputMeta.Exception.UnexpectedErrorWhileReadingStepInfo" ), e ); //$NON-NLS-1$
     }
+  }
+  
+  @Override
+  public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step )
+    throws KettleException {
+    saveRep( rep, id_transformation, id_step );
   }
 
   @Override
