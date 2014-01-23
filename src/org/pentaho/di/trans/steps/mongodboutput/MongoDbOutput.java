@@ -141,18 +141,10 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
             // output the same as the input
             m_data.setOutputRowMeta(getInputRowMeta());
       
-            m_mongoTopLevelStructure = MongoDbOutputData.checkTopLevelConsistency(
-                m_meta.m_mongoFields, MongoDbOutput.this);
             // scan for top-level JSON document insert and validate
             // field specification in this case.
-            m_data.m_hasTopLevelJSONDocInsert = MongoDbOutputData
-                .scanForInsertTopLevelJSONDoc(m_meta.m_mongoFields);
-      
-            if (m_mongoTopLevelStructure == MongoDbOutputData.MongoTopLevel.INCONSISTENT) {
-              throw new KettleException(BaseMessages.getString(PKG,
-                  "MongoDbOutput.Messages.Error.InconsistentMongoTopLevel")); //$NON-NLS-1$
-            }
-      
+            m_data.m_hasTopLevelJSONDocInsert = MongoDbOutputData.scanForInsertTopLevelJSONDoc( m_meta.m_mongoFields );
+
             // first check our incoming fields against our meta data for fields to
             // insert
             RowMetaInterface rmi = getInputRowMeta();
@@ -514,6 +506,19 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
         }
         m_data.createCollection(collection);
         m_data.setCollection(m_data.getDB().getCollection(collection));
+
+        try {
+          m_mongoTopLevelStructure =
+                  MongoDbOutputData.checkTopLevelConsistency( m_meta.m_mongoFields, MongoDbOutput.this );
+
+          if ( m_mongoTopLevelStructure == MongoDbOutputData.MongoTopLevel.INCONSISTENT ) {
+            logError( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.InconsistentMongoTopLevel" ) ); //$NON-NLS-1$
+            return false;
+          }
+        } catch ( KettleException e ) {
+          logError( e.getMessage() );
+          return false;
+        }
 
         return true;
       } catch (UnknownHostException ex) {

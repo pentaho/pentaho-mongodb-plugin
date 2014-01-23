@@ -1258,6 +1258,13 @@ public class MongoDbOutputDialog extends BaseStepDialog implements
       }
 
       return mongoFields;
+    } else {
+      // popup dialog warning that no paths have been defined
+      ShowMessageDialog smd =
+              new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK, BaseMessages.getString( PKG,
+                      "MongoDbOutputDialog.ErrorMessage.NoFieldPathsDefined.Title" ), BaseMessages.getString( PKG, //$NON-NLS-1$
+                      "MongoDbOutputDialog.ErrorMessage.NoFieldPathsDefined" ) ); //$NON-NLS-1$
+      smd.open();
     }
 
     return null;
