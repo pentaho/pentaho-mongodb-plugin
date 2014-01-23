@@ -19,11 +19,9 @@ package org.pentaho.di.trans.steps.mongodbinput;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
-import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.encryption.Encr;
@@ -88,12 +86,6 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
   public boolean getExecuteForEachIncomingRow() {
     return m_executeForEachIncomingRow;
-  }
-
-  @Override
-  public void loadXML( Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters )
-    throws KettleXMLException {
-    readData( stepnode );
   }
   
   @Override
@@ -304,12 +296,6 @@ public class MongoDbInputMeta extends MongoDbMeta {
   @Override
   public void readRep( Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases )
     throws KettleException {
-    readRep( rep, id_step, databases, null );
-  }
-
-  @Override
-  public void readRep( Repository rep, ObjectId id_step, List<DatabaseMeta> databases, Map<String, Counter> counters )
-    throws KettleException {
     try {
       setHostnames( rep.getStepAttributeString( id_step, "hostname" ) ); //$NON-NLS-1$
       setPort( rep.getStepAttributeString( id_step, "port" ) ); //$NON-NLS-1$
@@ -369,11 +355,6 @@ public class MongoDbInputMeta extends MongoDbMeta {
   @Override
   public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step )
     throws KettleException {
-    saveRep( rep, id_transformation, id_step );
-  }
-
-  @Override
-  public void saveRep( Repository rep, ObjectId id_transformation, ObjectId id_step ) throws KettleException {
     try {
       rep.saveStepAttribute( id_transformation, id_step, "hostname", getHostnames() ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, "port", getPort() ); //$NON-NLS-1$
