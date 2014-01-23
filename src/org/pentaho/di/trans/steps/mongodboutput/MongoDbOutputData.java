@@ -1030,8 +1030,12 @@ public class MongoDbOutputData extends BaseStepData implements
    * @param vars environment variables
    * @return the top level structure
    */
-  protected static MongoTopLevel checkTopLevelConsistency(
-      List<MongoDbOutputMeta.MongoField> fieldDefs, VariableSpace vars) {
+  protected static MongoTopLevel checkTopLevelConsistency(List<MongoDbOutputMeta.MongoField> fieldDefs,
+                                                          VariableSpace vars) throws KettleException {
+
+    if ( fieldDefs == null || fieldDefs.size() == 0 ) {
+      throw new KettleException( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.NoMongoPathsDefined" ) );
+    }
 
     int numRecords = 0;
     int numArrays = 0;

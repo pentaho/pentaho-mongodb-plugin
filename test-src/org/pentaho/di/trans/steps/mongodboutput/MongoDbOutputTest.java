@@ -16,6 +16,8 @@ import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.variables.Variables;
+import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputData.MongoTopLevel;
+
 
 import com.mongodb.DBObject;
 
@@ -25,6 +27,74 @@ import com.mongodb.DBObject;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  */
 public class MongoDbOutputTest {
+
+  @Test
+  public void testCheckTopLevelConsistencyPathsAreConsistentRecord() throws KettleException {
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+    MongoDbOutputMeta.MongoField mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "field1";
+    mf.m_mongoDocPath = "";
+    mf.m_useIncomingFieldNameAsMongoFieldName = true;
+    paths.add( mf );
+
+    mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "field2";
+    mf.m_mongoDocPath = "";
+    mf.m_useIncomingFieldNameAsMongoFieldName = true;
+    paths.add( mf );
+
+    MongoTopLevel topLevel = MongoDbOutputData.checkTopLevelConsistency( paths, new Variables() );
+    assertTrue( topLevel == MongoTopLevel.RECORD );
+  }
+
+  @Test
+  public void testCheckTopLevelConsistencyPathsAreConsistentArray() throws KettleException {
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+    MongoDbOutputMeta.MongoField mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "field1";
+    mf.m_mongoDocPath = "[0]";
+    mf.m_useIncomingFieldNameAsMongoFieldName = true;
+    paths.add( mf );
+
+    mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "field2";
+    mf.m_mongoDocPath = "[0]";
+    mf.m_useIncomingFieldNameAsMongoFieldName = true;
+    paths.add( mf );
+
+    MongoTopLevel topLevel = MongoDbOutputData.checkTopLevelConsistency( paths, new Variables() );
+    assertTrue( topLevel == MongoTopLevel.ARRAY );
+  }
+
+  @Test
+  public void testCheckTopLevelConsistencyPathsAreInconsistent() throws KettleException {
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+    MongoDbOutputMeta.MongoField mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "field1";
+    mf.m_mongoDocPath = "";
+    mf.m_useIncomingFieldNameAsMongoFieldName = true;
+    paths.add( mf );
+
+    mf = new MongoDbOutputMeta.MongoField();
+    mf.m_incomingFieldName = "field2";
+    mf.m_mongoDocPath = "[0]";
+    mf.m_useIncomingFieldNameAsMongoFieldName = true;
+    paths.add( mf );
+
+    MongoTopLevel topLevel = MongoDbOutputData.checkTopLevelConsistency( paths, new Variables() );
+
+    assertTrue( topLevel == MongoTopLevel.INCONSISTENT );
+  }
+
+  @Test( expected = KettleException.class )
+  public void testCheckTopLevelConsistencyNoFieldsDefined() throws KettleException {
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+    MongoDbOutputData.checkTopLevelConsistency( paths, new Variables() );
+  }
 
   @Test
   public void testTopLevelObjectStructureNoNestedDocs() throws KettleException {
