@@ -18,14 +18,11 @@
 package org.pentaho.di.trans.steps.mongodboutput;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
-import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.encryption.Encr;
@@ -603,12 +600,6 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   @Override
   public void loadXML( Node stepnode, List<DatabaseMeta> databases, IMetaStore metaStore ) throws KettleXMLException {
-    loadXML( stepnode, databases, new HashMap<String, Counter>() );
-  }
-
-  @Override
-  public void loadXML( Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters )
-    throws KettleXMLException {
     setHostnames( XMLHandler.getTagValue( stepnode, "mongo_host" ) ); //$NON-NLS-1$
     setPort( XMLHandler.getTagValue( stepnode, "mongo_port" ) ); //$NON-NLS-1$
     setAuthenticationUser( XMLHandler.getTagValue( stepnode, "mongo_user" ) ); //$NON-NLS-1$
@@ -720,13 +711,6 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
   @Override
   public void readRep( Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases )
     throws KettleException {
-    readRep( rep, id_step, databases, new HashMap<String, Counter>() );
-  }
-
-  @Override
-  public void readRep( Repository rep, ObjectId id_step, List<DatabaseMeta> databases, Map<String, Counter> counters )
-    throws KettleException {
-
     setHostnames( rep.getStepAttributeString( id_step, 0, "mongo_host" ) ); //$NON-NLS-1$
     setPort( rep.getStepAttributeString( id_step, 0, "mongo_port" ) ); //$NON-NLS-1$
     setUseAllReplicaSetMembers( rep.getStepAttributeBoolean( id_step, 0, "use_all_replica_members" ) ); //$NON-NLS-1$
