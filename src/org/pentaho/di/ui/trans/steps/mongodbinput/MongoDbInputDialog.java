@@ -1,30 +1,24 @@
-/*******************************************************************************
- *
- * Pentaho Data Integration
- *
- * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
- *
- *******************************************************************************
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- ******************************************************************************/
+/*!
+* Copyright 2010 - 2013 Pentaho Corporation.  All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
 
 package org.pentaho.di.ui.trans.steps.mongodbinput;
 
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -55,7 +49,6 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.Props;
-import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.i18n.BaseMessages;
@@ -66,6 +59,7 @@ import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
+import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.core.dialog.EnterNumberDialog;
 import org.pentaho.di.ui.core.dialog.EnterTextDialog;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
@@ -77,14 +71,12 @@ import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.dialog.TransPreviewProgressDialog;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
-import org.pentaho.mongo.AuthContext;
-import org.pentaho.mongo.MongoUtils;
 import org.pentaho.mongo.NamedReadPreference;
+import org.pentaho.mongo.wrapper.MongoClientWrapper;
+import org.pentaho.mongo.wrapper.MongoClientWrapperFactory;
+import org.pentaho.mongo.wrapper.field.MongoField;
 
-import com.mongodb.CommandResult;
-import com.mongodb.DB;
 import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
 import com.mongodb.util.JSON;
 
 public class MongoDbInputDialog extends BaseStepDialog implements
@@ -129,12 +121,15 @@ public class MongoDbInputDialog extends BaseStepDialog implements
   private TableView m_tagsView;
   private ColumnInfo[] m_colInf;
 
-  private CCombo m_tagsCombo;
 
   private Button m_executeForEachRowBut;
 
   private final MongoDbInputMeta input;
+  
+  /* Only referenced in commented code, commenting also
+  private CCombo m_tagsCombo;
   private String m_currentTagsState = ""; //$NON-NLS-1$
+  */
 
   public MongoDbInputDialog(Shell parent, Object in, TransMeta tr, String sname) {
     super(parent, (BaseStepMeta) in, tr, sname);
@@ -855,7 +850,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     wJsonQuery = new StyledTextComp(transMeta, wQueryComp, SWT.MULTI | SWT.LEFT
         | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL, ""); //$NON-NLS-1$
-    props.setLook(wJsonQuery, props.WIDGET_STYLE_FIXED);
+    props.setLook(wJsonQuery, PropsUI.WIDGET_STYLE_FIXED);
     wJsonQuery.addModifyListener(lsMod);
 
     /*
@@ -1166,10 +1161,10 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     int numNonEmpty = m_fieldsView.nrNonEmpty();
     if (numNonEmpty > 0) {
-      List<MongoDbInputData.MongoField> outputFields = new ArrayList<MongoDbInputData.MongoField>();
+      List<MongoField> outputFields = new ArrayList<MongoField>();
       for (int i = 0; i < numNonEmpty; i++) {
         TableItem item = m_fieldsView.getNonEmpty(i);
-        MongoDbInputData.MongoField newField = new MongoDbInputData.MongoField();
+        MongoField newField = new MongoField();
 
         newField.m_fieldName = item.getText(1).trim();
         newField.m_fieldPath = item.getText(2).trim();
@@ -1235,13 +1230,13 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     m_tagsView.optWidth(true);
   }
 
-  private void setFieldTableFields(List<MongoDbInputData.MongoField> fields) {
+  private void setFieldTableFields(List<MongoField> fields) {
     if (fields == null) {
       return;
     }
 
     m_fieldsView.clearAll();
-    for (MongoDbInputData.MongoField f : fields) {
+    for (MongoField f : fields) {
       TableItem item = new TableItem(m_fieldsView.table, SWT.NONE);
 
       if (!Const.isEmpty(f.m_fieldName)) {
@@ -1281,7 +1276,6 @@ public class MongoDbInputDialog extends BaseStepDialog implements
   private boolean checkForUnresolved(MongoDbInputMeta meta, String title) {
 
     String query = transMeta.environmentSubstitute(meta.getJsonQuery());
-    String fields = transMeta.environmentSubstitute(meta.getFieldsName());
 
     boolean notOk = (query.contains("${") || query.contains("?{")); //$NON-NLS-1$ //$NON-NLS-2$
 
@@ -1442,7 +1436,13 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       MongoDbInputMeta meta = new MongoDbInputMeta();
       getInfo(meta);
       try {
-        List<String> dbNames = MongoUtils.getDatabaseNames(meta, transMeta);
+        MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
+        List<String> dbNames = new ArrayList<String>();
+        try {
+          dbNames = wrapper.getDatabaseNames();
+        } finally {
+          wrapper.dispose();
+        }
 
         for (String s : dbNames) {
           wDbName.add(s);
@@ -1475,12 +1475,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements
   }
 
   private void setupCollectionNamesForDB() {
-
     final String hostname = transMeta.environmentSubstitute(wHostname.getText());
     final String dB = transMeta.environmentSubstitute(wDbName.getText());
-    final String username = transMeta.environmentSubstitute(wAuthUser.getText());
-    final String realPass = Encr.decryptPasswordOptionallyEncrypted(transMeta
-        .environmentSubstitute(wAuthPass.getText()));
 
     String current = wCollection.getText();
     wCollection.removeAll();
@@ -1490,7 +1486,13 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       final MongoDbInputMeta meta = new MongoDbInputMeta();
       getInfo(meta);
       try {
-        Set<String> collections = MongoUtils.getCollectionsNames(meta, transMeta, dB, username, realPass);
+        MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
+        Set<String> collections = new HashSet<String>();
+        try {
+          collections = wrapper.getCollectionsNames( dB );
+        } finally {
+          wrapper.dispose();
+        }
 
         for (String c : collections) {
           wCollection.add(c);
@@ -1538,8 +1540,13 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       getInfo(meta);
 
       try {
-        List<String> repSetTags = MongoUtils.getAllTags(meta, transMeta,
-            MongoUtils.createCredentials(meta, transMeta), null);
+        MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
+        List<String> repSetTags = new ArrayList<String>();
+        try {
+          repSetTags = wrapper.getAllTags();
+        } finally {
+          wrapper.dispose();
+        }
 
         if (repSetTags.size() == 0) {
           ShowMessageDialog smd = new ShowMessageDialog(shell, SWT.ICON_WARNING
@@ -1575,7 +1582,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       smd.open();
     }
   }
-
+  /* Only referenced in commented code, commenting out also
   private void deleteSelectedFromView() {
     if (m_tagsView.nrNonEmpty() > 0 && m_tagsView.getSelectionIndex() >= 0) {
       int selectedI = m_tagsView.getSelectionIndex();
@@ -1605,8 +1612,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       m_tagsView.removeEmptyRows();
       m_tagsView.setRowNums();
     }
-  }
-
+  } 
+  
   private void addTagsToTable() {
     if (!Const.isEmpty(m_tagsCombo.getText())) {
       TableItem item = new TableItem(m_tagsView.table, SWT.NONE);
@@ -1626,7 +1633,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
       m_currentTagsState = ""; //$NON-NLS-1$
       m_tagsCombo.setText(""); //$NON-NLS-1$
     }
-  }
+  }*/
 
   private void testUserSpecifiedTagSetsAgainstReplicaSet() {
     if (m_tagsView.nrNonEmpty() > 0) {
@@ -1656,14 +1663,15 @@ public class MongoDbInputDialog extends BaseStepDialog implements
           if (!Const.isEmpty(hostname)) {
             MongoDbInputMeta meta = new MongoDbInputMeta();
             getInfo(meta);
-
-            List<DBObject> satisfy = MongoUtils
-                .getReplicaSetMembersThatSatisfyTagSets(tagSets, meta,
-                    transMeta, MongoUtils.createCredentials(meta, transMeta),
-                    null);
+            MongoClientWrapper wrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, transMeta, log );
+            List<String> satisfy = new ArrayList<String>();
+            try {
+              satisfy = wrapper.getReplicaSetMembersThatSatisfyTagSets( tagSets );
+            } finally {
+              wrapper.dispose();
+            }
 
             if (satisfy.size() == 0) {
-
               logBasic(BaseMessages
                   .getString(PKG,
                       "MongoDbInputDialog.Info.Message.NoReplicaSetMembersMatchTagSets")); //$NON-NLS-1$
@@ -1681,7 +1689,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
               StringBuilder builder = new StringBuilder();
               builder.append("\n"); //$NON-NLS-1$
               for (int i = 0; i < satisfy.size(); i++) {
-                builder.append(satisfy.get(i).toString()).append("\n"); //$NON-NLS-1$
+                builder.append(satisfy.get(i)).append("\n"); //$NON-NLS-1$
               }
 
               ShowMessageDialog smd = new ShowMessageDialog(

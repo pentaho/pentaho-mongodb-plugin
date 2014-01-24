@@ -1,29 +1,22 @@
-/*******************************************************************************
- *
- * Pentaho Data Integration
- *
- * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
- *
- *******************************************************************************
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- ******************************************************************************/
+/*!
+* Copyright 2010 - 2013 Pentaho Corporation.  All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
 
 package org.pentaho.di.trans.steps.mongodbinput;
 
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.List;
 
 import org.pentaho.di.core.Const;
@@ -38,8 +31,7 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
-import org.pentaho.mongo.AuthContext;
-import org.pentaho.mongo.MongoUtils;
+import org.pentaho.mongo.wrapper.MongoClientWrapperFactory;
 
 import com.mongodb.AggregationOutput;
 import com.mongodb.DBObject;
@@ -66,94 +58,85 @@ public class MongoDbInput extends BaseStep implements StepInterface {
   @Override
   public boolean processRow(StepMetaInterface smi, StepDataInterface sdi)
       throws KettleException {
-
-    AuthContext context = MongoUtils.createAuthContext(meta, this);
     try {
-      return /* allow autoboxing */ context.doAs(new PrivilegedExceptionAction<Boolean>() {
+    if (meta.getExecuteForEachIncomingRow()
+          && m_currentInputRowDrivingQuery == null) {
+        m_currentInputRowDrivingQuery = getRow();
 
-        @Override
-        public Boolean run() throws KettleException {
-          if (meta.getExecuteForEachIncomingRow()
-              && m_currentInputRowDrivingQuery == null) {
-            m_currentInputRowDrivingQuery = getRow();
-
-            if (m_currentInputRowDrivingQuery == null) {
-              // no more input, no more queries to make
-              setOutputDone();
-              return false;
-            }
-
-            if (!first) {
-              initQuery();
-            }
-          }
-
-          if (first) {
-            data.outputRowMeta = new RowMeta();
-            meta.getFields(data.outputRowMeta, getStepname(), null, null, MongoDbInput.this);
-
-            initQuery();
-            first = false;
-
-            data.init();
-          }
-
-          boolean hasNext = ((meta.getQueryIsPipeline() ? data.m_pipelineResult
-              .hasNext() : data.cursor.hasNext()) && !isStopped());
-          if (hasNext) {
-            DBObject nextDoc = null;
-            Object row[] = null;
-            if (meta.getQueryIsPipeline()) {
-              nextDoc = data.m_pipelineResult.next();
-            } else {
-              nextDoc = data.cursor.next();
-            }
-
-            if (!meta.getQueryIsPipeline() && !m_serverDetermined) {
-              ServerAddress s = data.cursor.getServerAddress();
-              if (s != null) {
-                m_serverDetermined = true;
-                logBasic(BaseMessages.getString(PKG,
-                    "MongoDbInput.Message.QueryPulledDataFrom", s.toString())); //$NON-NLS-1$
-              }
-            }
-
-            if (meta.getOutputJson() || meta.getMongoFields() == null
-                || meta.getMongoFields().size() == 0) {
-              String json = nextDoc.toString();
-              row = RowDataUtil.allocateRowData(data.outputRowMeta.size());
-              int index = 0;
-
-              row[index++] = json;
-              putRow(data.outputRowMeta, row);
-            } else {
-              Object[][] outputRows = data.mongoDocumentToKettle(nextDoc, MongoDbInput.this);
-
-              // there may be more than one row if the paths contain an array
-              // unwind
-              for (int i = 0; i < outputRows.length; i++) {
-                putRow(data.outputRowMeta, outputRows[i]);
-              }
-            }
-          } else {
-            if (!meta.getExecuteForEachIncomingRow()) {
-              setOutputDone();
-
-              return false;
-            } else {
-              m_currentInputRowDrivingQuery = null; // finished with this row
-            }
-          }
-
-          return true;
+        if (m_currentInputRowDrivingQuery == null) {
+          // no more input, no more queries to make
+          setOutputDone();
+          return false;
         }
-      });
-    } catch (PrivilegedActionException e) {
-      Throwable cause = e.getException();
-      if (cause instanceof KettleException) {
-        throw (KettleException) cause;
+
+        if (!first) {
+          initQuery();
+        }
+      }
+
+      if (first) {
+        data.outputRowMeta = new RowMeta();
+        meta.getFields(data.outputRowMeta, getStepname(), null, null, MongoDbInput.this);
+
+        initQuery();
+        first = false;
+
+        data.init();
+      }
+
+      boolean hasNext = ((meta.getQueryIsPipeline() ? data.m_pipelineResult
+          .hasNext() : data.cursor.hasNext()) && !isStopped());
+      if (hasNext) {
+        DBObject nextDoc = null;
+        Object row[] = null;
+        if (meta.getQueryIsPipeline()) {
+          nextDoc = data.m_pipelineResult.next();
+        } else {
+          nextDoc = data.cursor.next();
+        }
+
+        if (!meta.getQueryIsPipeline() && !m_serverDetermined) {
+          ServerAddress s = data.cursor.getServerAddress();
+          if (s != null) {
+            m_serverDetermined = true;
+            logBasic(BaseMessages.getString(PKG,
+                "MongoDbInput.Message.QueryPulledDataFrom", s.toString())); //$NON-NLS-1$
+          }
+        }
+
+        if (meta.getOutputJson() || meta.getMongoFields() == null
+            || meta.getMongoFields().size() == 0) {
+          String json = nextDoc.toString();
+          row = RowDataUtil.allocateRowData(data.outputRowMeta.size());
+          int index = 0;
+
+          row[index++] = json;
+          putRow(data.outputRowMeta, row);
+        } else {
+          Object[][] outputRows = data.mongoDocumentToKettle(nextDoc, MongoDbInput.this);
+
+          // there may be more than one row if the paths contain an array
+          // unwind
+          for (int i = 0; i < outputRows.length; i++) {
+            putRow(data.outputRowMeta, outputRows[i]);
+          }
+        }
       } else {
-        throw new KettleException("Unexpected error", e.getException());
+        if (!meta.getExecuteForEachIncomingRow()) {
+          setOutputDone();
+
+          return false;
+        } else {
+          m_currentInputRowDrivingQuery = null; // finished with this row
+        }
+      }
+
+      return true;
+    } catch ( Exception e ) {
+      if ( e instanceof KettleException ) {
+        throw (KettleException) e;
+      } else {
+        throw new KettleException( e ); //$NON-NLS-1$
       }
     }
   }
@@ -249,7 +232,6 @@ public class MongoDbInput extends BaseStep implements StepInterface {
   }
 
   @Override
-  @SuppressWarnings("deprecation")
   public boolean init(StepMetaInterface stepMetaInterface,
       StepDataInterface stepDataInterface) {
     if (super.init(stepMetaInterface, stepDataInterface)) {
@@ -285,10 +267,8 @@ public class MongoDbInput extends BaseStep implements StepInterface {
         }
 
         // init connection constructs a MongoCredentials object if necessary
-        data.mongo = MongoDbInputData.initConnection(meta, this, log);
-        data.db = data.mongo.getDB(db);
-
-        data.collection = data.db.getCollection(collection);
+        data.clientWrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, this, log );
+        data.collection = data.clientWrapper.getCollection(db, collection);
 
         if (!((MongoDbInputMeta) stepMetaInterface).getOutputJson()) {
           ((MongoDbInputData) stepDataInterface)
@@ -311,10 +291,18 @@ public class MongoDbInput extends BaseStep implements StepInterface {
   @Override
   public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
     if (data.cursor != null) {
-      data.cursor.close();
+      try {
+        data.cursor.close();
+      } catch ( KettleException e ) {
+        log.logError( e.getMessage() );
+      }
     }
-    if (data.mongo != null) {
-      data.mongo.close();
+    if (data.clientWrapper != null) {
+      try {
+        data.clientWrapper.dispose();
+      } catch ( KettleException e ) {
+        log.logError( e.getMessage() );
+      }
     }
 
     super.dispose(smi, sdi);
