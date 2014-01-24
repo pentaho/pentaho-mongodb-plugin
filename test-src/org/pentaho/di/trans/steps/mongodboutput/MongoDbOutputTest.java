@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -42,7 +41,6 @@ import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettlePluginException;
@@ -57,6 +55,7 @@ import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputData.MongoTopLevel;
+import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -1044,7 +1043,7 @@ public class MongoDbOutputTest {
     Node stepNode = step.item( 0 );
 
     MongoDbOutputMeta newMeta = new MongoDbOutputMeta();
-    newMeta.loadXML( stepNode, (List<DatabaseMeta>) null, (Map<String, Counter>) null );
+    newMeta.loadXML( stepNode, (List<DatabaseMeta>) null, (IMetaStore) null );
 
     assertTrue( newMeta.getUpdate() );
     assertFalse( newMeta.getUpsert() );
@@ -1067,7 +1066,7 @@ public class MongoDbOutputTest {
     Node stepNode = step.item( 0 );
 
     MongoDbOutputMeta newMeta = new MongoDbOutputMeta();
-    newMeta.loadXML( stepNode, (List<DatabaseMeta>) null, (Map<String, Counter>) null );
+    newMeta.loadXML( stepNode, (List<DatabaseMeta>) null, (IMetaStore) null );
 
     assertTrue( newMeta.getUpsert() );
     assertTrue( newMeta.getUpdate() );
