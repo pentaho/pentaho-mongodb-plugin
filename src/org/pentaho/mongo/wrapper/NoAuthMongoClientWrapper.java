@@ -576,7 +576,7 @@ public class NoAuthMongoClientWrapper implements MongoClientWrapper {
     return result.results().iterator();
   }
 
-  protected static List<DBObject> jsonPipelineToDBObjectList( String jsonPipeline ) throws KettleException {
+  public static List<DBObject> jsonPipelineToDBObjectList( String jsonPipeline ) throws KettleException {
     List<DBObject> pipeline = new ArrayList<DBObject>();
     StringBuilder b = new StringBuilder( jsonPipeline.trim() );
 
@@ -627,7 +627,7 @@ public class NoAuthMongoClientWrapper implements MongoClientWrapper {
     return pipeline;
   }
 
-  private void docToFields( DBObject doc, Map<String, MongoField> lookup ) {
+  protected static void docToFields( DBObject doc, Map<String, MongoField> lookup ) {
     String root = "$"; //$NON-NLS-1$
     String name = "$"; //$NON-NLS-1$
 
@@ -638,7 +638,7 @@ public class NoAuthMongoClientWrapper implements MongoClientWrapper {
     }
   }
 
-  private void processRecord( BasicDBObject rec, String path, String name, Map<String, MongoField> lookup ) {
+  private static void processRecord( BasicDBObject rec, String path, String name, Map<String, MongoField> lookup ) {
     for ( String key : rec.keySet() ) {
       Object fieldValue = rec.get( key );
 
@@ -655,7 +655,11 @@ public class NoAuthMongoClientWrapper implements MongoClientWrapper {
         if ( !lookup.containsKey( finalPath ) ) {
           MongoField newField = new MongoField();
           int kettleType = mongoToKettleType( fieldValue );
-          newField.m_mongoType = fieldValue;
+          // Following suit of mongoToKettleType by interpreting null as String type
+          newField.m_mongoType = String.class;
+          if ( fieldValue != null ) {
+            newField.m_mongoType = fieldValue.getClass();
+          }
           newField.m_fieldName = finalName;
           newField.m_fieldPath = finalPath;
           newField.m_kettleType = ValueMeta.getTypeDesc( kettleType );
@@ -665,7 +669,11 @@ public class NoAuthMongoClientWrapper implements MongoClientWrapper {
         } else {
           // update max indexes in array parts of name
           MongoField m = lookup.get( finalPath );
-          if ( !m.m_mongoType.getClass().isAssignableFrom( fieldValue.getClass() ) ) {
+          Class<?> fieldClass = String.class;
+          if ( fieldValue != null ) {
+            fieldClass = fieldValue.getClass();
+          }
+          if ( !m.m_mongoType.isAssignableFrom( fieldClass ) ) {
             m.m_disparateTypes = true;
           }
           m.m_percentageOfSample++;
@@ -702,7 +710,7 @@ public class NoAuthMongoClientWrapper implements MongoClientWrapper {
     return ValueMetaInterface.TYPE_STRING;
   }
 
-  private void processList( BasicDBList list, String path, String name, Map<String, MongoField> lookup ) {
+  private static void processList( BasicDBList list, String path, String name, Map<String, MongoField> lookup ) {
 
     if ( list.size() == 0 ) {
       return; // can't infer anything about an empty list
@@ -727,7 +735,11 @@ public class NoAuthMongoClientWrapper implements MongoClientWrapper {
         if ( !lookup.containsKey( finalPath ) ) {
           MongoField newField = new MongoField();
           int kettleType = mongoToKettleType( element );
-          newField.m_mongoType = element;
+          // Following suit of mongoToKettleType by interpreting null as String type
+          newField.m_mongoType = String.class;
+          if ( element != null ) {
+            newField.m_mongoType = element.getClass();
+          }
           newField.m_fieldName = finalPath;
           newField.m_fieldPath = finalName;
           newField.m_kettleType = ValueMeta.getTypeDesc( kettleType );
@@ -737,7 +749,11 @@ public class NoAuthMongoClientWrapper implements MongoClientWrapper {
         } else {
           // update max indexes in array parts of name
           MongoField m = lookup.get( finalPath );
-          if ( !m.m_mongoType.getClass().isAssignableFrom( element.getClass() ) ) {
+          Class<?> elementClass = String.class;
+          if ( element != null ) {
+            elementClass = element.getClass();
+          }
+          if ( !m.m_mongoType.isAssignableFrom( elementClass ) ) {
             m.m_disparateTypes = true;
           }
           m.m_percentageOfSample++;

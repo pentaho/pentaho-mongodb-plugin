@@ -19,10 +19,8 @@ package org.pentaho.di.trans.steps.mongodbinput;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.bson.types.BSONTimestamp;
 import org.bson.types.Binary;
@@ -31,11 +29,9 @@ import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 import org.bson.types.Symbol;
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.i18n.BaseMessages;
@@ -51,7 +47,6 @@ import org.pentaho.mongo.wrapper.field.MongoField;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import com.mongodb.util.JSON;
 
 /**
  * @author Matt
@@ -435,139 +430,6 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     m.m_fieldName = updated.toString();
   }
 
-  protected static void docToFields( DBObject doc, Map<String, MongoField> lookup ) {
-    String root = "$"; //$NON-NLS-1$
-    String name = "$"; //$NON-NLS-1$
-
-    if ( doc instanceof BasicDBObject ) {
-      processRecord( (BasicDBObject) doc, root, name, lookup );
-    } else if ( doc instanceof BasicDBList ) {
-      processList( (BasicDBList) doc, root, name, lookup );
-    }
-  }
-
-  protected static void processRecord( BasicDBObject rec, String path, String name, Map<String, MongoField> lookup ) {
-    for ( String key : rec.keySet() ) {
-      Object fieldValue = rec.get( key );
-
-      if ( fieldValue instanceof BasicDBObject ) {
-        processRecord( (BasicDBObject) fieldValue, path + "." + key, name + "." //$NON-NLS-1$ //$NON-NLS-2$
-            + key, lookup );
-      } else if ( fieldValue instanceof BasicDBList ) {
-        processList( (BasicDBList) fieldValue, path + "." + key, name + "." //$NON-NLS-1$ //$NON-NLS-2$
-            + key, lookup );
-      } else {
-        // some sort of primitive
-        String finalPath = path + "." + key; //$NON-NLS-1$
-        String finalName = name + "." + key; //$NON-NLS-1$
-        if ( !lookup.containsKey( finalPath ) ) {
-          MongoField newField = new MongoField();
-          int kettleType = mongoToKettleType( fieldValue );
-          newField.m_mongoType = fieldValue;
-          newField.m_fieldName = finalName;
-          newField.m_fieldPath = finalPath;
-          newField.m_kettleType = ValueMeta.getTypeDesc( kettleType );
-          newField.m_percentageOfSample = 1;
-
-          lookup.put( finalPath, newField );
-        } else {
-          // update max indexes in array parts of name
-          MongoField m = lookup.get( finalPath );
-          if ( !m.m_mongoType.getClass().isAssignableFrom( fieldValue.getClass() ) ) {
-            m.m_disparateTypes = true;
-          }
-          m.m_percentageOfSample++;
-          updateMaxArrayIndexes( m, finalName );
-        }
-      }
-    }
-  }
-
-  protected static void processList( BasicDBList list, String path, String name, Map<String, MongoField> lookup ) {
-
-    if ( list.size() == 0 ) {
-      return; // can't infer anything about an empty list
-    }
-
-    String nonPrimitivePath = path + "[-]"; //$NON-NLS-1$
-    String primitivePath = path;
-
-    for ( int i = 0; i < list.size(); i++ ) {
-      Object element = list.get( i );
-
-      if ( element instanceof BasicDBObject ) {
-        processRecord( (BasicDBObject) element, nonPrimitivePath, name + "[" + i //$NON-NLS-1$
-            + ":" + i + "]", lookup ); //$NON-NLS-1$ //$NON-NLS-2$
-      } else if ( element instanceof BasicDBList ) {
-        processList( (BasicDBList) element, nonPrimitivePath, name + "[" + i //$NON-NLS-1$
-            + ":" + i + "]", lookup ); //$NON-NLS-1$ //$NON-NLS-2$
-      } else {
-        // some sort of primitive
-        String finalPath = primitivePath + "[" + i + "]"; //$NON-NLS-1$ //$NON-NLS-2$
-        String finalName = name + "[" + i + "]"; //$NON-NLS-1$ //$NON-NLS-2$
-        if ( !lookup.containsKey( finalPath ) ) {
-          MongoField newField = new MongoField();
-          int kettleType = mongoToKettleType( element );
-          newField.m_mongoType = element;
-          newField.m_fieldName = finalPath;
-          newField.m_fieldPath = finalName;
-          newField.m_kettleType = ValueMeta.getTypeDesc( kettleType );
-          newField.m_percentageOfSample = 1;
-
-          lookup.put( finalPath, newField );
-        } else {
-          // update max indexes in array parts of name
-          MongoField m = lookup.get( finalPath );
-          if ( !m.m_mongoType.getClass().isAssignableFrom( element.getClass() ) ) {
-            m.m_disparateTypes = true;
-          }
-          m.m_percentageOfSample++;
-          updateMaxArrayIndexes( m, finalName );
-        }
-      }
-    }
-  }
-
-  protected static void postProcessPaths( Map<String, MongoField> fieldLookup, List<MongoField> discoveredFields,
-      int numDocsProcessed ) {
-    for ( String key : fieldLookup.keySet() ) {
-      MongoField m = fieldLookup.get( key );
-      m.m_occurenceFraction = "" + m.m_percentageOfSample + "/" //$NON-NLS-1$ //$NON-NLS-2$
-          + numDocsProcessed;
-      setMinArrayIndexes( m );
-
-      // set field names to terminal part and copy any min:max array index
-      // info
-      if ( m.m_fieldName.contains( "[" ) && m.m_fieldName.contains( ":" ) ) { //$NON-NLS-1$ //$NON-NLS-2$
-        m.m_arrayIndexInfo = m.m_fieldName;
-      }
-      if ( m.m_fieldName.indexOf( '.' ) >= 0 ) {
-        m.m_fieldName = m.m_fieldName.substring( m.m_fieldName.lastIndexOf( '.' ) + 1, m.m_fieldName.length() );
-      }
-
-      if ( m.m_disparateTypes ) {
-        // force type to string if we've seen this path more than once
-        // with incompatible types
-        m.m_kettleType = ValueMeta.getTypeDesc( ValueMeta.TYPE_STRING );
-      }
-      discoveredFields.add( m );
-    }
-
-    // check for name clashes
-    Map<String, Integer> tempM = new HashMap<String, Integer>();
-    for ( MongoField m : discoveredFields ) {
-      if ( tempM.get( m.m_fieldName ) != null ) {
-        Integer toUse = tempM.get( m.m_fieldName );
-        String key = m.m_fieldName;
-        m.m_fieldName = key + "_" + toUse; //$NON-NLS-1$
-        toUse = new Integer( toUse.intValue() + 1 );
-        tempM.put( key, toUse );
-      } else {
-        tempM.put( m.m_fieldName, 1 );
-      }
-    }
-  }
-
   public static boolean discoverFields( final MongoDbInputMeta meta, final VariableSpace vars, final int docsToSample )
     throws KettleException {
     MongoClientWrapper clientWrapper = MongoClientWrapperFactory.createMongoClientWrapper( meta, vars, null );
@@ -601,57 +463,6 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     }
 
     return false;
-  }
-
-  protected static List<DBObject> jsonPipelineToDBObjectList( String jsonPipeline ) throws KettleException {
-    List<DBObject> pipeline = new ArrayList<DBObject>();
-    StringBuilder b = new StringBuilder( jsonPipeline.trim() );
-
-    // extract the parts of the pipeline
-    int bracketCount = -1;
-    List<String> parts = new ArrayList<String>();
-    int i = 0;
-    while ( i < b.length() ) {
-      if ( b.charAt( i ) == '{' ) {
-        if ( bracketCount == -1 ) {
-          // trim anything off before this point
-          b.delete( 0, i );
-          bracketCount = 0;
-          i = 0;
-        }
-        bracketCount++;
-      }
-      if ( b.charAt( i ) == '}' ) {
-        bracketCount--;
-      }
-      if ( bracketCount == 0 ) {
-        String part = b.substring( 0, i + 1 );
-        parts.add( part );
-        bracketCount = -1;
-
-        if ( i == b.length() - 1 ) {
-          break;
-        }
-        b.delete( 0, i + 1 );
-        i = 0;
-      }
-
-      i++;
-    }
-
-    for ( String p : parts ) {
-      if ( !Const.isEmpty( p ) ) {
-        DBObject o = (DBObject) JSON.parse( p );
-        pipeline.add( o );
-      }
-    }
-
-    if ( pipeline.size() == 0 ) {
-      throw new KettleException( BaseMessages.getString( MongoDbInputMeta.PKG,
-          "MongoDbInput.ErrorMessage.UnableToParsePipelineOperators" ) ); //$NON-NLS-1$
-    }
-
-    return pipeline;
   }
 
   /**
