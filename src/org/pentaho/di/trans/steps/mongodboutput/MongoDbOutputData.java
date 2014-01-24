@@ -37,6 +37,7 @@ import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaFactory;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.i18n.BaseMessages;
@@ -785,110 +786,94 @@ public class MongoDbOutputData extends BaseStepData implements
     }
 
     boolean haveNonNullFields = false;
-    for (MongoDbOutputMeta.MongoField field : fieldDefs) {
-      if (!field.m_updateMatchField) {
-        DBObject current = root;
+    for ( MongoDbOutputMeta.MongoField field : fieldDefs ) {
+      DBObject current = root;
 
-        field.reset();
-        List<String> pathParts = field.m_tempPathList;
-        String incomingFieldName = vars
-            .environmentSubstitute(field.m_incomingFieldName);
-        int index = inputMeta.indexOfValue(incomingFieldName);
-        ValueMetaInterface vm = inputMeta.getValueMeta(index);
+      field.reset();
+      List<String> pathParts = field.m_tempPathList;
+      String incomingFieldName = vars.environmentSubstitute( field.m_incomingFieldName );
+      int index = inputMeta.indexOfValue( incomingFieldName );
+      ValueMetaInterface vm = inputMeta.getValueMeta( index );
 
-        Object lookup = getPathElementName(pathParts, current,
-            field.m_useIncomingFieldNameAsMongoFieldName);
-        do {
-          // array?
-          if (lookup != null && lookup instanceof Integer) {
-            BasicDBList temp = (BasicDBList) current;
-            if (temp.get(lookup.toString()) == null) {
-              if (pathParts.size() == 0
-                  && !field.m_useIncomingFieldNameAsMongoFieldName) {
-                // leaf - primitive element of the array (unless kettle field
-                // value is JSON)
-                boolean res = setMongoValueFromKettleValue(temp, lookup, vm,
-                    row[index], field.m_JSON);
-                haveNonNullFields = (haveNonNullFields || res);
-              } else {
-                // must be a record here (since multi-dimensional array creation
-                // is handled
-                // in getPathElementName())
-
-                // need to create this record/object
-                BasicDBObject newRec = new BasicDBObject();
-                temp.put(lookup.toString(), newRec);
-                current = newRec;
-
-                // end of the path?
-                if (pathParts.size() == 0) {
-                  if (field.m_useIncomingFieldNameAsMongoFieldName) {
-                    boolean res = setMongoValueFromKettleValue(current,
-                        incomingFieldName, vm, row[index], field.m_JSON);
-                    haveNonNullFields = (haveNonNullFields || res);
-                  } else {
-                    throw new KettleException(
-                        BaseMessages
-                            .getString(PKG,
-                                "MongoDbOutput.Messages.Error.NoFieldNameSpecifiedForPath")); //$NON-NLS-1$
-                  }
-                }
-              }
+      Object lookup = getPathElementName( pathParts, current, field.m_useIncomingFieldNameAsMongoFieldName );
+      do {
+        // array?
+        if ( lookup != null && lookup instanceof Integer ) {
+          BasicDBList temp = (BasicDBList) current;
+          if ( temp.get( lookup.toString() ) == null ) {
+            if ( pathParts.size() == 0 && !field.m_useIncomingFieldNameAsMongoFieldName ) {
+              // leaf - primitive element of the array (unless kettle field
+              // value is JSON)
+              boolean res = setMongoValueFromKettleValue( temp, lookup, vm, row[index], field.m_JSON );
+              haveNonNullFields = ( haveNonNullFields || res );
             } else {
-              // existing element of the array
-              current = (DBObject) temp.get(lookup.toString());
+              // must be a record here (since multi-dimensional array creation
+              // is handled
+              // in getPathElementName())
 
-              // no more path parts so we must be setting a field in an array
-              // element
-              // that is a record
-              if (pathParts == null || pathParts.size() == 0) {
-                if (current instanceof BasicDBObject) {
-                  if (field.m_useIncomingFieldNameAsMongoFieldName) {
-                    boolean res = setMongoValueFromKettleValue(current,
-                        incomingFieldName, vm, row[index], field.m_JSON);
-                    haveNonNullFields = (haveNonNullFields || res);
-                  } else {
-                    throw new KettleException(
-                        BaseMessages
-                            .getString(PKG,
-                                "MongoDbOutput.Messages.Error.NoFieldNameSpecifiedForPath")); //$NON-NLS-1$
-                  }
+              // need to create this record/object
+              BasicDBObject newRec = new BasicDBObject();
+              temp.put( lookup.toString(), newRec );
+              current = newRec;
+
+              // end of the path?
+              if ( pathParts.size() == 0 ) {
+                if ( field.m_useIncomingFieldNameAsMongoFieldName ) {
+                  boolean res = setMongoValueFromKettleValue( current, incomingFieldName, vm, row[index], field.m_JSON );
+                  haveNonNullFields = ( haveNonNullFields || res );
+                } else {
+                  throw new KettleException( BaseMessages.getString( PKG,
+                      "MongoDbOutput.Messages.Error.NoFieldNameSpecifiedForPath" ) ); //$NON-NLS-1$
                 }
               }
             }
           } else {
-            // record/object
-            if (lookup == null && pathParts.size() == 0) {
-              if (field.m_useIncomingFieldNameAsMongoFieldName) {
-                boolean res = setMongoValueFromKettleValue(current,
-                    incomingFieldName, vm, row[index], field.m_JSON);
-                haveNonNullFields = (haveNonNullFields || res);
-              } else {
-                throw new KettleException(BaseMessages.getString(PKG,
-                    "MongoDbOutput.Messages.Error.NoFieldNameSpecifiedForPath")); //$NON-NLS-1$
-              }
-            } else {
-              if (pathParts.size() == 0) {
-                if (!field.m_useIncomingFieldNameAsMongoFieldName) {
-                  boolean res = setMongoValueFromKettleValue(current,
-                      lookup.toString(), vm, row[index], field.m_JSON);
-                  haveNonNullFields = (haveNonNullFields || res);
+            // existing element of the array
+            current = (DBObject) temp.get( lookup.toString() );
+
+            // no more path parts so we must be setting a field in an array
+            // element
+            // that is a record
+            if ( pathParts == null || pathParts.size() == 0 ) {
+              if ( current instanceof BasicDBObject ) {
+                if ( field.m_useIncomingFieldNameAsMongoFieldName ) {
+                  boolean res = setMongoValueFromKettleValue( current, incomingFieldName, vm, row[index], field.m_JSON );
+                  haveNonNullFields = ( haveNonNullFields || res );
                 } else {
-                  current = (DBObject) current.get(lookup.toString());
-                  boolean res = setMongoValueFromKettleValue(current,
-                      incomingFieldName, vm, row[index], field.m_JSON);
-                  haveNonNullFields = (haveNonNullFields || res);
+                  throw new KettleException( BaseMessages.getString( PKG,
+                      "MongoDbOutput.Messages.Error.NoFieldNameSpecifiedForPath" ) ); //$NON-NLS-1$
                 }
-              } else {
-                current = (DBObject) current.get(lookup.toString());
               }
             }
           }
+        } else {
+          // record/object
+          if ( lookup == null && pathParts.size() == 0 ) {
+            if ( field.m_useIncomingFieldNameAsMongoFieldName ) {
+              boolean res = setMongoValueFromKettleValue( current, incomingFieldName, vm, row[index], field.m_JSON );
+              haveNonNullFields = ( haveNonNullFields || res );
+            } else {
+              throw new KettleException( BaseMessages.getString( PKG,
+                  "MongoDbOutput.Messages.Error.NoFieldNameSpecifiedForPath" ) ); //$NON-NLS-1$
+            }
+          } else {
+            if ( pathParts.size() == 0 ) {
+              if ( !field.m_useIncomingFieldNameAsMongoFieldName ) {
+                boolean res = setMongoValueFromKettleValue( current, lookup.toString(), vm, row[index], field.m_JSON );
+                haveNonNullFields = ( haveNonNullFields || res );
+              } else {
+                current = (DBObject) current.get( lookup.toString() );
+                boolean res = setMongoValueFromKettleValue( current, incomingFieldName, vm, row[index], field.m_JSON );
+                haveNonNullFields = ( haveNonNullFields || res );
+              }
+            } else {
+              current = (DBObject) current.get( lookup.toString() );
+            }
+          }
+        }
 
-          lookup = getPathElementName(pathParts, current,
-              field.m_useIncomingFieldNameAsMongoFieldName);
-        } while (lookup != null);
-      }
+        lookup = getPathElementName( pathParts, current, field.m_useIncomingFieldNameAsMongoFieldName );
+      } while ( lookup != null );
     }
 
     if (!haveNonNullFields) {

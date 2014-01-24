@@ -14,6 +14,7 @@ import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaFactory;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputData.MongoTopLevel;
@@ -27,6 +28,106 @@ import com.mongodb.DBObject;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  */
 public class MongoDbOutputTest {
+
+    /**
+     * PDI-11045. When doing a non-modifier update/upsert it should not be necessary to define query fields a second time
+     * in the step (i.e. those paths that the user defines for the matching conditions should be placed into the update
+     * document automatically).
+     *
+     * @throws KettleException
+     */
+    @Test
+    public void testUpdateObjectContainsQueryFields() throws KettleException {
+        List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+        MongoDbOutputMeta.MongoField mf = new MongoDbOutputMeta.MongoField();
+        mf.m_incomingFieldName = "field1";
+        mf.m_mongoDocPath = "";
+        mf.m_useIncomingFieldNameAsMongoFieldName = true;
+        mf.m_updateMatchField = true;
+        paths.add( mf );
+
+        mf = new MongoDbOutputMeta.MongoField();
+        mf.m_incomingFieldName = "field2";
+        mf.m_mongoDocPath = "";
+        mf.m_useIncomingFieldNameAsMongoFieldName = true;
+        paths.add( mf );
+
+        RowMetaInterface rmi = new RowMeta();
+        ValueMetaInterface vm = ValueMetaFactory.createValueMeta( "field1", ValueMetaInterface.TYPE_STRING );
+        rmi.addValueMeta( vm );
+        vm = ValueMetaFactory.createValueMeta( "field2", ValueMetaInterface.TYPE_INTEGER );
+        rmi.addValueMeta( vm );
+
+        Object[] row = new Object[2];
+        row[0] = "value1";
+        row[1] = new Long( 12 );
+        VariableSpace vs = new Variables();
+
+        for ( MongoDbOutputMeta.MongoField f : paths ) {
+            f.init( vs );
+        }
+
+        DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
+
+        assertEquals( result.toString(), "{ \"field1\" : \"value1\" , \"field2\" : 12}" );
+    }
+
+    /**
+     * PDI-11045. Here we test backwards compatibility for old ktrs that were developed before 11045. In these ktrs query
+     * paths had to be specified a second time in the step in order to get them into the update/upsert object. Now we
+     * assume that there will never be a situation where the user might not want the match fields present in the update
+     * object
+     *
+     * @throws KettleException
+     */
+    @Test
+    public void testUpdateObjectBackwardsCompatibility() throws KettleException {
+        List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
+
+        MongoDbOutputMeta.MongoField mf = new MongoDbOutputMeta.MongoField();
+        mf.m_incomingFieldName = "field1";
+        mf.m_mongoDocPath = "";
+        mf.m_useIncomingFieldNameAsMongoFieldName = true;
+        mf.m_updateMatchField = true;
+        paths.add( mf );
+
+        // same as previous field (but not a match condition). Prior to PDI-11045 the
+        // user had to specify the match conditions a second time (but not marked in the
+        // step as a match condition) in order to get them into the update/upsert object
+        mf = new MongoDbOutputMeta.MongoField();
+        mf.m_incomingFieldName = "field1";
+        mf.m_mongoDocPath = "";
+        mf.m_useIncomingFieldNameAsMongoFieldName = true;
+        mf.m_updateMatchField = false;
+        paths.add( mf );
+
+        mf = new MongoDbOutputMeta.MongoField();
+        mf.m_incomingFieldName = "field2";
+        mf.m_mongoDocPath = "";
+        mf.m_useIncomingFieldNameAsMongoFieldName = true;
+        paths.add( mf );
+
+        RowMetaInterface rmi = new RowMeta();
+        ValueMetaInterface vm = ValueMetaFactory.createValueMeta( "field1", ValueMetaInterface.TYPE_STRING );
+        rmi.addValueMeta( vm );
+        vm = ValueMetaFactory.createValueMeta( "field2", ValueMetaInterface.TYPE_INTEGER );
+        rmi.addValueMeta( vm );
+
+        Object[] row = new Object[2];
+        row[0] = "value1";
+        row[1] = new Long( 12 );
+        VariableSpace vs = new Variables();
+
+        for ( MongoDbOutputMeta.MongoField f : paths ) {
+            f.init( vs );
+        }
+
+        DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
+
+        // here we expect that field1 does *not* occur twice in the update object
+        assertEquals( result.toString(), "{ \"field1\" : \"value1\" , \"field2\" : 12}" );
+    }
 
   @Test
   public void testCheckTopLevelConsistencyPathsAreConsistentRecord() throws KettleException {
