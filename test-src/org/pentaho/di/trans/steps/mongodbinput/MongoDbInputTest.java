@@ -21,10 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.Test;
 import org.pentaho.di.core.exception.KettleException;
@@ -46,9 +43,6 @@ public class MongoDbInputTest {
       + "\"two\" : [ { \"rec1\" : { \"f1\" : \"bob\", \"f2\" : \"fred\" } } ] }, "
       + "\"name\" : \"george\", \"aNumber\" : 42 }";
   protected static String s_testData2 = "{\"one\" : {\"three\" : [ {\"rec2\" : { \"f0\" : \"zzz\" } } ], "
-      + "\"two\" : [ { \"rec1\" : { \"f1\" : \"bob\", \"f2\" : \"fred\" } } ] }, "
-      + "\"name\" : \"george\", \"aNumber\" : \"Forty two\" }";
-  protected static String s_testData3 = "{\"one\" : {\"three\" : [ {\"rec2\" : { \"f0\" : \"zzz\" } } ], "
       + "\"two\" : [ { \"rec1\" : { \"f1\" : \"bob\", \"f2\" : \"fred\" } }, "
       + "{ \"rec1\" : { \"f1\" : \"sid\", \"f2\" : \"zaphod\" } } ] }, "
       + "\"name\" : \"george\", \"aNumber\" : \"Forty two\" }";
@@ -58,93 +52,6 @@ public class MongoDbInputTest {
       ValueMetaPluginType.getInstance().searchPlugins();
     } catch (KettlePluginException ex) {
       ex.printStackTrace();
-    }
-  }
-
-  @Test
-  public void testDeterminePaths() {
-    Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
-    List<MongoField> discoveredFields = new ArrayList<MongoField>();
-
-    Object mongoO = JSON.parse(s_testData);
-    assertTrue(mongoO instanceof DBObject);
-
-    MongoDbInputData.docToFields((DBObject) mongoO, fieldLookup);
-    MongoDbInputData.postProcessPaths(fieldLookup, discoveredFields, 1);
-
-    assertEquals(5, discoveredFields.size());
-
-    // check types
-    int stringCount = 0;
-    int numCount = 0;
-    for (MongoField m : discoveredFields) {
-      if (ValueMeta.getType(m.m_kettleType) == ValueMetaInterface.TYPE_STRING) {
-        stringCount++;
-      }
-
-      if (ValueMeta.getType(m.m_kettleType) == ValueMetaInterface.TYPE_INTEGER) {
-        numCount++;
-      }
-    }
-
-    assertEquals(numCount, 1);
-    assertEquals(stringCount, 4);
-  }
-
-  @Test
-  public void testDeterminePathsWithDisparateTypes() {
-    Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
-    List<MongoField> discoveredFields = new ArrayList<MongoField>();
-
-    Object mongoO = JSON.parse(s_testData);
-    assertTrue(mongoO instanceof DBObject);
-    MongoDbInputData.docToFields((DBObject) mongoO, fieldLookup);
-
-    mongoO = JSON.parse(s_testData2);
-    assertTrue(mongoO instanceof DBObject);
-    MongoDbInputData.docToFields((DBObject) mongoO, fieldLookup);
-
-    MongoDbInputData.postProcessPaths(fieldLookup, discoveredFields, 1);
-
-    assertEquals(5, discoveredFields.size());
-    Collections.sort(discoveredFields);
-
-    // First path is the "aNumber" field
-    assertTrue(discoveredFields.get(0).m_disparateTypes);
-  }
-
-  @Test
-  public void testGetAllFields() throws KettleException {
-
-    Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
-    List<MongoField> discoveredFields = new ArrayList<MongoField>();
-
-    Object mongoO = JSON.parse(s_testData);
-    assertTrue(mongoO instanceof DBObject);
-
-    MongoDbInputData.docToFields((DBObject) mongoO, fieldLookup);
-    MongoDbInputData.postProcessPaths(fieldLookup, discoveredFields, 1);
-    Collections.sort(discoveredFields);
-
-    RowMetaInterface rowMeta = new RowMeta();
-    for (MongoField m : discoveredFields) {
-      ValueMetaInterface vm = new ValueMeta(m.m_fieldName,
-          ValueMeta.getType(m.m_kettleType));
-      rowMeta.addValueMeta(vm);
-    }
-
-    MongoDbInputData data = new MongoDbInputData();
-    data.outputRowMeta = rowMeta;
-    data.setMongoFields(discoveredFields);
-    data.init();
-    Variables vars = new Variables();
-    Object[] result = data.mongoDocumentToKettle((DBObject) mongoO, vars)[0];
-    assertTrue(result != null);
-    Object[] expected = { new Long(42), "zzz", "bob", "fred", "george" };
-
-    for (int i = 0; i < rowMeta.size(); i++) {
-      assertTrue(result[i] != null);
-      assertEquals(expected[i], result[i]);
     }
   }
 
@@ -181,7 +88,7 @@ public class MongoDbInputTest {
 
   @Test
   public void testArrayUnwindArrayFieldsOnly() throws KettleException {
-    Object mongoO = JSON.parse(s_testData3);
+    Object mongoO = JSON.parse(s_testData2);
     assertTrue(mongoO instanceof DBObject);
 
     List<MongoField> fields = new ArrayList<MongoField>();
@@ -220,7 +127,7 @@ public class MongoDbInputTest {
   @Test
   public void testArrayUnwindOneArrayExpandFieldAndOneNormalField()
       throws KettleException {
-    Object mongoO = JSON.parse(s_testData3);
+    Object mongoO = JSON.parse(s_testData2);
     assertTrue(mongoO instanceof DBObject);
 
     List<MongoField> fields = new ArrayList<MongoField>();
@@ -272,7 +179,7 @@ public class MongoDbInputTest {
   @Test
   public void testArrayUnwindWithOneExistingAndOneNonExistingField()
       throws KettleException {
-    Object mongoO = JSON.parse(s_testData3);
+    Object mongoO = JSON.parse(s_testData2);
     assertTrue(mongoO instanceof DBObject);
 
     List<MongoField> fields = new ArrayList<MongoField>();
@@ -324,9 +231,6 @@ public class MongoDbInputTest {
   public static void main(String[] args) {
     MongoDbInputTest test = new MongoDbInputTest();
     try {
-      test.testDeterminePaths();
-      test.testDeterminePathsWithDisparateTypes();
-      test.testGetAllFields();
       test.testGetNonExistentField();
       test.testArrayUnwindArrayFieldsOnly();
       test.testArrayUnwindWithOneExistingAndOneNonExistingField();

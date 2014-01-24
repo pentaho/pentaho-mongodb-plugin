@@ -50,7 +50,7 @@ public class MongoField implements Comparable<MongoField> {
    */
   public transient String m_occurenceFraction = ""; //$NON-NLS-1$
 
-  public transient Object m_mongoType;
+  public transient Class<?> m_mongoType;
 
   /**
    * Temporary variable used to indicate that this path occurs multiple times over the sampled documents and that the

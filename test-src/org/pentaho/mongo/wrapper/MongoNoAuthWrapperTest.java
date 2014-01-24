@@ -21,15 +21,40 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettlePluginException;
+import org.pentaho.di.core.row.RowMeta;
+import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMeta;
+import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaPluginType;
+import org.pentaho.di.core.variables.Variables;
+import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
+import org.pentaho.mongo.wrapper.field.MongoField;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
 
 public class MongoNoAuthWrapperTest {
+  protected static String s_testData = "{\"one\" : {\"three\" : [ {\"rec2\" : { \"f0\" : \"zzz\" } } ], "
+      + "\"two\" : [ { \"rec1\" : { \"f1\" : \"bob\", \"f2\" : \"fred\" } } ] }, "
+      + "\"name\" : \"george\", \"aNumber\" : 42 }";
+  protected static String s_testData2 = "{\"one\" : {\"three\" : [ {\"rec2\" : { \"f0\" : \"zzz\" } } ], "
+      + "\"two\" : [ { \"rec1\" : { \"f1\" : \"bob\", \"f2\" : \"fred\" } } ] }, "
+      + "\"name\" : \"george\", \"aNumber\" : \"Forty two\" }";
+  protected static String s_testData3 = "{\"one\" : {\"three\" : [ {\"rec2\" : { \"f0\" : \"zzz\" } } ], "
+      + "\"two\" : [ { \"rec1\" : { \"f1\" : \"bob\", \"f2\" : \"fred\" } } ] }, "
+      + "\"name\" : \"george\", \"aNumber\" : 42, anotherNumber : 32, numberArray : [1,2,3] }";
+  protected static String s_testData4 = "{\"one\" : {\"three\" : [ {\"rec2\" : { \"f0\" : \"zzz\" } } ], "
+      + "\"two\" : [ { \"rec1\" : { \"f1\" : \"bob\", \"f2\" : \"fred\" } } ] }, "
+      + "\"name\" : \"george\", \"aNumber\" : \"Forty two\", anotherNumber : null, numberArray : [null,2,3] }";
   public static String REP_SET_CONFIG = "{\"_id\" : \"foo\", \"version\" : 1, " + "\"members\" : [" + "{"
       + "\"_id\" : 0, " + "\"host\" : \"palladium.lan:27017\", " + "\"tags\" : {" + "\"dc.one\" : \"primary\", "
       + "\"use\" : \"production\"" + "}" + "}, " + "{" + "\"_id\" : 1, " + "\"host\" : \"palladium.local:27018\", "
@@ -40,6 +65,14 @@ public class MongoNoAuthWrapperTest {
 
   public static String TAG_SET = "{\"use\" : \"production\"}";
 
+  static {
+    try {
+      ValueMetaPluginType.getInstance().searchPlugins();
+    } catch (KettlePluginException ex) {
+      ex.printStackTrace();
+    }
+  }
+  
   @Test
   public void testExtractLastErrorMode() {
     DBObject config = (DBObject) JSON.parse( REP_SET_CONFIG );
@@ -89,5 +122,92 @@ public class MongoNoAuthWrapperTest {
 
     // two replica set members have the "use : production" tag in their tag sets
     assertEquals( 2, satisfy.size() );
+  }
+
+  @Test
+  public void testDeterminePaths() {
+    Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
+    List<MongoField> discoveredFields = new ArrayList<MongoField>();
+
+    Object mongoO = JSON.parse(s_testData);
+    assertTrue(mongoO instanceof DBObject);
+
+    NoAuthMongoClientWrapper.docToFields((DBObject) mongoO, fieldLookup);
+    NoAuthMongoClientWrapper.postProcessPaths(fieldLookup, discoveredFields, 1);
+
+    assertEquals(5, discoveredFields.size());
+
+    // check types
+    int stringCount = 0;
+    int numCount = 0;
+    for (MongoField m : discoveredFields) {
+      if (ValueMeta.getType(m.m_kettleType) == ValueMetaInterface.TYPE_STRING) {
+        stringCount++;
+      }
+
+      if (ValueMeta.getType(m.m_kettleType) == ValueMetaInterface.TYPE_INTEGER) {
+        numCount++;
+      }
+    }
+
+    assertEquals(1, numCount);
+    assertEquals(4, stringCount);
+  }
+
+  @Test
+  public void testDeterminePathsWithDisparateTypes() {
+    Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
+    List<MongoField> discoveredFields = new ArrayList<MongoField>();
+
+    Object mongoO = JSON.parse(s_testData3);
+    assertTrue(mongoO instanceof DBObject);
+    NoAuthMongoClientWrapper.docToFields((DBObject) mongoO, fieldLookup);
+
+    mongoO = JSON.parse(s_testData4);
+    assertTrue(mongoO instanceof DBObject);
+    NoAuthMongoClientWrapper.docToFields((DBObject) mongoO, fieldLookup);
+
+    NoAuthMongoClientWrapper.postProcessPaths(fieldLookup, discoveredFields, 1);
+
+    assertEquals(9, discoveredFields.size());
+    Collections.sort(discoveredFields);
+
+    // First path is the "aNumber" field
+    assertTrue(discoveredFields.get(0).m_disparateTypes);
+  }
+
+  @Test
+  public void testGetAllFields() throws KettleException {
+
+    Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
+    List<MongoField> discoveredFields = new ArrayList<MongoField>();
+
+    Object mongoO = JSON.parse(s_testData);
+    assertTrue(mongoO instanceof DBObject);
+
+    NoAuthMongoClientWrapper.docToFields((DBObject) mongoO, fieldLookup);
+    NoAuthMongoClientWrapper.postProcessPaths(fieldLookup, discoveredFields, 1);
+    Collections.sort(discoveredFields);
+
+    RowMetaInterface rowMeta = new RowMeta();
+    for (MongoField m : discoveredFields) {
+      ValueMetaInterface vm = new ValueMeta(m.m_fieldName,
+          ValueMeta.getType(m.m_kettleType));
+      rowMeta.addValueMeta(vm);
+    }
+
+    MongoDbInputData data = new MongoDbInputData();
+    data.outputRowMeta = rowMeta;
+    data.setMongoFields(discoveredFields);
+    data.init();
+    Variables vars = new Variables();
+    Object[] result = data.mongoDocumentToKettle((DBObject) mongoO, vars)[0];
+    assertTrue(result != null);
+    Object[] expected = { new Long(42), "zzz", "bob", "fred", "george" };
+
+    for (int i = 0; i < rowMeta.size(); i++) {
+      assertTrue(result[i] != null);
+      assertEquals(expected[i], result[i]);
+    }
   }
 }
