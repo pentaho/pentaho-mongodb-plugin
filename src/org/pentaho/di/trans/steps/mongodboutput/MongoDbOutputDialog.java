@@ -1100,6 +1100,15 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     stepname = m_stepnameText.getText();
 
     getInfo( m_currentMeta );
+    
+    if ( m_currentMeta.getMongoFields() == null ) {
+      // popup dialog warning that no paths have been defined
+      ShowMessageDialog smd =
+          new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK, BaseMessages.getString( PKG,
+              "MongoDbOutputDialog.ErrorMessage.NoFieldPathsDefined.Title" ), BaseMessages.getString( PKG, //$NON-NLS-1$
+              "MongoDbOutputDialog.ErrorMessage.NoFieldPathsDefined" ) ); //$NON-NLS-1$
+      smd.open();
+    }
 
     if ( !m_originalMeta.equals( m_currentMeta ) ) {
       m_currentMeta.setChanged();
@@ -1191,13 +1200,6 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
       }
 
       return mongoFields;
-    } else {
-      // popup dialog warning that no paths have been defined
-      ShowMessageDialog smd =
-          new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK, BaseMessages.getString( PKG,
-              "MongoDbOutputDialog.ErrorMessage.NoFieldPathsDefined.Title" ), BaseMessages.getString( PKG, //$NON-NLS-1$
-              "MongoDbOutputDialog.ErrorMessage.NoFieldPathsDefined" ) ); //$NON-NLS-1$
-      smd.open();
     }
 
     return null;
