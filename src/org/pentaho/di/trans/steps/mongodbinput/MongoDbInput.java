@@ -32,6 +32,7 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.mongo.wrapper.MongoClientWrapperFactory;
+import org.pentaho.mongo.wrapper.NoAuthMongoClientWrapper;
 
 import com.mongodb.AggregationOutput;
 import com.mongodb.DBObject;
@@ -182,7 +183,7 @@ public class MongoDbInput extends BaseStep implements StepInterface {
         logDetailed(BaseMessages.getString(PKG,
             "MongoDbInput.Message.QueryPulledDataFrom", query));
 
-        List<DBObject> pipeline = MongoDbInputData
+        List<DBObject> pipeline = NoAuthMongoClientWrapper
             .jsonPipelineToDBObjectList(query);
         DBObject firstP = pipeline.get(0);
         DBObject[] remainder = null;
