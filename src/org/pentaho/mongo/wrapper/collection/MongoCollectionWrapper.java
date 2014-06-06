@@ -32,4 +32,6 @@ public interface MongoCollectionWrapper {
   void createIndex( BasicDBObject mongoIndex ) throws KettleException;
 
   WriteResult save( DBObject toTry ) throws KettleException;
+
+  WriteResult drop( DBObject dropQuery) throws KettleException;
 }
