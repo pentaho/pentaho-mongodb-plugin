@@ -90,7 +90,7 @@ public class MongoDbDelete extends BaseStep implements StepInterface {
 
             DBObject query = MongoDbDeleteData.getQueryObject(data.m_userFields, getInputRowMeta(), row, MongoDbDelete.this);
             if (log.isDebug()) {
-                logDebug(BaseMessages.getString(PKG, "MongoDelete.Messages.Debug.QueryForDelete", query));
+                logDebug(BaseMessages.getString(PKG, "MongoDbDelete.Message.Debug.QueryForDelete", query));
             }
             // We have query delete
             if (query != null) {
@@ -133,12 +133,12 @@ public class MongoDbDelete extends BaseStep implements StepInterface {
 
                 if (Const.isEmpty(db)) {
                     throw new Exception(BaseMessages.getString(PKG,
-                            "MongoDelete.ErrorMessage.NoDBSpecified")); //$NON-NLS-1$
+                            "MongoDbDelete.ErrorMessage.NoDBSpecified"));
                 }
 
                 if (Const.isEmpty(collection)) {
                     throw new Exception(BaseMessages.getString(PKG,
-                            "MongoDelete.ErrorMessage.NoCollectionSpecified")); //$NON-NLS-1$
+                            "MongoDbDelete.ErrorMessage.NoCollectionSpecified"));
                 }
 
                 if (!Const.isEmpty(meta.getAuthenticationUser())) {
@@ -154,18 +154,18 @@ public class MongoDbDelete extends BaseStep implements StepInterface {
 
                 data.setConnection(MongoClientWrapperFactory.createMongoClientWrapper(meta, this, log));
                 if (Const.isEmpty(collection)) {
-                    throw new KettleException(BaseMessages.getString(PKG, "MongoDbDelete.ErrorMessage.NoCollectionSpecified")); //$NON-NLS-1$
+                    throw new KettleException(BaseMessages.getString(PKG, "MongoDbDelete.ErrorMessage.NoCollectionSpecified"));
                 }
                 data.createCollection(db, collection);
                 data.setCollection(data.getConnection().getCollection(db, collection));
 
                 return true;
             } catch (UnknownHostException ex) {
-                logError(BaseMessages.getString(PKG, "MongoDbDelete.ErrorMessage.UnknownHost", hostname), ex); //$NON-NLS-1$
+                logError(BaseMessages.getString(PKG, "MongoDbDelete.ErrorMessage.UnknownHost", hostname), ex);
                 return false;
             } catch (Exception e) {
                 logError(BaseMessages.getString(PKG,
-                        "MongoDelete.ErrorMessage.ProblemConnecting", hostname, "" //$NON-NLS-1$ //$NON-NLS-2$
+                        "MongoDbDelete.ErrorMessage.ProblemConnecting", hostname, ""
                         + port), e);
                 return false;
             }
@@ -217,7 +217,7 @@ public class MongoDbDelete extends BaseStep implements StepInterface {
                 cmd = result.getLastError();
                 if (cmd != null && !cmd.ok()) {
                     String message = cmd.getErrorMessage();
-                    logError(BaseMessages.getString(PKG, "MongoDelete.ErrorMessage.MongoReported", message)); //$NON-NLS-1$
+                    logError(BaseMessages.getString(PKG, "MongoDbDelete.ErrorMessage.MongoReported", message));
 
                     cmd.throwOnError();
                 }
@@ -225,9 +225,9 @@ public class MongoDbDelete extends BaseStep implements StepInterface {
                 lastEx = me;
                 retrys++;
                 if (retrys <= m_writeRetries) {
-                    logError(BaseMessages.getString(PKG, "MongoDelete.ErrorMessage.ErrorWritingToMongo", //$NON-NLS-1$
+                    logError(BaseMessages.getString(PKG, "MongoDbDelete.ErrorMessage.ErrorWritingToMongo",
                             me.toString()));
-                    logBasic(BaseMessages.getString(PKG, "MongoDelete.Message.Retry", m_writeRetryDelay)); //$NON-NLS-1$
+                    logBasic(BaseMessages.getString(PKG, "MongoDbDelete.Message.Retry", m_writeRetryDelay));
                     try {
                         Thread.sleep(m_writeRetryDelay * 1000);
                         // CHECKSTYLE:OFF
@@ -279,12 +279,12 @@ public class MongoDbDelete extends BaseStep implements StepInterface {
                 b.append("'").append(name).append("', ");
             }
             throw new KettleException(BaseMessages.getString(PKG,
-                    "MongoDelete.MongoField.Error.FieldsNotFoundInMetadata", b.toString()));
+                    "MongoDbDelete.MongoField.Error.FieldsNotFoundInMetadata", b.toString()));
         }
 
         boolean found = actual.removeAll(expected);
         if (!found) {
-            throw new KettleException(BaseMessages.getString(PKG, "MongoDelete.ErrorMessage.NotDeleteAnyFields")); //$NON-NLS-1$
+            throw new KettleException(BaseMessages.getString(PKG, "MongoDbDelete.ErrorMessage.NotDeleteAnyFields"));
         }
     }
 }

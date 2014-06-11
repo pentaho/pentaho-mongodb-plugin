@@ -96,7 +96,7 @@ public class MongoDbDeleteData extends BaseStepData implements StepDataInterface
      */
     public void createCollection(String db, String collectionName) throws Exception {
         if (clientWrapper == null) {
-            throw new Exception(BaseMessages.getString(PKG, "MongoDelete.ErrorMessage.NoDatabaseSet")); //$NON-NLS-1$
+            throw new Exception(BaseMessages.getString(PKG, "MongoDbDelete.ErrorMessage.NoDatabaseSet"));
         }
 
         clientWrapper.createCollection(db, collectionName);
@@ -173,7 +173,7 @@ public class MongoDbDeleteData extends BaseStepData implements StepDataInterface
             boolean hasPath = !Const.isEmpty(path);
 
             if (!hasPath) {
-                throw new KettleException(BaseMessages.getString(PKG, "MongoDelete.ErrorMessage.NoMongoPathsDefined"));
+                throw new KettleException(BaseMessages.getString(PKG, "MongoDbDelete.ErrorMessage.NoMongoPathsDefined"));
             }
 
             // post process arrays to fit the dot notation (if not already done
@@ -257,7 +257,7 @@ public class MongoDbDeleteData extends BaseStepData implements StepDataInterface
             } else if (Comparator.BETWEEN.getValue().equals(field.m_comparator)) {
 
                 if (Const.isEmpty(field.m_incomingField1) || Const.isEmpty(field.m_incomingField2)) {
-                    throw new KettleException(BaseMessages.getString(PKG, "MongoDelete.ErrorMessage.BetweenTwoFieldsRequired"));
+                    throw new KettleException(BaseMessages.getString(PKG, "MongoDbDelete.ErrorMessage.BetweenTwoFieldsRequired"));
                 }
 
                 String field1 = vars.environmentSubstitute(field.m_incomingField1);
@@ -287,14 +287,14 @@ public class MongoDbDeleteData extends BaseStepData implements StepDataInterface
                 exist.put("$exists", true);
                 query.put(path.toString(), exist);
             } else {
-                throw new KettleException(BaseMessages.getString(PKG, "MongoDelete.ErrorMessage.ComparatorNotSupported", new String[]{field.m_comparator}));
+                throw new KettleException(BaseMessages.getString(PKG, "MongoDbDelete.ErrorMessage.ComparatorNotSupported", new String[]{field.m_comparator}));
             }
 
         }
 
         if (!haveMatchFields) {
             throw new KettleException(BaseMessages.getString(PKG,
-                    "MongoDelete.ErrorMessage.NoFieldsToDeleteSpecifiedForMatch"));
+                    "MongoDbDelete.ErrorMessage.NoFieldsToDeleteSpecifiedForMatch"));
         }
 
         if (!hasNonNullMatchValues) {
@@ -348,7 +348,7 @@ public class MongoDbDeleteData extends BaseStepData implements StepDataInterface
         }
         if (kettleType.isSerializableType()) {
             throw new KettleValueException(BaseMessages.getString(PKG,
-                    "MongoDelete.ErrorMessage.CantStoreKettleSerializableVals"));
+                    "MongoDbDelete.ErrorMessage.CantStoreKettleSerializableVals"));
         }
 
         return false;
