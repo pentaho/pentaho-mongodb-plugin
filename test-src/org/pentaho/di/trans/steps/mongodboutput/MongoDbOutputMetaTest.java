@@ -1,5 +1,9 @@
 package org.pentaho.di.trans.steps.mongodboutput;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -7,12 +11,15 @@ import java.util.Map;
 
 import org.junit.Test;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.repository.ObjectId;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.steps.loadsave.LoadSaveTester;
 import org.pentaho.di.trans.steps.loadsave.validator.FieldLoadSaveValidatorFactory;
 import org.pentaho.di.trans.steps.loadsave.validator.ListLoadSaveValidator;
 import org.pentaho.di.trans.steps.loadsave.validator.ObjectValidator;
 import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMeta.MongoField;
 import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMeta.MongoIndex;
+import org.pentaho.metastore.api.IMetaStore;
 
 public class MongoDbOutputMetaTest {
   @Test
@@ -60,5 +67,26 @@ public class MongoDbOutputMetaTest {
     
     tester.testXmlRoundTrip();
     tester.testRepoRoundTrip();
+  }
+  
+  @Test
+  public void testForPDI12155_NotDeprecatedSaveRepMethodImplemented() throws Exception {
+    Class[] cArg = { Repository.class, IMetaStore.class, ObjectId.class, ObjectId.class };
+    try {
+      MongoDbOutputMeta.class.getDeclaredMethod( "saveRep", cArg );
+    } catch ( NoSuchMethodException e ) {
+      fail( "There is no such a method BUT should be: " + e.getMessage() );
+    }
+  }
+  
+  @Test
+  public void testForPDI12155_DeprecatedSaveRepMethodNotImplemented() throws Exception {
+    Class[] cArg = { Repository.class, ObjectId.class, ObjectId.class };
+    try {
+      Method declaredMethod = MongoDbOutputMeta.class.getDeclaredMethod( "saveRep", cArg );
+      fail( "There is a method BUT should not be: " + declaredMethod );
+    } catch ( NoSuchMethodException e ) {
+      assertTrue(true);
+    }
   }
 }
