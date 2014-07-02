@@ -1,20 +1,42 @@
 package org.pentaho.di.trans.steps.mongodboutput;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.pentaho.di.core.Const;
+import org.pentaho.di.core.encryption.Encr;
+import org.pentaho.di.core.encryption.TwoWayPasswordEncoderPluginType;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.plugins.PluginRegistry;
+import org.pentaho.di.core.util.EnvUtil;
+import org.pentaho.di.repository.ObjectId;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.steps.loadsave.LoadSaveTester;
 import org.pentaho.di.trans.steps.loadsave.validator.FieldLoadSaveValidatorFactory;
 import org.pentaho.di.trans.steps.loadsave.validator.ListLoadSaveValidator;
 import org.pentaho.di.trans.steps.loadsave.validator.ObjectValidator;
 import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMeta.MongoField;
 import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMeta.MongoIndex;
+import org.pentaho.metastore.api.IMetaStore;
 
 public class MongoDbOutputMetaTest {
+  @BeforeClass
+  public static void beforeClass() throws KettleException {
+    PluginRegistry.addPluginType( TwoWayPasswordEncoderPluginType.getInstance() );
+    PluginRegistry.init();
+    String passwordEncoderPluginID = Const.NVL( EnvUtil.getSystemProperty( Const.KETTLE_PASSWORD_ENCODER_PLUGIN ), "Kettle" );
+    Encr.init( passwordEncoderPluginID );
+  }
+  
   @Test
   public void testRoundTrips() throws KettleException {
     List<String> commonFields =
@@ -60,5 +82,26 @@ public class MongoDbOutputMetaTest {
     
     tester.testXmlRoundTrip();
     tester.testRepoRoundTrip();
+  }
+  
+  @Test
+  public void testForPDI12155_NotDeprecatedSaveRepMethodImplemented() throws Exception {
+    Class[] cArg = { Repository.class, IMetaStore.class, ObjectId.class, ObjectId.class };
+    try {
+      MongoDbOutputMeta.class.getDeclaredMethod( "saveRep", cArg );
+    } catch ( NoSuchMethodException e ) {
+      fail( "There is no such a method BUT should be: " + e.getMessage() );
+    }
+  }
+  
+  @Test
+  public void testForPDI12155_DeprecatedSaveRepMethodNotImplemented() throws Exception {
+    Class[] cArg = { Repository.class, ObjectId.class, ObjectId.class };
+    try {
+      Method declaredMethod = MongoDbOutputMeta.class.getDeclaredMethod( "saveRep", cArg );
+      fail( "There is a method BUT should not be: " + declaredMethod );
+    } catch ( NoSuchMethodException e ) {
+      assertTrue(true);
+    }
   }
 }
