@@ -2,11 +2,14 @@ bin/
 dist/
 lib/
 lib-provided/
+lib-codegen/
 stage-pmr/
 test-lib/
 eclipse-bin/
 override.properties
 .settings/
+.classpath
 /dev-lib
 /pdi-null
 /pdi-bin
+target/
