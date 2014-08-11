@@ -17,6 +17,7 @@
 
 package org.pentaho.di.trans.steps.mongodboutput;
 
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -284,7 +285,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
     CommandResult cmd = null;
     int count = 0;
     logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.CurrentBatchSize", m_batch.size() ) );
-    for ( int i = m_batch.size() - 1; i >= 0; i-- ) {
+    for ( int i = 0, len = m_batch.size(); i < len; i++ ) {
       DBObject toTry = m_batch.get( i );
       Object[] correspondingRow = m_batchRows.get( i );
       try {
@@ -298,30 +299,38 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
           cmd.throwOnError();
         }
 
-        m_batch.remove( i );
-        m_batchRows.remove( i );
         count++;
       } catch ( MongoException ex ) {
         if ( !lastRetry ) {
           logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.SuccessfullySavedXDocuments", count ) );
+          removeFirstItemsFrom( m_batch, count );
+          removeFirstItemsFrom( m_batchRows, count );
           throw ex;
         }
-
-        m_batch.remove( i );
-        m_batchRows.remove( i );
 
         // Send this one to the error stream if doing error handling
         if ( getStepMeta().isDoingErrorHandling() ) {
           putError( getInputRowMeta(), correspondingRow, 1, ex.getMessage(), "", "MongoDbOutput" );
         } else {
+          removeFirstItemsFrom( m_batch, i + 1 );
+          removeFirstItemsFrom( m_batchRows, i + 1 );
           throw ex;
         }
       }
     }
 
+    m_batch.clear();
+    m_batchRows.clear();
+
     logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.SuccessfullySavedXDocuments", count ) );
 
     return cmd;
+  }
+
+  private static <T> void removeFirstItemsFrom( List<T> list, int amount ) {
+    for ( int i = 0; i < amount; i++ ) {
+      list.remove( 0 );
+    }
   }
 
   protected void doBatch() throws KettleException {
@@ -348,12 +357,21 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
           cmd = batchRetryUsingSave( retries == m_writeRetries );
         }
       } catch ( MongoException me ) {
-        lastEx = me;
+        // avoid exception if a timeout issue occurred and it was exactly the first attempt
+        boolean shouldNotBeAvoided = !isTimeoutException( me ) && ( retries == 0 );
+        if ( shouldNotBeAvoided ) {
+          lastEx = me;
+        }
         retries++;
         if ( retries <= m_writeRetries ) {
-          logError( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.ErrorWritingToMongo", //$NON-NLS-1$
+          if ( shouldNotBeAvoided ) {
+            // skip logging error
+            // however do not skip saving elements separately during next attempt to prevent losing data
+            logError( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.ErrorWritingToMongo", //$NON-NLS-1$
               me.toString() ) );
-          logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Message.Retry", m_writeRetryDelay ) ); //$NON-NLS-1$
+            logBasic(
+              BaseMessages.getString( PKG, "MongoDbOutput.Messages.Message.Retry", m_writeRetryDelay ) ); //$NON-NLS-1$
+          }
           try {
             Thread.sleep( m_writeRetryDelay * 1000 );
             // CHECKSTYLE:OFF
@@ -384,6 +402,10 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
     m_batchRows.clear();
   }
 
+  private static boolean isTimeoutException( MongoException me ) {
+    return ( me instanceof MongoException.Network ) && ( me.getCause() instanceof SocketTimeoutException );
+  }
+
   @Override
   public boolean init( StepMetaInterface stepMetaInterface, StepDataInterface stepDataInterface ) {
     if ( super.init( stepMetaInterface, stepDataInterface ) ) {
@@ -405,7 +427,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
           m_writeRetryDelay = MongoDbOutputMeta.RETRY_DELAY;
         }
       }
-      
+
       String hostname = environmentSubstitute( m_meta.getHostnames() );
       int port = Const.toInt( environmentSubstitute( m_meta.getPort() ), 27017 );
       String db = environmentSubstitute( m_meta.getDbName() );
@@ -491,7 +513,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
   }
 
   final void checkInputFieldsMatch( RowMetaInterface rmi, List<MongoDbOutputMeta.MongoField> mongoFields )
-      throws KettleException {
+    throws KettleException {
     Set<String> expected = new HashSet<String>( mongoFields.size(), 1 );
     Set<String> actual = new HashSet<String>( rmi.getFieldNames().length, 1 );
     for ( MongoDbOutputMeta.MongoField field : mongoFields ) {
