@@ -15,10 +15,14 @@ public class MongoClientWrapperFactory {
       KerberosMongoClientWrapper wrapper = new KerberosMongoClientWrapper( meta, vars, log );
       return (MongoClientWrapper) Proxy.newProxyInstance( wrapper.getClass().getClassLoader(),
           new Class<?>[] { MongoClientWrapper.class }, new KerberosInvocationHandler( wrapper.getAuthContext(), wrapper ) );
-    } else if ( !Const.isEmpty( meta.getAuthenticationUser() ) || !Const.isEmpty( meta.getAuthenticationPassword() ) ) {
-      return new UsernamePasswordMongoClientWrapper( meta, vars, log );
     } else {
-      return new NoAuthMongoClientWrapper( meta, vars, log );
+      String user = vars.environmentSubstitute(meta.getAuthenticationUser());
+      String password = vars.environmentSubstitute(meta.getAuthenticationPassword());
+      if (!Const.isEmpty(user) || !Const.isEmpty(password)) {
+        return new UsernamePasswordMongoClientWrapper(meta, vars, log);
+      } else {
+        return new NoAuthMongoClientWrapper(meta, vars, log);
+      }
     }
   }
 }
