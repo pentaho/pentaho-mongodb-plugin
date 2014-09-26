@@ -14,16 +14,13 @@
  * limitations under the License.
  *
  */
-
 package org.pentaho.di.trans.steps.mongodboutput;
-
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -36,97 +33,74 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.mongo.wrapper.MongoClientWrapperFactory;
-
 import com.mongodb.CommandResult;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteResult;
-
 /**
  * Class providing an output step for writing data to a MongoDB collection. Supports insert, truncate, upsert,
  * multi-update (update all matching docs) and modifier update (update only certain fields) operations. Can also create
  * and drop indexes based on one or more fields.
  *
- * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
+ * @author Mark Hall ( mhall{[at]}pentaho{[dot]}com)
  */
 public class MongoDbOutput extends BaseStep implements StepInterface {
   private static Class<?> PKG = MongoDbOutputMeta.class;
-
   protected MongoDbOutputMeta m_meta;
   protected MongoDbOutputData m_data;
-
   protected MongoDbOutputData.MongoTopLevel m_mongoTopLevelStructure = MongoDbOutputData.MongoTopLevel.INCONSISTENT;
-
   /** The batch size to use for insert operation */
   protected int m_batchInsertSize = 100;
-
   /** Holds a batch of rows converted to documents */
   protected List<DBObject> m_batch;
-
   /** Holds an original batch of rows (corresponding to the converted documents) */
   protected List<Object[]> m_batchRows;
-
   protected int m_writeRetries = MongoDbOutputMeta.RETRIES;
   protected int m_writeRetryDelay = MongoDbOutputMeta.RETRY_DELAY;
-
   public MongoDbOutput( StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta,
                         Trans trans ) {
     super( stepMeta, stepDataInterface, copyNr, transMeta, trans );
   }
-
   @Override
   public boolean processRow( StepMetaInterface smi, StepDataInterface sdi ) throws KettleException {
-
     Object[] row = getRow();
-
     if ( row == null ) {
       // no more output
-
       // check any remaining buffered objects
       if ( m_batch != null && m_batch.size() > 0 ) {
         doBatch();
       }
-
       // INDEXING - http://www.mongodb.org/display/DOCS/Indexes
       // Indexing is computationally expensive - it needs to be
       // done after all data is inserted and done in the BACKGROUND.
-
       // UNIQUE indexes (prevent duplicates on the
       // keys in the index) and SPARSE indexes (don't index docs that
       // don't have the key field) - current limitation is that SPARSE
       // indexes can only have a single field
-
       List<MongoDbOutputMeta.MongoIndex> indexes = m_meta.getMongoIndexes();
       if ( indexes != null && indexes.size() > 0 ) {
         logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.ApplyingIndexOpps" ) ); //$NON-NLS-1$
         m_data.applyIndexes( indexes, log, m_meta.getTruncate() );
       }
-
       disconnect();
       setOutputDone();
       return false;
     }
-
     if ( first ) {
       first = false;
-
       m_batchInsertSize = 100;
-
       String batchInsert = environmentSubstitute( m_meta.getBatchInsertSize() );
       if ( !Const.isEmpty( batchInsert ) ) {
         m_batchInsertSize = Integer.parseInt( batchInsert );
       }
       m_batch = new ArrayList<DBObject>( m_batchInsertSize );
       m_batchRows = new ArrayList<Object[]>();
-
       // output the same as the input
       m_data.setOutputRowMeta( getInputRowMeta() );
-
       // scan for top-level JSON document insert and validate
       // field specification in this case.
       m_data.m_hasTopLevelJSONDocInsert = MongoDbOutputData.scanForInsertTopLevelJSONDoc( m_meta.m_mongoFields );
-
       // first check our incoming fields against our meta data for
       // fields to
       // insert
@@ -135,17 +109,14 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       // this fields we are going to use for mongo output
       List<MongoDbOutputMeta.MongoField> mongoFields = m_meta.getMongoFields();
       checkInputFieldsMatch( rmi, mongoFields );
-
       // copy and initialize mongo fields
       m_data.setMongoFields( m_meta.getMongoFields() );
       m_data.init( MongoDbOutput.this );
-
       // check truncate
       if ( m_meta.getTruncate() ) {
         try {
           logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.TruncatingCollection" ) ); //$NON-NLS-1$
           m_data.getCollection().drop();
-
           // re-establish the collection
           String collection = environmentSubstitute( m_meta.getCollection() );
           m_data.createCollection( m_meta.getDbName(), collection );
@@ -156,26 +127,20 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
         }
       }
     }
-
     if ( !isStopped() ) {
-
       if ( m_meta.getUpdate() ) {
         DBObject updateQuery =
           MongoDbOutputData.getQueryObject( m_data.m_userFields, getInputRowMeta(), row, MongoDbOutput.this,
             m_mongoTopLevelStructure );
-
         if ( log.isDebug() ) {
           logDebug( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Debug.QueryForUpsert", updateQuery ) ); //$NON-NLS-1$
         }
-
         if ( updateQuery != null ) {
           // i.e. we have some non-null incoming query field values
           DBObject insertUpdate = null;
-
           // get the record to update the match with
           if ( !m_meta.getModifierUpdate() ) {
             // complete record replace or insert
-
             insertUpdate =
               MongoDbOutputData.kettleRowToMongo( m_data.m_userFields, getInputRowMeta(), row, MongoDbOutput.this,
                 m_mongoTopLevelStructure, m_data.m_hasTopLevelJSONDocInsert );
@@ -183,9 +148,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
               logDebug( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Debug.InsertUpsertObject", //$NON-NLS-1$
                 insertUpdate ) );
             }
-
           } else {
-
             // specific field update (or insert)
             insertUpdate =
               m_data.getModifierUpdateObject( m_data.m_userFields, getInputRowMeta(), row, MongoDbOutput.this,
@@ -195,18 +158,15 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
                 insertUpdate ) );
             }
           }
-
           if ( insertUpdate != null ) {
             commitUpdate( updateQuery, insertUpdate, row );
           }
         }
       } else {
         // straight insert
-
         DBObject mongoInsert =
           MongoDbOutputData.kettleRowToMongo( m_data.m_userFields, getInputRowMeta(), row, MongoDbOutput.this,
             m_mongoTopLevelStructure, m_data.m_hasTopLevelJSONDocInsert );
-
         if ( mongoInsert != null ) {
           m_batch.add( mongoInsert );
           m_batchRows.add( row );
@@ -217,15 +177,11 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
         }
       }
     }
-
     return true;
   }
-
   protected void commitUpdate( DBObject updateQuery, DBObject insertUpdate, Object[] row ) throws KettleException {
-
     int retrys = 0;
     MongoException lastEx = null;
-
     while ( retrys <= m_writeRetries && !isStopped() ) {
       WriteResult result = null;
       CommandResult cmd = null;
@@ -240,12 +196,10 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
         // contains the primary in the replica set and give feedback if it
         // doesnt
         result = m_data.getCollection().update( updateQuery, insertUpdate, m_meta.getUpsert(), m_meta.getMulti() );
-
         cmd = result.getLastError();
         if ( cmd != null && !cmd.ok() ) {
           String message = cmd.getErrorMessage();
           logError( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.MongoReported", message ) ); //$NON-NLS-1$
-
           cmd.throwOnError();
         }
       } catch ( MongoException me ) {
@@ -263,14 +217,11 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
           }
         }
       }
-
       if ( cmd != null && cmd.ok() ) {
         break;
       }
     }
-
     if ( ( retrys > m_writeRetries || isStopped() ) && lastEx != null ) {
-
       // Send this one to the error stream if doing error handling
       if ( getStepMeta().isDoingErrorHandling() ) {
         putError( getInputRowMeta(), row, 1, lastEx.getMessage(), "", "MongoDbOutput" );
@@ -279,7 +230,6 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       }
     }
   }
-
   protected CommandResult batchRetryUsingSave( boolean lastRetry ) throws MongoException, KettleException {
     WriteResult result = null;
     CommandResult cmd = null;
@@ -291,14 +241,11 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       try {
         result = m_data.getCollection().save( toTry );
         cmd = result.getLastError();
-
         if ( cmd != null && !cmd.ok() ) {
           String message = cmd.getErrorMessage();
           logError( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.MongoReported", message ) ); //$NON-NLS-1$
-
           cmd.throwOnError();
         }
-
         count++;
       } catch ( MongoException ex ) {
         if ( !lastRetry ) {
@@ -307,7 +254,6 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
           m_batchRows = copyExceptFirst( count, m_batchRows );
           throw ex;
         }
-
         // Send this one to the error stream if doing error handling
         if ( getStepMeta().isDoingErrorHandling() ) {
           putError( getInputRowMeta(), correspondingRow, 1, ex.getMessage(), "", "MongoDbOutput" );
@@ -318,23 +264,17 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
         }
       }
     }
-
     m_batch.clear();
     m_batchRows.clear();
-
     logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.SuccessfullySavedXDocuments", count ) );
-
     return cmd;
   }
-
   private static <T> List<T> copyExceptFirst( int amount, List<T> list ) {
     return new ArrayList<T>( list.subList( amount, list.size() ) );
   }
-
   protected void doBatch() throws KettleException {
     int retries = 0;
     MongoException lastEx = null;
-
     while ( retries <= m_writeRetries && !isStopped() ) {
       WriteResult result = null;
       CommandResult cmd = null;
@@ -342,11 +282,9 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
         if ( retries == 0 ) {
           result = m_data.getCollection().insert( m_batch );
           cmd = result.getLastError();
-
           if ( cmd != null && !cmd.ok() ) {
             String message = cmd.getErrorMessage();
             logError( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.MongoReported", message ) ); //$NON-NLS-1$
-
             cmd.throwOnError();
           }
         } else {
@@ -377,39 +315,32 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
             // CHECKSTYLE:ON
           }
         }
-        // throw new KettleException(me.getMessage(), me);
+        // throw new KettleException( me.getMessage(), me );
       }
-
       if ( cmd != null ) {
         ServerAddress s = cmd.getServerUsed();
         if ( s != null ) {
           logDetailed( BaseMessages.getString( PKG, "MongoDbOutput.Messages.WroteBatchToServer", s.toString() ) ); //$NON-NLS-1$
         }
       }
-
       if ( cmd != null && cmd.ok() ) {
         break;
       }
     }
-
     if ( ( retries > m_writeRetries || isStopped() ) && lastEx != null ) {
       throw new KettleException( lastEx );
     }
-
     m_batch.clear();
     m_batchRows.clear();
   }
-
   private static boolean isTimeoutException( MongoException me ) {
     return ( me instanceof MongoException.Network ) && ( me.getCause() instanceof SocketTimeoutException );
   }
-
   @Override
   public boolean init( StepMetaInterface stepMetaInterface, StepDataInterface stepDataInterface ) {
     if ( super.init( stepMetaInterface, stepDataInterface ) ) {
       m_meta = (MongoDbOutputMeta) stepMetaInterface;
       m_data = (MongoDbOutputData) stepDataInterface;
-
       if ( !Const.isEmpty( m_meta.getWriteRetries() ) ) {
         try {
           m_writeRetries = Integer.parseInt( m_meta.getWriteRetries() );
@@ -417,7 +348,6 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
           m_writeRetries = MongoDbOutputMeta.RETRIES;
         }
       }
-
       if ( !Const.isEmpty( m_meta.getWriteRetryDelay() ) ) {
         try {
           m_writeRetryDelay = Integer.parseInt( m_meta.getWriteRetryDelay() );
@@ -425,45 +355,35 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
           m_writeRetryDelay = MongoDbOutputMeta.RETRY_DELAY;
         }
       }
-
       String hostname = environmentSubstitute( m_meta.getHostnames() );
       int port = Const.toInt( environmentSubstitute( m_meta.getPort() ), 27017 );
       String db = environmentSubstitute( m_meta.getDbName() );
       String collection = environmentSubstitute( m_meta.getCollection() );
-
       try {
-
         if ( Const.isEmpty( db ) ) {
           throw new Exception( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.NoDBSpecified" ) ); //$NON-NLS-1$
         }
-
         if ( Const.isEmpty( collection ) ) {
           throw new Exception( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.NoCollectionSpecified" ) ); //$NON-NLS-1$
         }
-
         if ( !Const.isEmpty( m_meta.getAuthenticationUser() ) ) {
           String authInfo =
             ( m_meta.getUseKerberosAuthentication() ? BaseMessages.getString( PKG,
               "MongoDbOutput.Message.KerberosAuthentication", environmentSubstitute( m_meta.getAuthenticationUser() ) )
               : BaseMessages.getString( PKG, "MongoDbOutput.Message.NormalAuthentication",
-              environmentSubstitute( m_meta.getAuthenticationUser() ) ) );
-
+                environmentSubstitute( m_meta.getAuthenticationUser() ) ) );
           logBasic( authInfo );
         }
-
         m_data.setConnection( MongoClientWrapperFactory.createMongoClientWrapper( m_meta, this, log ) ); //MongoDbOutputData.connect( m_meta, this, log ) );
         //        m_data.setDB( m_data.getConnection().getDB( db ) );
-
         if ( Const.isEmpty( collection ) ) {
           throw new KettleException( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.NoCollectionSpecified" ) ); //$NON-NLS-1$
         }
         m_data.createCollection( db, collection );
         m_data.setCollection( m_data.getConnection().getCollection( db, collection ) );
-
         try {
           m_mongoTopLevelStructure =
             MongoDbOutputData.checkTopLevelConsistency( m_meta.m_mongoFields, MongoDbOutput.this );
-
           if ( m_mongoTopLevelStructure == MongoDbOutputData.MongoTopLevel.INCONSISTENT ) {
             logError( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.InconsistentMongoTopLevel" ) ); //$NON-NLS-1$
             return false;
@@ -472,7 +392,6 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
           logError( e.getMessage() );
           return false;
         }
-
         return true;
       } catch ( UnknownHostException ex ) {
         logError( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.UnknownHost", hostname ), ex ); //$NON-NLS-1$
@@ -483,10 +402,8 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
         return false;
       }
     }
-
     return false;
   }
-
   protected void disconnect() {
     if ( m_data != null ) {
       try {
@@ -496,7 +413,6 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       }
     }
   }
-
   @Override
   public void dispose( StepMetaInterface smi, StepDataInterface sdi ) {
     if ( m_data != null ) {
@@ -506,10 +422,8 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
         log.logError( e.getMessage() );
       }
     }
-
     super.dispose( smi, sdi );
   }
-
   final void checkInputFieldsMatch( RowMetaInterface rmi, List<MongoDbOutputMeta.MongoField> mongoFields )
     throws KettleException {
     Set<String> expected = new HashSet<String>( mongoFields.size(), 1 );
@@ -522,7 +436,6 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       String metaFieldName = rmi.getValueMeta( i ).getName();
       actual.add( metaFieldName );
     }
-
     // check that all expected fields is available in step input meta
     if ( !actual.containsAll( expected ) ) {
       // in this case some fields willn't be found in input step meta
@@ -534,12 +447,10 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       throw new KettleException( BaseMessages.getString( PKG,
         "MongoDbOutput.Messages.MongoField.Error.FieldsNotFoundInMetadata", b.toString() ) );
     }
-
     boolean found = actual.removeAll( expected );
     if ( !found ) {
       throw new KettleException( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.NotInsertingAnyFields" ) ); //$NON-NLS-1$
     }
-
     if ( !actual.isEmpty() ) {
       // we have some fields that will not be inserted.
       StringBuffer b = new StringBuffer();
