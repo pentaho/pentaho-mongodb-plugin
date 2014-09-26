@@ -67,6 +67,16 @@ public class DefaultMongoCollectionWrapper implements MongoCollectionWrapper {
   }
 
   @Override
+  public WriteResult remove() throws KettleException {
+	return remove( new BasicDBObject() );
+  }
+
+  @Override
+  public WriteResult remove( DBObject query ) throws KettleException {
+	return collection.remove( query );
+  }
+
+  @Override
   public WriteResult save( DBObject toTry ) throws KettleException {
     return collection.save( toTry );
   }
