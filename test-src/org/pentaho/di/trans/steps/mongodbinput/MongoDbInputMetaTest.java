@@ -1,11 +1,9 @@
 package org.pentaho.di.trans.steps.mongodbinput;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.pentaho.di.core.Const;
@@ -20,7 +18,6 @@ import org.pentaho.di.trans.steps.loadsave.validator.FieldLoadSaveValidatorFacto
 import org.pentaho.di.trans.steps.loadsave.validator.ListLoadSaveValidator;
 import org.pentaho.di.trans.steps.loadsave.validator.ObjectValidator;
 import org.pentaho.mongo.wrapper.field.MongoField;
-
 public class MongoDbInputMetaTest {
   @BeforeClass
   public static void beforeClass() throws KettleException {
@@ -29,7 +26,6 @@ public class MongoDbInputMetaTest {
     String passwordEncoderPluginID = Const.NVL( EnvUtil.getSystemProperty( Const.KETTLE_PASSWORD_ENCODER_PLUGIN ), "Kettle" );
     Encr.init( passwordEncoderPluginID );
   }
-  
   @Test
   public void testRoundTrips() throws KettleException, NoSuchMethodException, SecurityException {
     Map<String, String> getterMap = new HashMap<String, String>();
@@ -50,17 +46,14 @@ public class MongoDbInputMetaTest {
     setterMap.put( "execute_for_each_row", "setExecuteForEachIncomingRow" );
     setterMap.put( "mongo_fields", "setMongoFields" );
     setterMap.put( "tag_sets", "setReadPrefTagSets" );
-    
     Map<String, FieldLoadSaveValidator<?>> fieldLoadSaveValidatorAttributeMap =
         new HashMap<String, FieldLoadSaveValidator<?>>();
     fieldLoadSaveValidatorAttributeMap.put( "tag_sets", new ListLoadSaveValidator<String>(
         new FieldLoadSaveValidator<String>() {
-
           @Override
           public String getTestObject() {
             return "{" + UUID.randomUUID().toString() + "}";
           }
-
           @Override
           public boolean validateTestObject( String testObject, Object actual ) {
             return testObject.equals( actual );
@@ -68,20 +61,16 @@ public class MongoDbInputMetaTest {
         } ) );
     Map<String, FieldLoadSaveValidator<?>> fieldLoadSaveValidatorTypeMap =
         new HashMap<String, FieldLoadSaveValidator<?>>();
-    
     LoadSaveTester tester =
-        new LoadSaveTester( MongoDbInputMeta.class, Arrays.<String> asList( "hostname", "port", "db_name",
+        new LoadSaveTester( MongoDbInputMeta.class, Arrays.<String>asList( "hostname", "port", "db_name",
             "fields_name", "collection", "json_field_name", "json_query", "auth_user", "auth_password",
             "auth_kerberos", "connect_timeout", "socket_timeout", "read_preference", "output_json",
             "use_all_replica_members", "query_is_pipeline", "execute_for_each_row", "mongo_fields", "tag_sets" ),
             getterMap, setterMap, fieldLoadSaveValidatorAttributeMap, fieldLoadSaveValidatorTypeMap );
-
     FieldLoadSaveValidatorFactory validatorFactory = tester.getFieldLoadSaveValidatorFactory();
-
     validatorFactory.registerValidator( validatorFactory.getName( List.class, MongoField.class ),
         new ListLoadSaveValidator<MongoField>( new ObjectValidator<MongoField>( validatorFactory, MongoField.class,
-            Arrays.<String> asList( "m_fieldName", "m_fieldPath", "m_kettleType", "m_indexedVals" ) ) ) );
-    
+            Arrays.<String>asList( "m_fieldName", "m_fieldPath", "m_kettleType", "m_indexedVals" ) ) ) );
     tester.testXmlRoundTrip();
     tester.testRepoRoundTrip();
   }
