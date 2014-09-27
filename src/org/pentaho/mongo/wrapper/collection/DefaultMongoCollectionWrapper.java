@@ -71,6 +71,11 @@ public class DefaultMongoCollectionWrapper implements MongoCollectionWrapper {
     return collection.save( toTry );
   }
 
+  @Override
+  public WriteResult drop(DBObject dropQuery) throws KettleException {
+    return collection.remove(dropQuery);
+  }
+
   protected MongoCursorWrapper wrap( DBCursor cursor ) {
     return new DefaultCursorWrapper( cursor );
   }
