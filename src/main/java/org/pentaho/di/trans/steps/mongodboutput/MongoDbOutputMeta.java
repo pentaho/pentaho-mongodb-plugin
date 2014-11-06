@@ -894,7 +894,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
    */
   @Override
   public String getDialogClassName() {
-    return "org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputDialog"; //$NON-NLS-1$
+    return MongoDbOutputDialog.class.getCanonicalName(); //$NON-NLS-1$
   }
 
   /*

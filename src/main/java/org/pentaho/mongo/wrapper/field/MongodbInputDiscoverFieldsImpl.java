@@ -8,81 +8,98 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFields;
 import org.pentaho.mongo.MongoDbException;
+import org.pentaho.mongo.MongoProperties;
 import org.pentaho.mongo.wrapper.MongoClientWrapper;
 import org.pentaho.mongo.wrapper.MongoDBAction;
+import org.pentaho.mongo.wrapper.MongoWrapperUtil;
 
 import java.util.*;
 
 /**
  * Created by bryan on 8/7/14.
  */
-public class FieldsUtil {
-    private static final Class<?> PKG = FieldsUtil.class;
-    public static List<MongoField> discoverFields( MongoClientWrapper wrapper, String db, final String collection, final String query, final String fields,
-                                            final boolean isPipeline, final int docsToSample ) throws KettleException {
-        try {
-            return wrapper.perform(db, new MongoDBAction<List<MongoField>>() {
-                @Override
-                public List<MongoField> perform(DB db) throws MongoDbException {
-                    DBCursor cursor = null;
-                        int numDocsToSample = docsToSample;
-                        if (numDocsToSample < 1) {
-                            numDocsToSample = 100; // default
-                        }
+public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverFields {
+  private static final Class<?> PKG = MongodbInputDiscoverFieldsImpl.class;
 
-                        List<MongoField> discoveredFields = new ArrayList<MongoField>();
-                        Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
-                        try {
-                            if (Const.isEmpty(collection)) {
-                                throw new KettleException(BaseMessages.getString(PKG,
-                                        "MongoNoAuthWrapper.ErrorMessage.NoCollectionSpecified")); //$NON-NLS-1$
-                            }
-                            DBCollection dbcollection = db.getCollection(collection);
-
-                            Iterator<DBObject> pipeSample = null;
-
-                            if (isPipeline) {
-                                pipeSample = setUpPipelineSample(query, numDocsToSample, dbcollection);
-                            } else {
-                                if (Const.isEmpty(query) && Const.isEmpty(fields)) {
-                                    cursor = dbcollection.find().limit(numDocsToSample);
-                                } else {
-                                    DBObject dbObject = (DBObject) JSON.parse(Const.isEmpty(query) ? "{}" //$NON-NLS-1$
-                                            : query);
-                                    DBObject dbObject2 = (DBObject) JSON.parse(fields);
-                                    cursor = dbcollection.find(dbObject, dbObject2).limit(numDocsToSample);
-                                }
-                            }
-
-                            int actualCount = 0;
-                            while (cursor != null ? cursor.hasNext() : pipeSample.hasNext()) {
-                                actualCount++;
-                                DBObject nextDoc = (cursor != null ? cursor.next() : pipeSample.next());
-                                docToFields(nextDoc, fieldLookup);
-                            }
-
-                            postProcessPaths(fieldLookup, discoveredFields, actualCount);
-
-                            return discoveredFields;
-                        } catch (Exception e) {
-                            throw new MongoDbException(e);
-                        } finally {
-                            if (cursor != null) {
-                                cursor.close();
-                            }
-                        }
-                }
-            });
-        } catch (Exception ex) {
-            if (ex instanceof KettleException) {
-                throw (KettleException) ex;
-            } else {
-                throw new KettleException(BaseMessages.getString(PKG,
-                        "MongoNoAuthWrapper.ErrorMessage.UnableToDiscoverFields"), ex); //$NON-NLS-1$
-            }
-        }
+  public List<MongoField> discoverFields( MongoProperties.Builder properties, String db, final String collection, final String query, final String fields,
+                                          final boolean isPipeline, final int docsToSample) throws KettleException {
+    MongoClientWrapper clientWrapper = null;
+    try {
+      clientWrapper = MongoWrapperUtil.createMongoClientWrapper(properties, null);
+    } catch ( MongoDbException e ) {
+      throw new KettleException( e );
     }
+    try {
+      return clientWrapper.perform(db, new MongoDBAction<List<MongoField>>() {
+        @Override
+        public List<MongoField> perform(DB db) throws MongoDbException {
+          DBCursor cursor = null;
+          int numDocsToSample = docsToSample;
+          if (numDocsToSample < 1) {
+            numDocsToSample = 100; // default
+          }
+
+          List<MongoField> discoveredFields = new ArrayList<MongoField>();
+          Map<String, MongoField> fieldLookup = new HashMap<String, MongoField>();
+          try {
+            if (Const.isEmpty(collection)) {
+              throw new KettleException(BaseMessages.getString(PKG,
+                  "MongoNoAuthWrapper.ErrorMessage.NoCollectionSpecified")); //$NON-NLS-1$
+            }
+            DBCollection dbcollection = db.getCollection(collection);
+
+            Iterator<DBObject> pipeSample = null;
+
+            if (isPipeline) {
+              pipeSample = setUpPipelineSample(query, numDocsToSample, dbcollection);
+            } else {
+              if (Const.isEmpty(query) && Const.isEmpty(fields)) {
+                cursor = dbcollection.find().limit(numDocsToSample);
+              } else {
+                DBObject dbObject = (DBObject) JSON.parse(Const.isEmpty(query) ? "{}" //$NON-NLS-1$
+                    : query);
+                DBObject dbObject2 = (DBObject) JSON.parse(fields);
+                cursor = dbcollection.find(dbObject, dbObject2).limit(numDocsToSample);
+              }
+            }
+
+            int actualCount = 0;
+            while (cursor != null ? cursor.hasNext() : pipeSample.hasNext()) {
+              actualCount++;
+              DBObject nextDoc = (cursor != null ? cursor.next() : pipeSample.next());
+              docToFields(nextDoc, fieldLookup);
+            }
+
+            postProcessPaths(fieldLookup, discoveredFields, actualCount);
+
+            return discoveredFields;
+          } catch (Exception e) {
+            throw new MongoDbException(e);
+          } finally {
+            if (cursor != null) {
+              cursor.close();
+            }
+          }
+        }
+      });
+    } catch (Exception ex) {
+      if (ex instanceof KettleException) {
+        throw (KettleException) ex;
+      } else {
+        throw new KettleException(BaseMessages.getString(PKG,
+            "MongoNoAuthWrapper.ErrorMessage.UnableToDiscoverFields"), ex); //$NON-NLS-1$
+      }
+    } finally {
+      try {
+        clientWrapper.dispose();
+      } catch (MongoDbException e) {
+        //Ignore
+      }
+    }
+  }
+
     protected static void postProcessPaths( Map<String, MongoField> fieldLookup, List<MongoField> discoveredFields,
                                             int numDocsProcessed ) {
         for ( String key : fieldLookup.keySet() ) {
