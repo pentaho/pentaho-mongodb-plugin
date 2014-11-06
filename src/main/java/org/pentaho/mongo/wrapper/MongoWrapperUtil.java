@@ -29,7 +29,15 @@ public class MongoWrapperUtil {
 
   public static MongoClientWrapper createMongoClientWrapper( MongoDbMeta mongoDbMeta, VariableSpace vars,
                                                              LogChannelInterface log ) throws MongoDbException {
+    MongoProperties.Builder propertiesBuilder = createPropertiesBuilder(mongoDbMeta, vars);
+
+    return mongoWrapperClientFactory
+      .createMongoClientWrapper( propertiesBuilder.build(), new KettleMongoUtilLogger( log ) );
+  }
+
+  public static MongoProperties.Builder createPropertiesBuilder( MongoDbMeta mongoDbMeta, VariableSpace vars ) {
     MongoProperties.Builder propertiesBuilder = new MongoProperties.Builder();
+
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.HOST, vars.environmentSubstitute( mongoDbMeta.getHostnames() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.PORT, vars.environmentSubstitute( mongoDbMeta.getPort() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.DBNAME, vars.environmentSubstitute( mongoDbMeta.getDbName() ) );
@@ -40,11 +48,11 @@ public class MongoWrapperUtil {
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.wTimeout, mongoDbMeta.getWTimeout() );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.JOURNALED, Boolean.toString( mongoDbMeta.getJournal() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.USE_ALL_REPLICA_SET_MEMBERS,
-      Boolean.toString( mongoDbMeta.getUseAllReplicaSetMembers() ) );
+        Boolean.toString( mongoDbMeta.getUseAllReplicaSetMembers() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.USERNAME, mongoDbMeta.getAuthenticationUser() );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.PASSWORD, mongoDbMeta.getAuthenticationPassword() );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.USE_KERBEROS,
-      Boolean.toString( mongoDbMeta.getUseKerberosAuthentication() ) );
+        Boolean.toString( mongoDbMeta.getUseKerberosAuthentication() ) );
     if ( mongoDbMeta.getReadPrefTagSets() != null ) {
       StringBuilder tagSet = new StringBuilder();
       for ( String tag : mongoDbMeta.getReadPrefTagSets() ) {
@@ -57,8 +65,14 @@ public class MongoWrapperUtil {
       }
       setIfNotNullOrEmpty( propertiesBuilder, MongoProp.tagSet, tagSet.toString() );
     }
+
+    return propertiesBuilder;
+  }
+
+  public static MongoClientWrapper createMongoClientWrapper( MongoProperties.Builder properties, LogChannelInterface log )
+      throws MongoDbException {
     return mongoWrapperClientFactory
-      .createMongoClientWrapper( propertiesBuilder.build(), new KettleMongoUtilLogger( log ) );
+        .createMongoClientWrapper( properties.build(), new KettleMongoUtilLogger( log ) );
   }
 
   private static void setIfNotNullOrEmpty( MongoProperties.Builder builder, MongoProp prop, String value ) {

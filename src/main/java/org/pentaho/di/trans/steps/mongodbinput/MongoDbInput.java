@@ -17,7 +17,6 @@
 
 package org.pentaho.di.trans.steps.mongodbinput;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.pentaho.di.core.Const;
@@ -39,7 +38,7 @@ import com.mongodb.AggregationOutput;
 import com.mongodb.DBObject;
 import com.mongodb.ServerAddress;
 import com.mongodb.util.JSON;
-import org.pentaho.mongo.wrapper.field.FieldsUtil;
+import org.pentaho.mongo.wrapper.field.MongodbInputDiscoverFieldsImpl;
 
 public class MongoDbInput extends BaseStep implements StepInterface {
   private static Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes,
@@ -185,7 +184,7 @@ public class MongoDbInput extends BaseStep implements StepInterface {
         logDetailed(BaseMessages.getString(PKG,
             "MongoDbInput.Message.QueryPulledDataFrom", query));
 
-        List<DBObject> pipeline = FieldsUtil.jsonPipelineToDBObjectList(query);
+        List<DBObject> pipeline = MongodbInputDiscoverFieldsImpl.jsonPipelineToDBObjectList(query);
         DBObject firstP = pipeline.get(0);
         DBObject[] remainder = null;
         if (pipeline.size() > 1) {

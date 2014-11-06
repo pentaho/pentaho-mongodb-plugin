@@ -20,7 +20,6 @@ package org.pentaho.di.trans.steps.mongodbinput;
 import java.util.*;
 
 import com.mongodb.*;
-import com.mongodb.util.JSON;
 import org.bson.types.BSONTimestamp;
 import org.bson.types.Binary;
 import org.bson.types.Code;
@@ -28,7 +27,6 @@ import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 import org.bson.types.Symbol;
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -38,12 +36,12 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.mongo.MongoDbException;
+import org.pentaho.mongo.MongoProperties;
 import org.pentaho.mongo.wrapper.MongoClientWrapper;
-import org.pentaho.mongo.wrapper.MongoClientWrapperFactory;
 import org.pentaho.mongo.wrapper.MongoWrapperUtil;
 import org.pentaho.mongo.wrapper.collection.MongoCollectionWrapper;
 import org.pentaho.mongo.wrapper.cursor.MongoCursorWrapper;
-import org.pentaho.mongo.wrapper.field.FieldsUtil;
+import org.pentaho.mongo.wrapper.field.MongodbInputDiscoverFieldsImpl;
 import org.pentaho.mongo.wrapper.field.MongoArrayExpansion;
 import org.pentaho.mongo.wrapper.field.MongoField;
 
@@ -70,6 +68,11 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
   private List<MongoField> m_userFields;
   private MongoArrayExpansion m_expansionHandler;
+  private static MongoDbInputDiscoverFields m_mongoDbInputDiscoverFields = new MongodbInputDiscoverFieldsImpl();
+
+  public static void mongoDbInputDiscoverFieldsSetter( MongoDbInputDiscoverFields mongoDbInputDiscoverFields ) {
+    m_mongoDbInputDiscoverFields = mongoDbInputDiscoverFields;
+  }
 
   protected static MongoArrayExpansion checkFieldPaths( List<MongoField> normalFields, RowMetaInterface outputRowMeta )
     throws KettleException {
@@ -432,14 +435,10 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
 
   public static boolean discoverFields( final MongoDbInputMeta meta, final VariableSpace vars, final int docsToSample )
-    throws KettleException {
-      MongoClientWrapper clientWrapper = null;
-      try {
-          clientWrapper = MongoWrapperUtil.createMongoClientWrapper(meta, vars, null);
-      } catch (MongoDbException e) {
-          throw new KettleException(e);
-      }
-      try {
+      throws KettleException {
+
+    MongoProperties.Builder propertiesBuilder = MongoWrapperUtil.createPropertiesBuilder( meta, vars );
+    try {
       String db = vars.environmentSubstitute( meta.getDbName() );
       String collection = vars.environmentSubstitute( meta.getCollection() );
       String query = vars.environmentSubstitute( meta.getJsonQuery() );
@@ -449,7 +448,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         numDocsToSample = 100; // default
       }
       List<MongoField> discoveredFields =
-          FieldsUtil.discoverFields(clientWrapper, db, collection, query, fields, meta.getQueryIsPipeline(), numDocsToSample);
+          m_mongoDbInputDiscoverFields.discoverFields( propertiesBuilder, db, collection, query, fields, meta.getQueryIsPipeline(), numDocsToSample );
 
       // return true if query resulted in documents being returned and fields
       // getting extracted
@@ -464,14 +463,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       } else {
         throw new KettleException( "Unable to discover fields from MongoDB", e );
       }
-    } finally {
-        try {
-            clientWrapper.dispose();
-        } catch (MongoDbException e) {
-            //Ignore
-        }
     }
-
     return false;
   }
 
