@@ -22,7 +22,7 @@
     <service id="mongodbInputDiscoverFieldsImplService" ref="mongodbInputDiscoverFieldsImpl"
              interface="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFields"/>
     <reference id="mongoDbInputDiscoverFields"
-               interface="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFields"/>
+               interface="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFields" availability="optional"/>
 
     <bean id="inputMeta" class="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta"/>
     <bean id="inputPlugin" class="org.pentaho.di.osgi.OSGIPlugin">
