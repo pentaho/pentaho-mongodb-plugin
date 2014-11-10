@@ -68,11 +68,6 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
   private List<MongoField> m_userFields;
   private MongoArrayExpansion m_expansionHandler;
-  private static MongoDbInputDiscoverFields m_mongoDbInputDiscoverFields = new MongodbInputDiscoverFieldsImpl();
-
-  public static void mongoDbInputDiscoverFieldsSetter( MongoDbInputDiscoverFields mongoDbInputDiscoverFields ) {
-    m_mongoDbInputDiscoverFields = mongoDbInputDiscoverFields;
-  }
 
   protected static MongoArrayExpansion checkFieldPaths( List<MongoField> normalFields, RowMetaInterface outputRowMeta )
     throws KettleException {
@@ -158,7 +153,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
   /**
    * Initialize all the paths by locating the index for their field name in the outgoing row structure.
-   * 
+   *
    * @throws KettleException
    */
   public void init() throws KettleException {
@@ -181,7 +176,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   /**
    * Convert a mongo document to outgoing row field values with respect to the user-specified paths. May return more
    * than one Kettle row if an array is being expanded/unwound
-   * 
+   *
    * @param mongoObj
    *          the mongo document
    * @param space
@@ -240,7 +235,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   /**
    * Cleanses a string path by ensuring that any variables names present in the path do not contain "."s (replaces any
    * dots with underscores).
-   * 
+   *
    * @param path
    *          the path to cleanse
    * @return the cleansed path
@@ -282,7 +277,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
   /**
    * Set user-defined paths for extracting field values from Mongo documents
-   * 
+   *
    * @param fields
    *          the field path specifications
    */
@@ -448,7 +443,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         numDocsToSample = 100; // default
       }
       List<MongoField> discoveredFields =
-          m_mongoDbInputDiscoverFields.discoverFields( propertiesBuilder, db, collection, query, fields, meta.getQueryIsPipeline(), numDocsToSample );
+          MongoDbInputDiscoverFieldsHolder.getInstance().getMongoDbInputDiscoverFields().discoverFields( propertiesBuilder, db, collection, query, fields, meta.getQueryIsPipeline(), numDocsToSample );
 
       // return true if query resulted in documents being returned and fields
       // getting extracted
@@ -469,7 +464,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
   /**
    * Helper function that takes a list of indexed values and returns them as a String in comma-separated form.
-   * 
+   *
    * @param indexedVals
    *          a list of indexed values
    * @return the list a String in comma-separated form
@@ -489,7 +484,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
   /**
    * Helper function that takes a comma-separated list in a String and returns a list.
-   * 
+   *
    * @param indexedVals
    *          the String containing the lsit
    * @return a List containing the values
