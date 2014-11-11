@@ -15,14 +15,13 @@
     <bean id="mongodbInputDiscoverFieldsImpl" class="org.pentaho.mongo.wrapper.field.MongodbInputDiscoverFieldsImpl"/>
 
     <bean id="mongoDbInputDiscoverFieldsHolder"
-          class="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFieldsHolder">
-        <argument ref="mongoDbInputDiscoverFields"/>
-    </bean>
+          class="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFieldsHolder" scope="singleton"/>
 
     <service id="mongodbInputDiscoverFieldsImplService" ref="mongodbInputDiscoverFieldsImpl"
              interface="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFields"/>
-    <reference id="mongoDbInputDiscoverFields"
-               interface="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFields" availability="optional"/>
+    <reference-list interface="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFields" availability="optional">
+        <reference-listener ref="mongoDbInputDiscoverFieldsHolder" bind-method="implAdded" unbind-method="implRemoved"/>
+    </reference-list>
 
     <bean id="inputMeta" class="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta"/>
     <bean id="inputPlugin" class="org.pentaho.di.osgi.OSGIPlugin">
