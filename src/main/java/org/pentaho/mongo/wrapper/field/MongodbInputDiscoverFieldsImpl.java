@@ -236,7 +236,7 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
                         m.m_disparateTypes = true;
                     }
                     m.m_percentageOfSample++;
-                    updateMaxArrayIndexes( m, finalName );
+                    updateMinMaxArrayIndexes( m, finalName );
                 }
             }
         }
@@ -288,12 +288,12 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
                         m.m_disparateTypes = true;
                     }
                     m.m_percentageOfSample++;
-                    updateMaxArrayIndexes( m, finalName );
+                    updateMinMaxArrayIndexes( m, finalName );
                 }
             }
         }
     }
-    protected static void updateMaxArrayIndexes( MongoField m, String update ) {
+    protected static void updateMinMaxArrayIndexes( MongoField m, String update ) {
         // just look at the second (i.e. max index value) in the array parts
         // of update
         if (m.m_fieldName.indexOf('[') < 0) {
@@ -334,15 +334,13 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
                 String[] compParts = innerComp.split(":"); //$NON-NLS-1$
                 int origMax = Integer.parseInt(origParts[1]);
                 int compMax = Integer.parseInt(compParts[1]);
+                int origMin = Integer.parseInt( origParts[0] );
+                int compMin = Integer.parseInt( compParts[0] );
 
-                if (compMax > origMax) {
-                    // updated the max index seen for this path
-                    String newRange = "[" + origParts[0] + ":" + compMax + "]"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-                    updated.append(newRange);
-                } else {
-                    String oldRange = "[" + innerPart + "]"; //$NON-NLS-1$ //$NON-NLS-2$
-                    updated.append(oldRange);
-                }
+                String newRange =
+                  "[" + ( compMin < origMin ? compMin : origParts[0] ) + ":" + ( compMax > origMax ? compMax : origParts[1] )
+                  + "]";
+                updated.append( newRange );
             }
         }
 
