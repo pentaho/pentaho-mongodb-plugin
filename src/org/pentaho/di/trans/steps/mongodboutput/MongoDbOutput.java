@@ -144,12 +144,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       if ( m_meta.getTruncate() ) {
         try {
           logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.TruncatingCollection" ) ); //$NON-NLS-1$
-          m_data.getCollection().drop();
-
-          // re-establish the collection
-          String collection = environmentSubstitute( m_meta.getCollection() );
-          m_data.createCollection( m_meta.getDbName(), collection );
-          m_data.setCollection( m_data.getConnection().getCollection( m_meta.getDbName(), collection ) );
+          m_data.getCollection().remove();
         } catch ( Exception m ) {
           disconnect();
           throw new KettleException( m.getMessage(), m );
