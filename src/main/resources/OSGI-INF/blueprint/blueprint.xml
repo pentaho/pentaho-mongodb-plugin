@@ -23,8 +23,8 @@
         <reference-listener ref="mongoDbInputDiscoverFieldsHolder" bind-method="implAdded" unbind-method="implRemoved"/>
     </reference-list>
 
-    <bean id="inputMeta" class="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta"/>
-    <bean id="inputPlugin" class="org.pentaho.di.osgi.OSGIPlugin">
+    <bean id="inputMeta" class="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta" scope="prototype"/>
+    <bean id="inputPlugin" class="org.pentaho.di.osgi.OSGIPlugin" scope="prototype">
         <property name="mainType" value="org.pentaho.di.trans.step.StepMetaInterface"/>
         <property name="name" value="MongoDB Input"/>
         <property name="ID" value="MongoDbInput"/>
@@ -46,8 +46,8 @@
         </service-properties>
     </service>
 
-    <bean id="outputMeta" class="org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMeta"/>
-    <bean id="outputPlugin" class="org.pentaho.di.osgi.OSGIPlugin">
+    <bean id="outputMeta" class="org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMeta" scope="prototype"/>
+    <bean id="outputPlugin" class="org.pentaho.di.osgi.OSGIPlugin" scope="prototype">
         <property name="mainType" value="org.pentaho.di.trans.step.StepMetaInterface"/>
         <property name="name" value="MongoDB Output"/>
         <property name="ID" value="MongoDbOutput"/>
