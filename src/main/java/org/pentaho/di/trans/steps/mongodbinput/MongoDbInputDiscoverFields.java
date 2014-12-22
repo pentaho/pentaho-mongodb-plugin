@@ -11,5 +11,5 @@ import java.util.List;
  */
 public interface MongoDbInputDiscoverFields {
     public List<MongoField> discoverFields( MongoProperties.Builder properties, String db, final String collection, final String query, final String fields,
-                                                   final boolean isPipeline, final int docsToSample ) throws KettleException;
+                                                   final boolean isPipeline, final int docsToSample, MongoDbInputMeta step ) throws KettleException;
 }
