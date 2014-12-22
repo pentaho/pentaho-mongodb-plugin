@@ -443,7 +443,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         numDocsToSample = 100; // default
       }
       List<MongoField> discoveredFields =
-          MongoDbInputDiscoverFieldsHolder.getInstance().getMongoDbInputDiscoverFields().discoverFields( propertiesBuilder, db, collection, query, fields, meta.getQueryIsPipeline(), numDocsToSample );
+          MongoDbInputDiscoverFieldsHolder.getInstance().getMongoDbInputDiscoverFields().discoverFields( propertiesBuilder, db, collection, query, fields, meta.getQueryIsPipeline(), numDocsToSample, meta );
 
       // return true if query resulted in documents being returned and fields
       // getting extracted
