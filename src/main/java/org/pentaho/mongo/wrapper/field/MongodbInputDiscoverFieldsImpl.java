@@ -8,6 +8,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.trans.steps.mongodbinput.DiscoverFieldsCallback;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFields;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.mongo.MongoDbException;
@@ -24,7 +25,7 @@ import java.util.*;
 public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverFields {
   private static final Class<?> PKG = MongodbInputDiscoverFieldsImpl.class;
 
-  public List<MongoField> discoverFields( MongoProperties.Builder properties, String db, final String collection,
+  public List<MongoField> discoverFields( final MongoProperties.Builder properties, final String db, final String collection,
                                           final String query, final String fields,
                                           final boolean isPipeline, final int docsToSample, MongoDbInputMeta step )
     throws KettleException {
@@ -100,6 +101,24 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
         //Ignore
       }
     }
+  }
+
+  @Override
+  public void discoverFields( final MongoProperties.Builder properties, final String db, final String collection,
+                              final String query, final String fields,
+                              final boolean isPipeline, final int docsToSample, final MongoDbInputMeta step,
+                              final DiscoverFieldsCallback discoverFieldsCallback ) throws KettleException {
+    new Thread( new Runnable() {
+      @Override
+      public void run() {
+        try {
+          discoverFieldsCallback.notifyFields(
+            discoverFields( properties, db, collection, query, fields, isPipeline, docsToSample, step ) );
+        } catch ( KettleException e ) {
+          discoverFieldsCallback.notifyException( e );
+        }
+      }
+    } ).run();
   }
 
   protected static void postProcessPaths( Map<String, MongoField> fieldLookup, List<MongoField> discoveredFields,
