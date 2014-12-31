@@ -27,6 +27,7 @@ import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 import org.bson.types.Symbol;
+import org.eclipse.swt.widgets.Display;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -35,6 +36,8 @@ import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
+import org.pentaho.di.ui.spoon.Spoon;
+import org.pentaho.di.ui.trans.steps.mongodbinput.MongoDbInputDialog;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.MongoProperties;
 import org.pentaho.mongo.wrapper.MongoClientWrapper;
@@ -427,7 +430,43 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     m.m_fieldName = updated.toString();
   }
 
+  public static void discoverFields( final MongoDbInputMeta meta, final VariableSpace vars, final int docsToSample,
+                                     final MongoDbInputDialog mongoDialog ) throws KettleException {
+    MongoProperties.Builder propertiesBuilder = MongoWrapperUtil.createPropertiesBuilder( meta, vars );
+    String db = vars.environmentSubstitute( meta.getDbName() );
+    String collection = vars.environmentSubstitute( meta.getCollection() );
+    String query = vars.environmentSubstitute( meta.getJsonQuery() );
+    String fields = vars.environmentSubstitute( meta.getFieldsName() );
+    int numDocsToSample = docsToSample;
+    if ( numDocsToSample < 1 ) {
+      numDocsToSample = 100; // default
+    }
+    try {
+      MongoDbInputDiscoverFieldsHolder.getInstance().getMongoDbInputDiscoverFields().discoverFields( propertiesBuilder,
+        db, collection, query, fields, meta.getQueryIsPipeline(), numDocsToSample, meta, new DiscoverFieldsCallback() {
+          @Override
+          public void notifyFields( final List<MongoField> fields ) {
+            if ( fields.size() > 0 ) {
+              Spoon.getInstance().getDisplay().asyncExec( new Runnable() {
+                @Override
+                public void run() {
+                  meta.setMongoFields( fields );
+                  //mongoDialog.getData(meta);
+                  mongoDialog.updateFieldTableFields( meta.getMongoFields() );
+                }
+              } );
+            }
+          }
 
+          @Override
+          public void notifyException( Exception exception ) {
+            mongoDialog.handleNotificationException( exception );
+          }
+        } );
+    } catch ( KettleException e ) {
+      throw new KettleException( "Unable to discover fields from MongoDB", e );
+    }
+  }
 
   public static boolean discoverFields( final MongoDbInputMeta meta, final VariableSpace vars, final int docsToSample )
       throws KettleException {
@@ -447,7 +486,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
       // return true if query resulted in documents being returned and fields
       // getting extracted
-      if ( discoveredFields.size() > 0 ) {
+      if (discoveredFields.size() > 0 ) {
         meta.setMongoFields( discoveredFields );
 
         return true;
