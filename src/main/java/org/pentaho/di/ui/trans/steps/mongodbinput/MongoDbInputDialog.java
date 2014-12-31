@@ -17,10 +17,7 @@
 
 package org.pentaho.di.ui.trans.steps.mongodbinput;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
@@ -1275,6 +1272,97 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     m_fieldsView.optWidth(true);
   }
 
+  public void updateFieldTableFields( List<MongoField> fields ) {
+    Map<String, MongoField> fieldMap = new HashMap<String, MongoField>( fields.size() );
+    for ( MongoField field : fields ) {
+      fieldMap.put( field.m_fieldName, field );
+    }
+
+    int index = 0;
+    List<Integer> indicesToRemove = new ArrayList<Integer>();
+    for ( TableItem tableItem : m_fieldsView.getTable().getItems() ) {
+      String name = tableItem.getText( 1 );
+      MongoField mongoField = fieldMap.remove( name );
+      if ( mongoField == null ) {
+        //Value does not exist in incoming fields list and exists in table, remove old value from table
+        indicesToRemove.add( index );
+      } else {
+        //Value exists in incoming fields list and in table, update entry
+        if ( !Const.isEmpty( mongoField.m_fieldName ) ) {
+          tableItem.setText( 1, mongoField.m_fieldName );
+        }
+
+        if ( !Const.isEmpty( mongoField.m_fieldPath ) ) {
+          tableItem.setText( 2, mongoField.m_fieldPath );
+        }
+
+        if ( !Const.isEmpty( mongoField.m_kettleType ) ) {
+          tableItem.setText( 3, mongoField.m_kettleType );
+        }
+
+        if ( mongoField.m_indexedVals != null && mongoField.m_indexedVals.size() > 0 ) {
+          tableItem.setText( 4, MongoDbInputData.indexedValsList( mongoField.m_indexedVals ) );
+        }
+
+        if ( !Const.isEmpty( mongoField.m_arrayIndexInfo ) ) {
+          tableItem.setText( 5, mongoField.m_arrayIndexInfo );
+        }
+
+        if ( !Const.isEmpty( mongoField.m_occurenceFraction ) ) {
+          tableItem.setText( 6, mongoField.m_occurenceFraction );
+        }
+
+        if ( mongoField.m_disparateTypes ) {
+          tableItem.setText( 7, "Y" ); //$NON-NLS-1$
+        }
+      }
+      index++;
+    }
+
+    int[] indicesArray = new int[ indicesToRemove.size() ];
+    for ( int i = 0; i < indicesArray.length; i++ ) {
+      indicesArray[ i ] = indicesToRemove.get( i );
+    }
+
+    for ( MongoField mongoField : fieldMap.values() ) {
+      TableItem item = new TableItem( m_fieldsView.table, SWT.NONE );
+
+      if ( !Const.isEmpty( mongoField.m_fieldName ) ) {
+        item.setText( 1, mongoField.m_fieldName );
+      }
+
+      if ( !Const.isEmpty( mongoField.m_fieldPath ) ) {
+        item.setText( 2, mongoField.m_fieldPath );
+      }
+
+      if ( !Const.isEmpty( mongoField.m_kettleType ) ) {
+        item.setText( 3, mongoField.m_kettleType );
+      }
+
+      if ( mongoField.m_indexedVals != null && mongoField.m_indexedVals.size() > 0 ) {
+        item.setText( 4, MongoDbInputData.indexedValsList( mongoField.m_indexedVals ) );
+      }
+
+      if ( !Const.isEmpty( mongoField.m_arrayIndexInfo ) ) {
+        item.setText( 5, mongoField.m_arrayIndexInfo );
+      }
+
+      if ( !Const.isEmpty( mongoField.m_occurenceFraction ) ) {
+        item.setText( 6, mongoField.m_occurenceFraction );
+      }
+
+      if ( mongoField.m_disparateTypes ) {
+        item.setText( 7, "Y" ); //$NON-NLS-1$
+      }
+    }
+    m_fieldsView.setRowNums();
+    m_fieldsView.remove( indicesArray );
+    m_fieldsView.removeEmptyRows();
+    m_fieldsView.setRowNums();
+    m_fieldsView.optWidth( true );
+  }
+
+
   private boolean checkForUnresolved(MongoDbInputMeta meta, String title) {
 
     String query = transMeta.environmentSubstitute(meta.getJsonQuery());
@@ -1295,75 +1383,73 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     return !notOk;
   }
 
-  private void getFields(MongoDbInputMeta meta) {
-    if (!Const.isEmpty(wHostname.getText())
-        && !Const.isEmpty(wDbName.getText())
-        && !Const.isEmpty(wCollection.getText())) {
-      EnterNumberDialog end = new EnterNumberDialog(shell, 100,
-          BaseMessages.getString(PKG,
-              "MongoDbInputDialog.SampleDocuments.Title"), //$NON-NLS-1$
-          BaseMessages.getString(PKG,
-              "MongoDbInputDialog.SampleDocuments.Message")); //$NON-NLS-1$
+  //Used to catch exceptions from discoverFields calls that come through the callback
+  public void handleNotificationException( Exception exception ) {
+    new ErrorDialog( shell, stepname, BaseMessages.getString(PKG,
+        "MongoDbInputDialog.ErrorMessage.ErrorDuringSampling"), exception ); //$NON-NLS-1$
+  }
+
+  private void getFields( MongoDbInputMeta meta ) {
+    if ( !Const.isEmpty( wHostname.getText() )
+      && !Const.isEmpty( wDbName.getText() )
+      && !Const.isEmpty( wCollection.getText() ) ) {
+      EnterNumberDialog end = new EnterNumberDialog( shell, 100,
+        BaseMessages.getString( PKG,
+          "MongoDbInputDialog.SampleDocuments.Title" ), //$NON-NLS-1$
+        BaseMessages.getString( PKG,
+          "MongoDbInputDialog.SampleDocuments.Message" ) ); //$NON-NLS-1$
       int samples = end.open();
-      if (samples > 0) {
+      if ( samples > 0 ) {
+
+        getInfo( meta );
+        // Turn off execute for each incoming row (if set).
+        // Query is still going to
+        // be stuffed if the user has specified field replacement (i.e.
+        // ?{...}) in the query string
+        boolean current = meta.getExecuteForEachIncomingRow();
+        meta.setExecuteForEachIncomingRow( false );
+
+        if ( !checkForUnresolved(
+          meta,
+          BaseMessages
+            .getString(
+              PKG,
+              "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs.SamplingTitle" ) ) ) {
+              //$NON-NLS-1$
+          return;
+        }
+
         try {
-          getInfo(meta);
-          // Turn off execute for each incoming row (if set).
-          // Query is still going to
-          // be stuffed if the user has specified field replacement (i.e.
-          // ?{...}) in the query string
-          boolean current = meta.getExecuteForEachIncomingRow();
-          meta.setExecuteForEachIncomingRow(false);
-
-          if (!checkForUnresolved(
-              meta,
-              BaseMessages
-                  .getString(
-                      PKG,
-                      "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs.SamplingTitle"))) { //$NON-NLS-1$
-            return;
-          }
-
-          boolean result = MongoDbInputData.discoverFields(meta, transMeta,
-              samples);
-
-          if (!result) {
-            new ErrorDialog(shell, stepname, BaseMessages.getString(PKG,
-                "MongoDbInputDialog.ErrorMessage.NoFieldsFound"), //$NON-NLS-1$
-                new KettleException(BaseMessages.getString(PKG,
-                    "MongoDbInputDialog.ErrorMessage.NoFieldsFound"))); //$NON-NLS-1$
-          } else {
-            meta.setExecuteForEachIncomingRow(current);
-            getData(meta);
-          }
-        } catch (KettleException e) {
-          new ErrorDialog(shell, stepname, BaseMessages.getString(PKG,
-              "MongoDbInputDialog.ErrorMessage.ErrorDuringSampling"), e); //$NON-NLS-1$
+          MongoDbInputData.discoverFields( meta, transMeta, samples, this );
+          meta.setExecuteForEachIncomingRow( current );
+        } catch ( KettleException e ) {
+          new ErrorDialog( shell, stepname, BaseMessages.getString( PKG,
+            "MongoDbInputDialog.ErrorMessage.ErrorDuringSampling" ), e ); //$NON-NLS-1$
         }
       }
     } else {
       // pop up an error dialog
 
       String missingConDetails = "";
-      if (Const.isEmpty(wHostname.getText())) {
+      if ( Const.isEmpty( wHostname.getText() ) ) {
         missingConDetails += " host name(s)";
       }
-      if (Const.isEmpty(wDbName.getText())) {
+      if ( Const.isEmpty( wDbName.getText() ) ) {
         missingConDetails += " database";
       }
-      if (Const.isEmpty(wCollection.getText())) {
+      if ( Const.isEmpty( wCollection.getText() ) ) {
         missingConDetails += " collection";
       }
 
       ShowMessageDialog smd = new ShowMessageDialog(
-          shell,
-          SWT.ICON_WARNING | SWT.OK,
-          BaseMessages.getString(PKG,
-              "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title"),
-          BaseMessages
-              .getString(
-                  PKG,
-                  "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails", missingConDetails)); //$NON-NLS-1$
+        shell,
+        SWT.ICON_WARNING | SWT.OK,
+        BaseMessages.getString( PKG,
+          "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title" ),
+        BaseMessages
+          .getString(
+            PKG,
+            "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails", missingConDetails ) ); //$NON-NLS-1$
       smd.open();
     }
   }
