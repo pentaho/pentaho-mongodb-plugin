@@ -27,7 +27,6 @@ import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 import org.bson.types.Symbol;
-import org.eclipse.swt.widgets.Display;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -38,13 +37,11 @@ import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.trans.steps.mongodbinput.MongoDbInputDialog;
-import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.MongoProperties;
 import org.pentaho.mongo.wrapper.MongoClientWrapper;
 import org.pentaho.mongo.wrapper.MongoWrapperUtil;
 import org.pentaho.mongo.wrapper.collection.MongoCollectionWrapper;
 import org.pentaho.mongo.wrapper.cursor.MongoCursorWrapper;
-import org.pentaho.mongo.wrapper.field.MongodbInputDiscoverFieldsImpl;
 import org.pentaho.mongo.wrapper.field.MongoArrayExpansion;
 import org.pentaho.mongo.wrapper.field.MongoField;
 
@@ -71,6 +68,12 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
   private List<MongoField> m_userFields;
   private MongoArrayExpansion m_expansionHandler;
+  private static MongoDbInputDiscoverFieldsHolder mongoDbInputDiscoverFieldsHolder
+    = MongoDbInputDiscoverFieldsHolder.getInstance();
+
+  protected void setMongoDbInputDiscoverFieldsHolder( MongoDbInputDiscoverFieldsHolder holder ) {
+    mongoDbInputDiscoverFieldsHolder = holder;
+  }
 
   protected static MongoArrayExpansion checkFieldPaths( List<MongoField> normalFields, RowMetaInterface outputRowMeta )
     throws KettleException {
@@ -442,7 +445,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       numDocsToSample = 100; // default
     }
     try {
-      MongoDbInputDiscoverFieldsHolder.getInstance().getMongoDbInputDiscoverFields().discoverFields( propertiesBuilder,
+      mongoDbInputDiscoverFieldsHolder.getMongoDbInputDiscoverFields().discoverFields( propertiesBuilder,
         db, collection, query, fields, meta.getQueryIsPipeline(), numDocsToSample, meta, new DiscoverFieldsCallback() {
           @Override
           public void notifyFields( final List<MongoField> fields ) {
@@ -482,13 +485,13 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
         numDocsToSample = 100; // default
       }
       List<MongoField> discoveredFields =
-          MongoDbInputDiscoverFieldsHolder.getInstance().getMongoDbInputDiscoverFields().discoverFields( propertiesBuilder, db, collection, query, fields, meta.getQueryIsPipeline(), numDocsToSample, meta );
+        mongoDbInputDiscoverFieldsHolder.getMongoDbInputDiscoverFields().discoverFields(
+            propertiesBuilder, db, collection, query, fields, meta.getQueryIsPipeline(), numDocsToSample, meta );
 
       // return true if query resulted in documents being returned and fields
       // getting extracted
-      if (discoveredFields.size() > 0 ) {
+      if ( discoveredFields.size() > 0 ) {
         meta.setMongoFields( discoveredFields );
-
         return true;
       }
     } catch ( Exception e ) {
@@ -499,6 +502,10 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
       }
     }
     return false;
+  }
+
+  public static MongoDbInputDiscoverFieldsHolder getDiscoverFieldsHolder() {
+    return MongoDbInputDiscoverFieldsHolder.getInstance();
   }
 
   /**
