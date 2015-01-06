@@ -453,9 +453,10 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
               Spoon.getInstance().getDisplay().asyncExec( new Runnable() {
                 @Override
                 public void run() {
-                  meta.setMongoFields( fields );
-                  //mongoDialog.getData(meta);
-                  mongoDialog.updateFieldTableFields( meta.getMongoFields() );
+                  if ( !mongoDialog.isTableDisposed() ) {
+                    meta.setMongoFields( fields );
+                    mongoDialog.updateFieldTableFields( meta.getMongoFields() );
+                  }
                 }
               } );
             }

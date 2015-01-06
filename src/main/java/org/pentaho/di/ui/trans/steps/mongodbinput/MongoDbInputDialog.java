@@ -1212,6 +1212,10 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     dispose();
   }
 
+  public boolean isTableDisposed() {
+    return m_fieldsView.isDisposed();
+  }
+
   private void setTagsTableFields( List<String> tags ) {
     if ( tags == null ) {
       return;
