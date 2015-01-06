@@ -1212,64 +1212,38 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     dispose();
   }
 
-  private void setTagsTableFields(List<String> tags) {
-    if (tags == null) {
+  private void setTagsTableFields( List<String> tags ) {
+    if ( tags == null ) {
       return;
     }
 
     m_tagsView.clearAll();
 
-    for (String t : tags) {
-      TableItem item = new TableItem(m_tagsView.table, SWT.NONE);
-      item.setText(1, t);
+    for ( String t : tags ) {
+      TableItem item = new TableItem( m_tagsView.table, SWT.NONE );
+      item.setText( 1, t );
     }
 
     m_tagsView.removeEmptyRows();
     m_tagsView.setRowNums();
-    m_tagsView.optWidth(true);
+    m_tagsView.optWidth( true );
   }
 
-  private void setFieldTableFields(List<MongoField> fields) {
-    if (fields == null) {
+  private void setFieldTableFields( List<MongoField> fields ) {
+    if ( fields == null ) {
       return;
     }
 
     m_fieldsView.clearAll();
-    for (MongoField f : fields) {
-      TableItem item = new TableItem(m_fieldsView.table, SWT.NONE);
+    for ( MongoField f : fields ) {
+      TableItem item = new TableItem( m_fieldsView.table, SWT.NONE );
 
-      if (!Const.isEmpty(f.m_fieldName)) {
-        item.setText(1, f.m_fieldName);
-      }
-
-      if (!Const.isEmpty(f.m_fieldPath)) {
-        item.setText(2, f.m_fieldPath);
-      }
-
-      if (!Const.isEmpty(f.m_kettleType)) {
-        item.setText(3, f.m_kettleType);
-      }
-
-      if (f.m_indexedVals != null && f.m_indexedVals.size() > 0) {
-        item.setText(4, MongoDbInputData.indexedValsList(f.m_indexedVals));
-      }
-
-      if (!Const.isEmpty(f.m_arrayIndexInfo)) {
-        item.setText(5, f.m_arrayIndexInfo);
-      }
-
-      if (!Const.isEmpty(f.m_occurenceFraction)) {
-        item.setText(6, f.m_occurenceFraction);
-      }
-
-      if (f.m_disparateTypes) {
-        item.setText(7, "Y"); //$NON-NLS-1$
-      }
+      updateTableItem( item, f );
     }
 
     m_fieldsView.removeEmptyRows();
     m_fieldsView.setRowNums();
-    m_fieldsView.optWidth(true);
+    m_fieldsView.optWidth( true );
   }
 
   public void updateFieldTableFields( List<MongoField> fields ) {
@@ -1288,33 +1262,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
         indicesToRemove.add( index );
       } else {
         //Value exists in incoming fields list and in table, update entry
-        if ( !Const.isEmpty( mongoField.m_fieldName ) ) {
-          tableItem.setText( 1, mongoField.m_fieldName );
-        }
-
-        if ( !Const.isEmpty( mongoField.m_fieldPath ) ) {
-          tableItem.setText( 2, mongoField.m_fieldPath );
-        }
-
-        if ( !Const.isEmpty( mongoField.m_kettleType ) ) {
-          tableItem.setText( 3, mongoField.m_kettleType );
-        }
-
-        if ( mongoField.m_indexedVals != null && mongoField.m_indexedVals.size() > 0 ) {
-          tableItem.setText( 4, MongoDbInputData.indexedValsList( mongoField.m_indexedVals ) );
-        }
-
-        if ( !Const.isEmpty( mongoField.m_arrayIndexInfo ) ) {
-          tableItem.setText( 5, mongoField.m_arrayIndexInfo );
-        }
-
-        if ( !Const.isEmpty( mongoField.m_occurenceFraction ) ) {
-          tableItem.setText( 6, mongoField.m_occurenceFraction );
-        }
-
-        if ( mongoField.m_disparateTypes ) {
-          tableItem.setText( 7, "Y" ); //$NON-NLS-1$
-        }
+        updateTableItem( tableItem, mongoField );
       }
       index++;
     }
@@ -1326,34 +1274,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
 
     for ( MongoField mongoField : fieldMap.values() ) {
       TableItem item = new TableItem( m_fieldsView.table, SWT.NONE );
-
-      if ( !Const.isEmpty( mongoField.m_fieldName ) ) {
-        item.setText( 1, mongoField.m_fieldName );
-      }
-
-      if ( !Const.isEmpty( mongoField.m_fieldPath ) ) {
-        item.setText( 2, mongoField.m_fieldPath );
-      }
-
-      if ( !Const.isEmpty( mongoField.m_kettleType ) ) {
-        item.setText( 3, mongoField.m_kettleType );
-      }
-
-      if ( mongoField.m_indexedVals != null && mongoField.m_indexedVals.size() > 0 ) {
-        item.setText( 4, MongoDbInputData.indexedValsList( mongoField.m_indexedVals ) );
-      }
-
-      if ( !Const.isEmpty( mongoField.m_arrayIndexInfo ) ) {
-        item.setText( 5, mongoField.m_arrayIndexInfo );
-      }
-
-      if ( !Const.isEmpty( mongoField.m_occurenceFraction ) ) {
-        item.setText( 6, mongoField.m_occurenceFraction );
-      }
-
-      if ( mongoField.m_disparateTypes ) {
-        item.setText( 7, "Y" ); //$NON-NLS-1$
-      }
+      updateTableItem( item, mongoField );
     }
     m_fieldsView.setRowNums();
     m_fieldsView.remove( indicesArray );
@@ -1362,6 +1283,35 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     m_fieldsView.optWidth( true );
   }
 
+  private void updateTableItem( TableItem tableItem, MongoField mongoField ) {
+    if ( !Const.isEmpty( mongoField.m_fieldName ) ) {
+      tableItem.setText( 1, mongoField.m_fieldName );
+    }
+
+    if ( !Const.isEmpty( mongoField.m_fieldPath ) ) {
+      tableItem.setText( 2, mongoField.m_fieldPath );
+    }
+
+    if ( !Const.isEmpty( mongoField.m_kettleType ) ) {
+      tableItem.setText( 3, mongoField.m_kettleType );
+    }
+
+    if ( mongoField.m_indexedVals != null && mongoField.m_indexedVals.size() > 0 ) {
+      tableItem.setText( 4, MongoDbInputData.indexedValsList( mongoField.m_indexedVals ) );
+    }
+
+    if ( !Const.isEmpty( mongoField.m_arrayIndexInfo ) ) {
+      tableItem.setText( 5, mongoField.m_arrayIndexInfo );
+    }
+
+    if ( !Const.isEmpty( mongoField.m_occurenceFraction ) ) {
+      tableItem.setText( 6, mongoField.m_occurenceFraction );
+    }
+
+    if ( mongoField.m_disparateTypes ) {
+      tableItem.setText( 7, "Y" ); //$NON-NLS-1$
+    }
+  }
 
   private boolean checkForUnresolved(MongoDbInputMeta meta, String title) {
 
