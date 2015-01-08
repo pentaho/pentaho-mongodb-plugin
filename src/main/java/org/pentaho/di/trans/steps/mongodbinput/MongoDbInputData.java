@@ -505,10 +505,6 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     return false;
   }
 
-  public static MongoDbInputDiscoverFieldsHolder getDiscoverFieldsHolder() {
-    return MongoDbInputDiscoverFieldsHolder.getInstance();
-  }
-
   /**
    * Helper function that takes a list of indexed values and returns them as a String in comma-separated form.
    *
