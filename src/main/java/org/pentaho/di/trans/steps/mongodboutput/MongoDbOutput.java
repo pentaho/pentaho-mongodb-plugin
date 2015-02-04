@@ -36,7 +36,6 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.mongo.MongoDbException;
-import org.pentaho.mongo.wrapper.MongoClientWrapperFactory;
 
 import com.mongodb.CommandResult;
 import com.mongodb.DBObject;
@@ -348,7 +347,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
     return new ArrayList<T>( list.subList( amount, list.size() ) );
   }
 
-  protected void doBatch() throws KettleException {
+  protected void doBatch() throws KettleException, MongoDbException {
     int retries = 0;
     MongoException lastEx = null;
 
