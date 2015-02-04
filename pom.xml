@@ -12,7 +12,7 @@
     <!-- TODO: change this to the pentaho-ee-jar-parent-pom to add the Proguard obfuscation -->
     <artifactId>pentaho-ce-jar-parent-pom</artifactId>
     <!-- recommend only setting this to a specific version upon migration to maintenance -->
-    <version>RELEASE</version>
+    <version>1.0.7</version>
   </parent>
 
   <name>Pentaho Enterprise Edition Project: ${project.artifactId}</name>
