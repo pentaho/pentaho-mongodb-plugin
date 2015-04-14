@@ -78,15 +78,19 @@ public class UsernamePasswordMongoClientWrapper extends NoAuthMongoClientWrapper
    * @return a configured MongoCredential object
    */
   protected MongoCredential getCredential( MongoDbMeta meta, VariableSpace vars ) {
-    return MongoCredential.createMongoCRCredential( vars.environmentSubstitute( meta.getAuthenticationUser() ), vars
-        .environmentSubstitute( meta.getDbName() ), Encr.decryptPasswordOptionallyEncrypted(
+    String dbName = vars.environmentSubstitute( meta.getDbName() );
+    dbName = dbName.trim().length() == 0 ? "admin" : dbName; 
+    return MongoCredential.createMongoCRCredential( vars.environmentSubstitute( meta.getAuthenticationUser() ), dbName,
+        Encr.decryptPasswordOptionallyEncrypted(
         vars.environmentSubstitute( meta.getAuthenticationPassword() ) ).toCharArray() );
   }
 
   protected DB getDb( String dbName ) throws KettleException {
     try {
       DB result = getMongo().getDB( dbName );
-      authenticateWithDb( result );
+      if ( !result.isAuthenticated() ) {
+        authenticateWithDb( result );
+      }
       return result;
     } catch ( Exception e ) {
       if ( e instanceof KettleException ) {
