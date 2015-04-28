@@ -343,6 +343,29 @@ public class MongoField implements Comparable<MongoField> {
     return null;
   }
 
+  /**
+   * Returns the MongoDB path for the field
+   *
+   * @return String MongoDB Field Path
+   */
+  public String getPath() {
+    String pathName = m_fieldPath.replace( "$.", "" );
+
+    pathName = pathName.replaceAll( "\\[([0-9]+)\\]", ".$1" );
+    pathName = pathName.replace( "[*]", "" );
+
+    return pathName;
+  }
+
+  /**
+   * Returns the name of the MongoDB field
+   *
+   * @return String MongoDB Field Name
+   */
+  public String getName() {
+    return m_fieldName;
+  }
+
   @Override
   public int compareTo( MongoField comp ) {
     return m_fieldName.compareTo( comp.m_fieldName );
