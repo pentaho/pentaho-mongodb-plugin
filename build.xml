@@ -9,6 +9,9 @@
 ============================================================================-->
 <project name="Pentaho Mongo Plugin" basedir="." default="dist"
 	xmlns:ivy="antlib:org.apache.ivy.ant" >
+
+	<!-- For ant version below 1.8.2 -->
+	<defaultexcludes add="**/.gitignore"/>
 	
 	<description>
 	  This build file is used to create the Pentaho Big Data Plugin project
