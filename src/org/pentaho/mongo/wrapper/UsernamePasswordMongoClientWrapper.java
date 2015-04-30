@@ -80,7 +80,7 @@ public class UsernamePasswordMongoClientWrapper extends NoAuthMongoClientWrapper
   protected MongoCredential getCredential( MongoDbMeta meta, VariableSpace vars ) {
     String dbName = vars.environmentSubstitute( meta.getDbName() );
     dbName = dbName.trim().length() == 0 ? "admin" : dbName; 
-    return MongoCredential.createMongoCRCredential( vars.environmentSubstitute( meta.getAuthenticationUser() ), dbName,
+    return MongoCredential.createCredential( vars.environmentSubstitute( meta.getAuthenticationUser() ), dbName,
         Encr.decryptPasswordOptionallyEncrypted(
         vars.environmentSubstitute( meta.getAuthenticationPassword() ) ).toCharArray() );
   }
