@@ -31,6 +31,8 @@ public interface MongoCollectionWrapper {
 
   void createIndex( BasicDBObject mongoIndex ) throws KettleException;
 
+  void createIndex( BasicDBObject mongoIndex, BasicDBObject options ) throws KettleException;
+
   WriteResult remove() throws KettleException;
 
   WriteResult remove( DBObject query ) throws KettleException;
