@@ -52,7 +52,6 @@ import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaFactory;
-import org.pentaho.di.core.util.StringUtil;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.i18n.BaseMessages;
@@ -62,6 +61,7 @@ import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.core.dialog.ShowMessageDialog;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
+import org.pentaho.di.ui.core.widget.PasswordTextVar;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
@@ -299,13 +299,6 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     m_usernameField = new TextVar( transMeta, wConfigComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( m_usernameField );
     m_usernameField.addModifyListener( lsMod );
-    // set the tool tip to the contents with any env variables expanded
-    m_usernameField.addModifyListener( new ModifyListener() {
-      @Override
-      public void modifyText( ModifyEvent e ) {
-        m_usernameField.setToolTipText( transMeta.environmentSubstitute( m_usernameField.getText() ) );
-      }
-    } );
     fd = new FormData();
     fd.right = new FormAttachment( 100, 0 );
     fd.top = new FormAttachment( m_useAllReplicaSetMembersBut, margin );
@@ -322,17 +315,8 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     fd.right = new FormAttachment( middle, -margin );
     passLab.setLayoutData( fd );
 
-    m_passField = new TextVar( transMeta, wConfigComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
+    m_passField = new PasswordTextVar( transMeta, wConfigComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( m_passField );
-    m_passField.setEchoChar( '*' );
-    // If the password contains a variable, don't hide it.
-    m_passField.getTextWidget().addModifyListener( new ModifyListener() {
-      @Override
-      public void modifyText( ModifyEvent e ) {
-        checkPasswordVisible();
-      }
-    } );
-
     m_passField.addModifyListener( lsMod );
 
     fd = new FormData();
@@ -1287,17 +1271,6 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
       m_mongoIndexesView.removeEmptyRows();
       m_mongoIndexesView.setRowNums();
       m_mongoIndexesView.optWidth( true );
-    }
-  }
-
-  private void checkPasswordVisible() {
-    String password = m_passField.getText();
-    ArrayList<String> list = new ArrayList<String>();
-    StringUtil.getUsedVariables( password, list, true );
-    if ( list.size() == 0 ) {
-      m_passField.setEchoChar( '*' );
-    } else {
-      m_passField.setEchoChar( '\0' ); // show everything
     }
   }
 
