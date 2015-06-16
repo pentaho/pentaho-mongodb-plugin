@@ -296,7 +296,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
         options.put( "background", true ); //$NON-NLS-1$
         options.put( "unique", index.m_unique ); //$NON-NLS-1$
         options.put( "sparse", index.m_sparse ); //$NON-NLS-1$
-        m_collection.createIndex( mongoIndex );
+        m_collection.createIndex( mongoIndex, options );
         log.logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.CreateIndex", index ) ); //$NON-NLS-1$
       }
     }

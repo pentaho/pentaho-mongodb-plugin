@@ -63,6 +63,7 @@ import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.core.dialog.PreviewRowsDialog;
 import org.pentaho.di.ui.core.dialog.ShowMessageDialog;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
+import org.pentaho.di.ui.core.widget.PasswordTextVar;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
@@ -290,8 +291,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     fdlAuthUser.right = new FormAttachment(middle, -margin);
     wlAuthUser.setLayoutData(fdlAuthUser);
 
-    wAuthUser = new TextVar(transMeta, wConfigComp, SWT.BORDER | SWT.READ_ONLY);
-    wAuthUser.setEditable(true);
+    wAuthUser = new TextVar(transMeta, wConfigComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
     props.setLook(wAuthUser);
     wAuthUser.addModifyListener(lsMod);
     FormData fdAuthUser = new FormData();
@@ -312,9 +312,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements
     fdlAuthPass.right = new FormAttachment(middle, -margin);
     wlAuthPass.setLayoutData(fdlAuthPass);
 
-    wAuthPass = new TextVar(transMeta, wConfigComp, SWT.BORDER | SWT.READ_ONLY);
-    wAuthPass.setEditable(true);
-    wAuthPass.setEchoChar('*');
+    wAuthPass = new PasswordTextVar(transMeta, wConfigComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
     props.setLook(wAuthPass);
     wAuthPass.addModifyListener(lsMod);
     FormData fdAuthPass = new FormData();
