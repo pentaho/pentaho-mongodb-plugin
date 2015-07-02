@@ -49,7 +49,7 @@ import com.mongodb.util.JSON;
 
 /**
  * Data class for the MongoDbOutput step
- * 
+ *
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  */
 public class MongoDbOutputData extends BaseStepData implements StepDataInterface {
@@ -141,7 +141,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Set the field paths to use for creating the document structure
-   * 
+   *
    * @param fields
    *          the field paths to use
    */
@@ -156,7 +156,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Initialize field paths
-   * 
+   *
    * @param vars
    *          variables to use
    * @throws KettleException
@@ -172,7 +172,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Get the current connection or null if not connected
-   * 
+   *
    * @return the connection or null
    */
   public MongoClientWrapper getConnection() {
@@ -181,7 +181,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Set the current connection
-   * 
+   *
    * @param clientWrapper
    *          the connection to use
    */
@@ -191,7 +191,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Create a collection in the current database
-   * 
+   *
    * @param collectionName
    *          the name of the collection to create
    * @throws Exception
@@ -207,7 +207,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Set the collection to use
-   * 
+   *
    * @param col
    *          the collection to use
    */
@@ -217,7 +217,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Get the collection in use
-   * 
+   *
    * @return the collection in use
    */
   public MongoCollectionWrapper getCollection() {
@@ -226,7 +226,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Set the output row format
-   * 
+   *
    * @param outM
    *          the output row format
    */
@@ -236,7 +236,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Get the output row format
-   * 
+   *
    * @return the output row format
    */
   public RowMetaInterface getOutputRowMeta() {
@@ -246,7 +246,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
   /**
    * Apply the supplied index operations to the collection. Indexes can be defined on one or more fields in the
    * document. Operation is either create or drop.
-   * 
+   *
    * @param indexes
    *          a list of index operations
    * @param log
@@ -256,7 +256,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    *          necessary
    * @throws MongoException
    *           if something goes wrong
-   * @throws KettleException 
+   * @throws KettleException
    */
   public void applyIndexes( List<MongoDbOutputMeta.MongoIndex> indexes, LogChannelInterface log, boolean truncate )
     throws MongoException, KettleException {
@@ -295,7 +295,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
         options.put( "background", true ); //$NON-NLS-1$
         options.put( "unique", index.m_unique ); //$NON-NLS-1$
         options.put( "sparse", index.m_sparse ); //$NON-NLS-1$
-        m_collection.createIndex( mongoIndex );
+        m_collection.createIndex( mongoIndex, options );
         log.logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.CreateIndex", index ) ); //$NON-NLS-1$
       }
     }
@@ -303,30 +303,30 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Get an object that encapsulates the fields and modifier operations to use for a modifier update.
-   * 
+   *
    * NOTE: that with modifier upserts the query conditions get created if the record does not exist (i.e. insert). This
    * is different than straight non- modifier upsert where the query conditions just locate a matching record (if any)
    * and then a complete object replacement is done. So for standard upsert it is necessary to duplicate the query
    * condition paths in order for these fields to be in the object that is inserted/updated.
-   * 
+   *
    * This also means that certain modifier upserts are not possible in the case of insert. E.g. here we are wanting to
    * test if the field "f1" in record "rec1" in the first element of array "two" is set to "george". If so, then we want
    * to push a new record to the end of the array; otherwise create a new document with the array containing just the
    * new record:
    * <p>
-   * 
+   *
    * <pre>
-   * db.collection.update({ "one.two.0.rec1.f1" : "george"}, 
-   * { "$push" : { "one.two" : { "rec1" : { "f1" : "bob" , "f2" : "fred"}}}}, 
+   * db.collection.update({ "one.two.0.rec1.f1" : "george"},
+   * { "$push" : { "one.two" : { "rec1" : { "f1" : "bob" , "f2" : "fred"}}}},
    * true)
    * </pre>
-   * 
+   *
    * This does not work and results in a "Cannot apply $push/$pushAll modifier to non-array" error if there is no match
    * (i.e. insert condition). This is because the query conditions get created as well as the modifier opps and,
    * furthermore, they get created first. Since mongo doesn't know whether ".0." indicates an array index or a field
    * name it defaults to creating a field with name "0". This means that "one.two" gets created as a record (not an
    * array) before the $push operation is executed. Hence the error.
-   * 
+   *
    * @param fieldDefs
    *          the list of document field definitions
    * @param inputMeta
@@ -561,7 +561,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Get an object that encapsulates the query to make for an update/upsert operation
-   * 
+   *
    * @param fieldDefs
    *          the list of document field definitions
    * @param inputMeta
@@ -643,7 +643,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Converts a kettle row to a Mongo Object for inserting/updating
-   * 
+   *
    * @param fieldDefs
    *          the document field definitions
    * @param inputMeta
@@ -917,7 +917,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    * Determines the top level structure of the outgoing Mongo document from the user-specified field paths. This can be
    * either RECORD ( for a top level structure that is an object), ARRAY or INCONSISTENT (if the user has some field
    * paths that start with an array and some that start with an object).
-   * 
+   *
    * @param fieldDefs
    *          the list of document field paths
    * @param vars
