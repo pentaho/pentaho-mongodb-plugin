@@ -67,13 +67,18 @@ public class DefaultMongoCollectionWrapper implements MongoCollectionWrapper {
   }
 
   @Override
+  public void createIndex( BasicDBObject mongoIndex, BasicDBObject options ) throws KettleException {
+    collection.createIndex( mongoIndex, options );
+  }
+
+  @Override
   public WriteResult remove() throws KettleException {
-	return remove( new BasicDBObject() );
+    return remove( new BasicDBObject() );
   }
 
   @Override
   public WriteResult remove( DBObject query ) throws KettleException {
-	return collection.remove( query );
+    return collection.remove( query );
   }
 
   @Override
