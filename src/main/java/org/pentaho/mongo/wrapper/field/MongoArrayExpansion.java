@@ -17,7 +17,9 @@ import com.mongodb.BasicDBObject;
 public class MongoArrayExpansion {
   protected static Class<?> PKG = MongoArrayExpansion.class; // for i18n purposes
 
-  /** The prefix of the full path that defines the expansion */
+  /**
+   * The prefix of the full path that defines the expansion
+   */
   public String m_expansionPath;
 
   /**
@@ -36,9 +38,8 @@ public class MongoArrayExpansion {
 
   /**
    * Initialize this field by parsing the path etc.
-   * 
-   * @throws KettleException
-   *           if a problem occurs
+   *
+   * @throws KettleException if a problem occurs
    */
   public void init() throws KettleException {
     if ( Const.isEmpty( m_expansionPath ) ) {
@@ -77,9 +78,8 @@ public class MongoArrayExpansion {
 
   /**
    * Reset this field. Should be called prior to processing a new field value from the avro file
-   * 
-   * @param space
-   *          environment variables (values that environment variables resolve to cannot contain "."s)
+   *
+   * @param space environment variables (values that environment variables resolve to cannot contain "."s)
    */
   public void reset( VariableSpace space ) {
     m_tempParts.clear();
@@ -107,7 +107,8 @@ public class MongoArrayExpansion {
     }
 
     if ( m_tempParts.size() == 0 ) {
-      throw new KettleException( BaseMessages.getString( PKG, "MongoDbInput.ErrorMessage.MalformedPathRecord" ) ); //$NON-NLS-1$
+      throw new KettleException(
+          BaseMessages.getString( PKG, "MongoDbInput.ErrorMessage.MalformedPathRecord" ) ); //$NON-NLS-1$
     }
 
     String part = m_tempParts.remove( 0 );
@@ -152,7 +153,8 @@ public class MongoArrayExpansion {
     }
 
     if ( m_tempParts.size() == 0 ) {
-      throw new KettleException( BaseMessages.getString( PKG, "MongoDbInput.ErrorMessage.MalformedPathArray" ) ); //$NON-NLS-1$
+      throw new KettleException(
+          BaseMessages.getString( PKG, "MongoDbInput.ErrorMessage.MalformedPathArray" ) ); //$NON-NLS-1$
     }
 
     String part = m_tempParts.remove( 0 );
@@ -199,8 +201,8 @@ public class MongoArrayExpansion {
       try {
         arrayI = Integer.parseInt( index.trim() );
       } catch ( NumberFormatException e ) {
-        throw new KettleException( BaseMessages.getString( PKG,
-            "MongoDbInput.ErrorMessage.UnableToParseArrayIndex", index ) ); //$NON-NLS-1$
+        throw new KettleException(
+            BaseMessages.getString( PKG, "MongoDbInput.ErrorMessage.UnableToParseArrayIndex", index ) ); //$NON-NLS-1$
       }
 
       if ( arrayI >= mongoList.size() || arrayI < 0 ) {

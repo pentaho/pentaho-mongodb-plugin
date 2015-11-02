@@ -19,7 +19,7 @@ public class MongoWrapperUtil {
     }
   };
 
-  protected static void setMongoWrapperClientFactory( MongoWrapperClientFactory mongoWrapperClientFactory ) {
+  public static void setMongoWrapperClientFactory( MongoWrapperClientFactory mongoWrapperClientFactory ) {
     MongoWrapperUtil.mongoWrapperClientFactory = mongoWrapperClientFactory;
   }
 
@@ -29,7 +29,7 @@ public class MongoWrapperUtil {
 
   public static MongoClientWrapper createMongoClientWrapper( MongoDbMeta mongoDbMeta, VariableSpace vars,
                                                              LogChannelInterface log ) throws MongoDbException {
-    MongoProperties.Builder propertiesBuilder = createPropertiesBuilder(mongoDbMeta, vars);
+    MongoProperties.Builder propertiesBuilder = createPropertiesBuilder( mongoDbMeta, vars );
 
     return mongoWrapperClientFactory
       .createMongoClientWrapper( propertiesBuilder.build(), new KettleMongoUtilLogger( log ) );
