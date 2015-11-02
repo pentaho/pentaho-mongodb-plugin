@@ -87,7 +87,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
   public boolean getExecuteForEachIncomingRow() {
     return m_executeForEachIncomingRow;
   }
-  
+
   @Override
   public void loadXML( Node stepnode, List<DatabaseMeta> databases, IMetaStore metaStore ) throws KettleXMLException {
     readData( stepnode );
@@ -292,9 +292,8 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
     return retval.toString();
   }
-  
-  @Override
-  public void readRep( Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases )
+
+  @Override public void readRep( Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases )
     throws KettleException {
     try {
       setHostnames( rep.getStepAttributeString( id_step, "hostname" ) ); //$NON-NLS-1$
@@ -351,7 +350,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
           "MongoDbInputMeta.Exception.UnexpectedErrorWhileReadingStepInfo" ), e ); //$NON-NLS-1$
     }
   }
-  
+
   @Override
   public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step )
     throws KettleException {

@@ -89,8 +89,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    * Map for grouping together $set operations that involve setting complex array-based objects. Key = dot path to array
    * name; value = DBObject specifying array to set to
    */
-  protected Map<String, List<MongoDbOutputMeta.MongoField>>
-      m_setComplexArrays =
+  protected Map<String, List<MongoDbOutputMeta.MongoField>> m_setComplexArrays =
       new HashMap<String, List<MongoDbOutputMeta.MongoField>>();
 
   /**
@@ -98,8 +97,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    * complex object to push. Key - dot path to the array name to push to; value - DBObject specifying the complex object
    * to push
    */
-  protected Map<String, List<MongoDbOutputMeta.MongoField>>
-      m_pushComplexStructures =
+  protected Map<String, List<MongoDbOutputMeta.MongoField>> m_pushComplexStructures =
       new HashMap<String, List<MongoDbOutputMeta.MongoField>>();
 
   /**
@@ -114,7 +112,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
   protected boolean m_hasTopLevelJSONDocInsert = false;
 
   public static boolean scanForInsertTopLevelJSONDoc( List<MongoDbOutputMeta.MongoField> fieldDefs )
-      throws KettleException {
+    throws KettleException {
 
     int countNonMatchFields = 0;
     boolean hasTopLevelJSONDocInsert = false;
@@ -264,7 +262,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    * @throws KettleException
    */
   public void applyIndexes( List<MongoDbOutputMeta.MongoIndex> indexes, LogChannelInterface log, boolean truncate )
-      throws MongoException, KettleException, MongoDbException {
+    throws MongoException, KettleException, MongoDbException {
 
     for ( MongoDbOutputMeta.MongoIndex index : indexes ) {
       String[] indexParts = index.m_pathToFields.split( "," ); //$NON-NLS-1$
@@ -651,7 +649,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    */
   protected static DBObject kettleRowToMongo( List<MongoDbOutputMeta.MongoField> fieldDefs, RowMetaInterface inputMeta,
       Object[] row, VariableSpace vars, MongoTopLevel topLevelStructure, boolean hasTopLevelJSONDocInsert )
-      throws KettleException {
+    throws KettleException {
 
     // the easy case
     if ( hasTopLevelJSONDocInsert ) {
@@ -840,7 +838,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
   }
 
   private static Object getPathElementName( List<String> pathParts, DBObject current, boolean incomingAsFieldName )
-      throws KettleException {
+    throws KettleException {
 
     if ( pathParts == null || pathParts.size() == 0 ) {
       return null;

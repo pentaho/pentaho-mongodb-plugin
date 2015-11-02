@@ -1,15 +1,5 @@
 package org.pentaho.di.trans.steps.mongodboutput;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.pentaho.di.core.Const;
@@ -28,18 +18,28 @@ import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMeta.MongoField;
 import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMeta.MongoIndex;
 import org.pentaho.metastore.api.IMetaStore;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class MongoDbOutputMetaTest {
-  @BeforeClass
-  public static void beforeClass() throws KettleException {
+  @BeforeClass public static void beforeClass() throws KettleException {
     PluginRegistry.addPluginType( TwoWayPasswordEncoderPluginType.getInstance() );
     PluginRegistry.init();
-    String passwordEncoderPluginID = Const.NVL( EnvUtil.getSystemProperty( Const.KETTLE_PASSWORD_ENCODER_PLUGIN ), "Kettle" );
+    String
+        passwordEncoderPluginID =
+        Const.NVL( EnvUtil.getSystemProperty( Const.KETTLE_PASSWORD_ENCODER_PLUGIN ), "Kettle" );
     Encr.init( passwordEncoderPluginID );
   }
-  
-  @Test
-  public void testRoundTrips() throws KettleException {
-    List<String> commonFields =
+
+  @Test public void testRoundTrips() throws KettleException {
+    List<String>
+        commonFields =
         Arrays.asList( "mongo_host", "mongo_port", "use_all_replica_members", "mongo_user", "mongo_password",
             "auth_kerberos", "mongo_db", "mongo_collection", "batch_insert_size", "connect_timeout", "socket_timeout",
             "read_preference", "write_concern", "w_timeout", "journaled_writes", "truncate", "update", "upsert",
@@ -73,19 +73,18 @@ public class MongoDbOutputMetaTest {
 
     validatorFactory.registerValidator( validatorFactory.getName( List.class, MongoField.class ),
         new ListLoadSaveValidator<MongoField>( new ObjectValidator<MongoField>( validatorFactory, MongoField.class,
-            Arrays.<String> asList( "m_incomingFieldName", "m_mongoDocPath", "m_useIncomingFieldNameAsMongoFieldName",
+            Arrays.<String>asList( "m_incomingFieldName", "m_mongoDocPath", "m_useIncomingFieldNameAsMongoFieldName",
                 "m_updateMatchField", "m_modifierUpdateOperation", "m_modifierOperationApplyPolicy", "m_JSON" ) ) ) );
 
     validatorFactory.registerValidator( validatorFactory.getName( List.class, MongoIndex.class ),
         new ListLoadSaveValidator<MongoIndex>( new ObjectValidator<MongoIndex>( validatorFactory, MongoIndex.class,
-            Arrays.<String> asList( "m_pathToFields", "m_drop", "m_unique", "m_sparse" ) ) ) );
-    
+            Arrays.<String>asList( "m_pathToFields", "m_drop", "m_unique", "m_sparse" ) ) ) );
+
     tester.testXmlRoundTrip();
     tester.testRepoRoundTrip();
   }
-  
-  @Test
-  public void testForPDI12155_NotDeprecatedSaveRepMethodImplemented() throws Exception {
+
+  @Test public void testForPDI12155_NotDeprecatedSaveRepMethodImplemented() throws Exception {
     Class[] cArg = { Repository.class, IMetaStore.class, ObjectId.class, ObjectId.class };
     try {
       MongoDbOutputMeta.class.getDeclaredMethod( "saveRep", cArg );
@@ -93,15 +92,14 @@ public class MongoDbOutputMetaTest {
       fail( "There is no such a method BUT should be: " + e.getMessage() );
     }
   }
-  
-  @Test
-  public void testForPDI12155_DeprecatedSaveRepMethodNotImplemented() throws Exception {
+
+  @Test public void testForPDI12155_DeprecatedSaveRepMethodNotImplemented() throws Exception {
     Class[] cArg = { Repository.class, ObjectId.class, ObjectId.class };
     try {
       Method declaredMethod = MongoDbOutputMeta.class.getDeclaredMethod( "saveRep", cArg );
       fail( "There is a method BUT should not be: " + declaredMethod );
     } catch ( NoSuchMethodException e ) {
-      assertTrue(true);
+      assertTrue( true );
     }
   }
 }

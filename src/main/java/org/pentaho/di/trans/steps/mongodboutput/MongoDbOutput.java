@@ -307,7 +307,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
   }
 
   protected CommandResult batchRetryUsingSave( boolean lastRetry )
-      throws MongoException, KettleException, MongoDbException {
+    throws MongoException, KettleException, MongoDbException {
     WriteResult result = null;
     CommandResult cmd = null;
     int count = 0;
@@ -469,8 +469,8 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
               ( m_meta.getUseKerberosAuthentication() ? BaseMessages
                   .getString( PKG, "MongoDbOutput.Message.KerberosAuthentication",
                       environmentSubstitute( m_meta.getAuthenticationUser() ) ) : BaseMessages
-                  .getString( PKG, "MongoDbOutput.Message.NormalAuthentication",
-                      environmentSubstitute( m_meta.getAuthenticationUser() ) ) );
+                      .getString( PKG, "MongoDbOutput.Message.NormalAuthentication",
+                          environmentSubstitute( m_meta.getAuthenticationUser() ) ) );
 
           logBasic( authInfo );
         }
@@ -530,7 +530,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
   }
 
   final void checkInputFieldsMatch( RowMetaInterface rmi, List<MongoDbOutputMeta.MongoField> mongoFields )
-      throws KettleException {
+    throws KettleException {
     Set<String> expected = new HashSet<String>( mongoFields.size(), 1 );
     Set<String> actual = new HashSet<String>( rmi.getFieldNames().length, 1 );
     for ( MongoDbOutputMeta.MongoField field : mongoFields ) {

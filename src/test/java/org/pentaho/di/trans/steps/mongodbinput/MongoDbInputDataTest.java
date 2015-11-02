@@ -30,13 +30,11 @@ import static org.mockito.Mockito.*;
 public class MongoDbInputDataTest {
   private MongoDbInputData mongoDbInputData;
 
-  protected static String
-      s_testData =
+  protected static String s_testData =
       "{\"one\" : {\"three\" : [ {\"rec2\" : { \"f0\" : \"zzz\" } } ], "
           + "\"two\" : [ { \"rec1\" : { \"f1\" : \"bob\", \"f2\" : \"fred\" } } ] }, "
           + "\"name\" : \"george\", \"aNumber\" : 42 }";
-  protected static String
-      s_testData2 =
+  protected static String s_testData2 =
       "{\"one\" : {\"three\" : [ {\"rec2\" : { \"f0\" : \"zzz\" } } ], "
           + "\"two\" : [ { \"rec1\" : { \"f1\" : \"bob\", \"f2\" : \"fred\" } }, "
           + "{ \"rec1\" : { \"f1\" : \"sid\", \"f2\" : \"zaphod\" } } ] }, "
@@ -82,9 +80,9 @@ public class MongoDbInputDataTest {
     final List<MongoField> mongoFields = new ArrayList<MongoField>();
 
     doAnswer( new Answer() {
-      @Override public Object answer( InvocationOnMock invocationOnMock ) {
-        ( (DiscoverFieldsCallback) invocationOnMock.getArguments()[8] ).notifyFields( mongoFields );
-        return null;
+        @Override public Object answer( InvocationOnMock invocationOnMock ) {
+          ( (DiscoverFieldsCallback) invocationOnMock.getArguments()[8] ).notifyFields( mongoFields );
+          return null;
         }
       } ).when( mongoDbInputDiscoverFields )
         .discoverFields( any( MongoProperties.Builder.class ), anyString(), anyString(), anyString(), anyString(),
@@ -131,7 +129,8 @@ public class MongoDbInputDataTest {
       @Override public Object answer( InvocationOnMock invocationOnMock ) {
         ( (DiscoverFieldsCallback) invocationOnMock.getArguments()[8] ).notifyException( new KettleException() );
         return null;
-      } } ).when( mongoDbInputDiscoverFields )
+      }
+    } ).when( mongoDbInputDiscoverFields )
         .discoverFields( any( MongoProperties.Builder.class ), anyString(), anyString(), anyString(), anyString(),
             anyBoolean(), anyInt(), any( MongoDbInputMeta.class ), any( DiscoverFieldsCallback.class ) );
 

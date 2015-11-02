@@ -175,7 +175,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
   }
 
   @Test( expected = KettleException.class ) public void testCheckTopLevelConsistencyNoFieldsDefined()
-      throws KettleException {
+    throws KettleException {
     List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
 
     MongoDbOutputData.checkTopLevelConsistency( paths, new Variables() );
@@ -984,7 +984,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
    * @throws KettleException
    */
   @Test( expected = KettleException.class ) public void testStepIsFailedIfOneOfMongoFieldsNotFound()
-      throws KettleException {
+    throws KettleException {
     MongoDbOutput output = prepareMongoDbOutputMock();
 
     final String[] metaNames = new String[] { "a1", "a2", "a3" };
@@ -1095,7 +1095,8 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     when( stepMetaInterface.getUpdate() ).thenReturn( true );
 
     // flag a field for update = "foo"
-    mongoFields.get( 0 ).m_updateMatchField = true;
+    MongoDbOutputMeta.MongoField mongoField = mongoFields.get( 0 );
+    mongoField.m_updateMatchField = true;
 
     setupRowMeta();
     dbOutput.init( stepMetaInterface, stepDataInterace );
@@ -1122,7 +1123,8 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     when( stepMetaInterface.getWriteRetries() ).thenReturn( "2" );
     when( stepMetaInterface.getWriteRetryDelay() ).thenReturn( "0" );
     when( stepMetaInterface.getUpdate() ).thenReturn( true );
-    mongoFields.get( 0 ).m_updateMatchField = true;
+    MongoDbOutputMeta.MongoField mongoField = mongoFields.get( 0 );
+    mongoField.m_updateMatchField = true;
 
     when( mongoCollectionWrapper.update( any( DBObject.class ), any( DBObject.class ), anyBoolean(), anyBoolean() ) )
         .thenThrow( mock( MongoDbException.class ) );
@@ -1219,7 +1221,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
   }
 
   @Test public void testStepMetaSetsUpdateInXML()
-      throws ParserConfigurationException, UnsupportedEncodingException, SAXException, IOException, KettleXMLException {
+    throws ParserConfigurationException, UnsupportedEncodingException, SAXException, IOException, KettleXMLException {
     MongoDbOutputMeta mongoMeta = new MongoDbOutputMeta();
     mongoMeta.setUpdate( true );
 
@@ -1241,7 +1243,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
   }
 
   @Test public void testStepMetaSettingUpsertAlsoSetsUpdateInXML()
-      throws ParserConfigurationException, UnsupportedEncodingException, SAXException, IOException, KettleXMLException {
+    throws ParserConfigurationException, UnsupportedEncodingException, SAXException, IOException, KettleXMLException {
     MongoDbOutputMeta mongoMeta = new MongoDbOutputMeta();
     mongoMeta.setUpsert( true );
 

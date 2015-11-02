@@ -246,8 +246,8 @@ public class MongoDbInput extends BaseStep implements StepInterface {
               ( meta.getUseKerberosAuthentication() ? BaseMessages
                   .getString( PKG, "MongoDbInput.Message.KerberosAuthentication",
                       environmentSubstitute( meta.getAuthenticationUser() ) ) : BaseMessages
-                  .getString( PKG, "MongoDbInput.Message.NormalAuthentication",
-                      environmentSubstitute( meta.getAuthenticationUser() ) ) );
+                      .getString( PKG, "MongoDbInput.Message.NormalAuthentication",
+                        environmentSubstitute( meta.getAuthenticationUser() ) ) );
 
           logBasic( authInfo );
         }

@@ -68,8 +68,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
 
   private List<MongoField> m_userFields;
   private MongoArrayExpansion m_expansionHandler;
-  private static MongoDbInputDiscoverFieldsHolder
-      mongoDbInputDiscoverFieldsHolder =
+  private static MongoDbInputDiscoverFieldsHolder mongoDbInputDiscoverFieldsHolder =
       MongoDbInputDiscoverFieldsHolder.getInstance();
 
   protected void setMongoDbInputDiscoverFieldsHolder( MongoDbInputDiscoverFieldsHolder holder ) {
@@ -77,7 +76,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   }
 
   protected static MongoArrayExpansion checkFieldPaths( List<MongoField> normalFields, RowMetaInterface outputRowMeta )
-      throws KettleException {
+    throws KettleException {
 
     // here we check whether there are any full array expansions
     // specified in the paths (via [*]). If so, we want to make sure
@@ -331,7 +330,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   }
 
   public static boolean discoverFields( final MongoDbInputMeta meta, final VariableSpace vars, final int docsToSample )
-      throws KettleException {
+    throws KettleException {
 
     MongoProperties.Builder propertiesBuilder = MongoWrapperUtil.createPropertiesBuilder( meta, vars );
     try {

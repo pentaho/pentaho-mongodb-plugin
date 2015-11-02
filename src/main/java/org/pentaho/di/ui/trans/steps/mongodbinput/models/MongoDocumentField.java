@@ -27,7 +27,7 @@ import org.pentaho.mongo.wrapper.field.MongoField;
 import org.pentaho.ui.xul.XulEventSourceAdapter;
 import org.pentaho.ui.xul.util.AbstractModelList;
 
-public class MongoDocumentField extends XulEventSourceAdapter{
+public class MongoDocumentField extends XulEventSourceAdapter {
 
   private String m_fieldName;
   private String m_fieldPath;
@@ -37,67 +37,67 @@ public class MongoDocumentField extends XulEventSourceAdapter{
   private String m_occurenceFraction;
   private boolean m_disparateTypes;
 
-  public String getFieldName(){
+  public String getFieldName() {
     return this.m_fieldName;
   }
-    
-  public void setFieldName(String name){
+
+  public void setFieldName( String name ) {
     this.m_fieldName = name;
   }
-  
-  public String getFieldPath(){
+
+  public String getFieldPath() {
     return this.m_fieldPath;
   }
-  
-  public void setFieldPath(String path){
+
+  public void setFieldPath( String path ) {
     this.m_fieldPath = path;
   }
-  
-  public String getKettleType(){
+
+  public String getKettleType() {
     return this.m_kettleType;
   }
-  
-  public void setKettleType(String type){
+
+  public void setKettleType( String type ) {
     this.m_kettleType = type;
   }
-  
-  public String getIndexedValues(){
-    if (!Const.isEmpty(m_indexedVals)){
-      return MongoDbInputData.indexedValsList(m_indexedVals);
+
+  public String getIndexedValues() {
+    if ( !Const.isEmpty( m_indexedVals ) ) {
+      return MongoDbInputData.indexedValsList( m_indexedVals );
     }
     return "";
   }
-    
-  public void setIndexedValues(String values){
-    String[] vals = values.split(",", -2);
-    m_indexedVals = Arrays.asList(vals);
-  }
-  
-  public String getArrayIndexInfo(){
-    return this.m_arrayIndexInfo;
-  }
-  
-  public void setArrayIndexInfo(String info){
-    this.m_arrayIndexInfo = info;
-  }
-  
-  public String getOccurenceFraction(){
-    return this.m_occurenceFraction;
-  }
-  
-  public void setOccurenceFraction(String fraction){
-    this.m_occurenceFraction = fraction;
-  }
-  
-  public String getIsDisparateTypes(){
-    return (this.m_disparateTypes?"Y":"");
+
+  public void setIndexedValues( String values ) {
+    String[] vals = values.split( ",", -2 );
+    m_indexedVals = Arrays.asList( vals );
   }
 
-  public void setIsDisparateTypes(String bool){
-    this.m_disparateTypes = bool == "Y"?true:false;
+  public String getArrayIndexInfo() {
+    return this.m_arrayIndexInfo;
   }
-  
-  protected void convertFrom(MongoField field){
+
+  public void setArrayIndexInfo( String info ) {
+    this.m_arrayIndexInfo = info;
+  }
+
+  public String getOccurenceFraction() {
+    return this.m_occurenceFraction;
+  }
+
+  public void setOccurenceFraction( String fraction ) {
+    this.m_occurenceFraction = fraction;
+  }
+
+  public String getIsDisparateTypes() {
+    return ( this.m_disparateTypes ? "Y" : "" );
+  }
+
+  public void setIsDisparateTypes( String bool ) {
+    this.m_disparateTypes = "Y".equals( bool ) ? true : false;
+  }
+
+  protected void convertFrom( MongoField field ) {
     this.m_arrayIndexInfo = field.m_arrayIndexInfo;
     this.m_disparateTypes = field.m_disparateTypes;
     this.m_fieldName = field.m_fieldName;
@@ -106,8 +106,8 @@ public class MongoDocumentField extends XulEventSourceAdapter{
     this.m_kettleType = field.m_kettleType;
     this.m_occurenceFraction = field.m_occurenceFraction;
   }
-  
-  protected void convertTo(MongoField field){
+
+  protected void convertTo( MongoField field ) {
     field.m_arrayIndexInfo = this.m_arrayIndexInfo;
     field.m_disparateTypes = this.m_disparateTypes;
     field.m_fieldName = this.m_fieldName;
@@ -116,46 +116,46 @@ public class MongoDocumentField extends XulEventSourceAdapter{
     field.m_kettleType = this.m_kettleType;
     field.m_occurenceFraction = this.m_occurenceFraction;
   }
-  
-  public static void convertList(List<MongoField> fields, AbstractModelList<MongoDocumentField> docFields){
-    
-    if ( fields == null || fields.isEmpty()){
+
+  public static void convertList( List<MongoField> fields, AbstractModelList<MongoDocumentField> docFields ) {
+
+    if ( fields == null || fields.isEmpty() ) {
       return;
     }
-    for (MongoField field: fields){
+    for ( MongoField field : fields ) {
       MongoDocumentField docField = new MongoDocumentField();
-      docField.convertFrom(field);
-      docFields.add(docField);
+      docField.convertFrom( field );
+      docFields.add( docField );
     }
   }
 
-  public static void trimList(List<MongoField> fields, AbstractModelList<MongoDocumentField> docFields){
-    
-    if ( fields == null || fields.isEmpty()){
+  public static void trimList( List<MongoField> fields, AbstractModelList<MongoDocumentField> docFields ) {
+
+    if ( fields == null || fields.isEmpty() ) {
       return;
     }
-    for (int i = fields.size() -1; i >= 0; i--){
-      MongoField field = fields.get(i);
-      for(MongoDocumentField docField: docFields.asList()){
-        if ((field.m_fieldName.equalsIgnoreCase(docField.m_fieldName)) &&
-            (field.m_fieldPath.equalsIgnoreCase(docField.m_fieldPath))){
-          fields.remove(field);
+    for ( int i = fields.size() - 1; i >= 0; i-- ) {
+      MongoField field = fields.get( i );
+      for ( MongoDocumentField docField : docFields.asList() ) {
+        if ( ( field.m_fieldName.equalsIgnoreCase( docField.m_fieldName ) ) && ( field.m_fieldPath
+            .equalsIgnoreCase( docField.m_fieldPath ) ) ) {
+          fields.remove( field );
           break;
         }
       }
     }
   }
 
-  public static List<MongoField> convertFromList(AbstractModelList<MongoDocumentField> docFields){
+  public static List<MongoField> convertFromList( AbstractModelList<MongoDocumentField> docFields ) {
     List<MongoField> fields = new ArrayList<MongoField>();
-    
-    if ( docFields == null || docFields.isEmpty()){
+
+    if ( docFields == null || docFields.isEmpty() ) {
       return fields;
     }
-    for (MongoDocumentField docField: docFields){
+    for ( MongoDocumentField docField : docFields ) {
       MongoField field = new MongoField();
-      docField.convertTo(field);
-      fields.add(field);
+      docField.convertTo( field );
+      fields.add( field );
     }
     return fields;
   }

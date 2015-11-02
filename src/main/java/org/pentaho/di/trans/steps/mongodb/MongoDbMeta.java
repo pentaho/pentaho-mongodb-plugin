@@ -24,7 +24,9 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
 
   private String m_socketTimeout = ""; // default - never time out //$NON-NLS-1$
 
-  /** primary, primaryPreferred, secondary, secondaryPreferred, nearest */
+  /**
+   * primary, primaryPreferred, secondary, secondaryPreferred, nearest
+   */
   private String m_readPreference = NamedReadPreference.PRIMARY.getName();
 
   /**
@@ -33,7 +35,9 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
    */
   private boolean m_useAllReplicaSetMembers;
 
-  /** optional tag sets to use with read preference settings */
+  /**
+   * optional tag sets to use with read preference settings
+   */
   private List<String> m_readPrefTagSets;
 
   /**
@@ -58,7 +62,7 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
    */
   private boolean m_journal;
 
-  public void setReadPrefTagSets(List<String> tagSets) {
+  public void setReadPrefTagSets( List<String> tagSets ) {
     m_readPrefTagSets = tagSets;
   }
 
@@ -66,7 +70,7 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
     return m_readPrefTagSets;
   }
 
-  public void setUseAllReplicaSetMembers(boolean u) {
+  public void setUseAllReplicaSetMembers( boolean u ) {
     m_useAllReplicaSetMembers = u;
   }
 
@@ -84,13 +88,13 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   /**
    * @param hostname the hostnames to set (comma separated: host:<port>)
    */
-  public void setHostnames(String hostname) {
+  public void setHostnames( String hostname ) {
     this.hostname = hostname;
   }
 
   /**
    * @return the port. This is a port to use for all hostnames (avoids having to
-   *         specify the same port for each hostname in the hostnames list
+   * specify the same port for each hostname in the hostnames list
    */
   public String getPort() {
     return port;
@@ -98,10 +102,10 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
 
   /**
    * @param port the port. This is a port to use for all hostnames (avoids
-   *          having to specify the same port for each hostname in the hostnames
-   *          list
+   *             having to specify the same port for each hostname in the hostnames
+   *             list
    */
-  public void setPort(String port) {
+  public void setPort( String port ) {
     this.port = port;
   }
 
@@ -115,7 +119,7 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   /**
    * @param dbName the dbName to set
    */
-  public void setDbName(String dbName) {
+  public void setDbName( String dbName ) {
     this.dbName = dbName;
   }
 
@@ -129,7 +133,7 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   /**
    * @param collection the collection to set
    */
-  public void setCollection(String collection) {
+  public void setCollection( String collection ) {
     this.collection = collection;
   }
 
@@ -143,7 +147,7 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   /**
    * @param authenticationUser the authenticationUser to set
    */
-  public void setAuthenticationUser(String authenticationUser) {
+  public void setAuthenticationUser( String authenticationUser ) {
     this.authenticationUser = authenticationUser;
   }
 
@@ -157,22 +161,22 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   /**
    * @param authenticationPassword the authenticationPassword to set
    */
-  public void setAuthenticationPassword(String authenticationPassword) {
+  public void setAuthenticationPassword( String authenticationPassword ) {
     this.authenticationPassword = authenticationPassword;
   }
 
   /**
    * Set whether to use kerberos authentication
-   * 
+   *
    * @param k true if kerberos is to be used
    */
-  public void setUseKerberosAuthentication(boolean k) {
+  public void setUseKerberosAuthentication( boolean k ) {
     m_kerberos = k;
   }
 
   /**
    * Get whether to use kerberos authentication
-   * 
+   *
    * @return true if kerberos is to be used
    */
   public boolean getUseKerberosAuthentication() {
@@ -181,16 +185,16 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
 
   /**
    * Set the connection timeout. The default is never timeout
-   * 
+   *
    * @param to the connection timeout in milliseconds
    */
-  public void setConnectTimeout(String to) {
+  public void setConnectTimeout( String to ) {
     m_connectTimeout = to;
   }
 
   /**
    * Get the connection timeout. The default is never timeout
-   * 
+   *
    * @return the connection timeout in milliseconds
    */
   public String getConnectTimeout() {
@@ -200,17 +204,17 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   /**
    * Set the number of milliseconds to attempt a send or receive on a socket
    * before timing out.
-   * 
+   *
    * @param so the number of milliseconds before socket timeout
    */
-  public void setSocketTimeout(String so) {
+  public void setSocketTimeout( String so ) {
     m_socketTimeout = so;
   }
 
   /**
    * Get the number of milliseconds to attempt a send or receive on a socket
    * before timing out.
-   * 
+   *
    * @return the number of milliseconds before socket timeout
    */
   public String getSocketTimeout() {
@@ -220,17 +224,17 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   /**
    * Set the read preference to use - primary, primaryPreferred, secondary,
    * secondaryPreferred or nearest.
-   * 
+   *
    * @param preference the read preference to use
    */
-  public void setReadPreference(String preference) {
+  public void setReadPreference( String preference ) {
     m_readPreference = preference;
   }
 
   /**
    * Get the read preference to use - primary, primaryPreferred, secondary,
    * secondaryPreferred or nearest.
-   * 
+   *
    * @return the read preference to use
    */
   public String getReadPreference() {
@@ -239,16 +243,16 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
 
   /**
    * Set the write concern to use
-   * 
+   *
    * @param concern the write concern to use
    */
-  public void setWriteConcern(String concern) {
+  public void setWriteConcern( String concern ) {
     m_writeConcern = concern;
   }
 
   /**
    * Get the write concern to use
-   * 
+   *
    * @param co the write concern to use
    */
   public String getWriteConcern() {
@@ -258,17 +262,17 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   /**
    * Set the time in milliseconds to wait for replication to succeed, as
    * specified in the w option, before timing out
-   * 
+   *
    * @param w the timeout to use
    */
-  public void setWTimeout(String w) {
+  public void setWTimeout( String w ) {
     m_wTimeout = w;
   }
 
   /**
    * Get the time in milliseconds to wait for replication to succeed, as
    * specified in the w option, before timing out
-   * 
+   *
    * @return the timeout to use
    */
   public String getWTimeout() {
@@ -277,16 +281,16 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
 
   /**
    * Set whether to use journaled writes
-   * 
+   *
    * @param j true for journaled writes
    */
-  public void setJournal(boolean j) {
+  public void setJournal( boolean j ) {
     m_journal = j;
   }
 
   /**
    * Get whether to use journaled writes
-   * 
+   *
    * @return true for journaled writes
    */
   public boolean getJournal() {

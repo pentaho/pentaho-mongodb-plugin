@@ -70,7 +70,7 @@ public class MongoWrapperUtil {
   }
 
   public static MongoClientWrapper createMongoClientWrapper( MongoProperties.Builder properties, LogChannelInterface log )
-      throws MongoDbException {
+    throws MongoDbException {
     return mongoWrapperClientFactory
         .createMongoClientWrapper( properties.build(), new KettleMongoUtilLogger( log ) );
   }
