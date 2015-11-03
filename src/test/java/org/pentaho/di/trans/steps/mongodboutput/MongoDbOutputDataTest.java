@@ -17,31 +17,59 @@
 
 package org.pentaho.di.trans.steps.mongodboutput;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-
-import java.util.Arrays;
-
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
+import com.mongodb.util.JSON;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMeta.MongoIndex;
 import org.pentaho.mongo.MongoDbException;
+import org.pentaho.mongo.wrapper.MongoClientWrapper;
 import org.pentaho.mongo.wrapper.collection.DefaultMongoCollectionWrapper;
 import org.pentaho.mongo.wrapper.collection.MongoCollectionWrapper;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
+import java.util.Arrays;
+import java.util.List;
+
+import static junit.framework.TestCase.fail;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
 public class MongoDbOutputDataTest {
+
+  @Mock private VariableSpace space;
+  @Mock private MongoClientWrapper client;
+  @Mock private MongoCollectionWrapper collection;
+  @Mock private RowMetaInterface rowMeta;
+  @Mock private ValueMetaInterface valueMeta;
+
+  @Before
+  public void before() {
+    MockitoAnnotations.initMocks( this );
+    when( space.environmentSubstitute( any( String.class ) ) )
+        .thenAnswer( new Answer<String>() {
+          @Override public String answer( InvocationOnMock invocationOnMock ) throws Throwable {
+            return (String) invocationOnMock.getArguments()[0];
+          }
+        } );
+  }
 
   @BeforeClass
   public static void setUpBeforeClass() throws KettleException {
@@ -168,4 +196,67 @@ public class MongoDbOutputDataTest {
     assertTrue( createdIndex.containsField( "Street" ) );
     assertEquals( "1", createdIndex.getString( "Street" ) );
   }
+
+  @Test
+  public void testSetInitGet() throws KettleException {
+    // validates setting, initializing, and getting of MongoFields.
+    MongoDbOutputMeta.MongoField field1 = new MongoDbOutputMeta.MongoField();
+    MongoDbOutputMeta.MongoField field2 = new MongoDbOutputMeta.MongoField();
+    field1.m_incomingFieldName = "field1";
+    field1.m_mongoDocPath = "parent.field1";
+    field2.m_incomingFieldName = "field2";
+    field2.m_mongoDocPath = "parent.field2";
+
+    MongoDbOutputData data = new MongoDbOutputData();
+    data.setMongoFields( Arrays.asList( field1, field2 ) );
+    data.init( space );
+
+    List<MongoDbOutputMeta.MongoField> fields = data.getMongoFields();
+    assertThat( fields.size(), equalTo( 2 ) );
+    assertThat( fields.get( 0 ).m_incomingFieldName, equalTo( "field1" ) );
+    assertThat( fields.get( 1 ).m_incomingFieldName, equalTo( "field2" ) );
+    assertThat( fields.get( 0 ).m_pathList, equalTo( Arrays.asList( "parent", "field1" ) ) );
+    assertThat( fields.get( 1 ).m_pathList, equalTo( Arrays.asList( "parent", "field2" ) ) );
+  }
+
+  @Test
+  public void testGetQueryObjectWithIncomingJson() throws KettleException {
+    MongoDbOutputMeta.MongoField field1 = new MongoDbOutputMeta.MongoField();
+    field1.m_JSON = true;
+    field1.m_updateMatchField = true;
+    when( rowMeta.getValueMeta( anyInt() ) )
+        .thenReturn( valueMeta );
+    String query = "{ foo : 'bar' }";
+    when( valueMeta.getString( any( Object[].class ) ) )
+        .thenReturn( query );
+    Object[] row = new Object[] { "foo" };
+
+    when( valueMeta.isString() ).thenReturn( false );
+    try {
+      MongoDbOutputData
+          .getQueryObject( Arrays.asList( field1 ), rowMeta, row, space, MongoDbOutputData.MongoTopLevel.RECORD );
+      fail( "expected an exception, can't construct query from non-string." );
+    } catch ( Exception e ) {
+      assertThat( e, instanceOf( KettleException.class ) );
+    }
+
+    when( valueMeta.isString() ).thenReturn( true );
+    assertThat( MongoDbOutputData
+            .getQueryObject( Arrays.asList( field1 ), rowMeta, row, space, MongoDbOutputData.MongoTopLevel.RECORD ),
+        equalTo( (DBObject) JSON.parse( query ) ) );
+
+
+  }
+
+  @Test
+  public void testWrapperMethods() {
+    MongoDbOutputData data = new MongoDbOutputData();
+    data.setConnection( client );
+    assertThat( data.getConnection(), equalTo( client ) );
+    data.setCollection( collection );
+    assertThat( data.getCollection(), equalTo( collection ) );
+    data.setOutputRowMeta( rowMeta );
+    assertThat( data.getOutputRowMeta(), equalTo( rowMeta ) );
+  }
+
 }

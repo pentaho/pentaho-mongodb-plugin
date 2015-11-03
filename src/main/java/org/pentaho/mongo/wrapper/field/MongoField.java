@@ -1,3 +1,20 @@
+/*!
+ * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package org.pentaho.mongo.wrapper.field;
 
 import java.math.BigDecimal;
@@ -176,9 +193,7 @@ public class MongoField implements Comparable<MongoField> {
       case ValueMetaInterface.TYPE_DATE:
         if ( fieldValue instanceof Number ) {
           fieldValue = new Date( ( (Number) fieldValue ).longValue() );
-        } else if ( fieldValue instanceof Date ) {
-          // nothing to do
-        } else {
+        } else if ( !( fieldValue instanceof Date ) ) {
           throw new KettleException( BaseMessages.getString( PKG, "MongoDbInput.ErrorMessage.DateConversion", //$NON-NLS-1$
               fieldValue.toString() ) );
         }
@@ -189,9 +204,9 @@ public class MongoField implements Comparable<MongoField> {
         } else if ( fieldValue instanceof Binary ) {
           byte[] b = ( (Binary) fieldValue ).getData();
           String s = new String( b );
-          fieldValue = new Integer( s );
+          fieldValue = new Long( s );
         } else {
-          fieldValue = new Integer( fieldValue.toString() );
+          fieldValue = new Long( fieldValue.toString() );
         }
         return m_tempValueMeta.getInteger( fieldValue );
       case ValueMetaInterface.TYPE_NUMBER:
@@ -276,7 +291,7 @@ public class MongoField implements Comparable<MongoField> {
   /**
    * Convert a mongo array object to a Kettle field value (for the field defined in this path)
    * 
-   * @param mongoObject
+   * @param mongoList
    *          the array to convert
    * @return the kettle field value
    * @throws KettleException

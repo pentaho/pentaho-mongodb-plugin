@@ -1,8 +1,37 @@
+/*!
+ * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package org.pentaho.mongo.wrapper.field;
 
-import com.mongodb.*;
+import com.mongodb.AggregationOutput;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
-import org.bson.types.*;
+import org.bson.types.BSONTimestamp;
+import org.bson.types.Binary;
+import org.bson.types.Code;
+import org.bson.types.MaxKey;
+import org.bson.types.MinKey;
+import org.bson.types.ObjectId;
+import org.bson.types.Symbol;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.ValueMeta;
@@ -17,7 +46,13 @@ import org.pentaho.mongo.wrapper.MongoClientWrapper;
 import org.pentaho.mongo.wrapper.MongoDBAction;
 import org.pentaho.mongo.wrapper.MongoWrapperUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by bryan on 8/7/14.
@@ -113,7 +148,7 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
       public void run() {
         try {
           discoverFieldsCallback.notifyFields(
-            discoverFields( properties, db, collection, query, fields, isPipeline, docsToSample, step ) );
+              discoverFields( properties, db, collection, query, fields, isPipeline, docsToSample, step ) );
         } catch ( KettleException e ) {
           discoverFieldsCallback.notifyException( e );
         }
@@ -123,7 +158,9 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
 
   protected static void postProcessPaths( Map<String, MongoField> fieldLookup, List<MongoField> discoveredFields,
                                           int numDocsProcessed ) {
-    for ( String key : fieldLookup.keySet() ) {
+    List<String> fieldKeys = new ArrayList<String>( fieldLookup.keySet() );
+    Collections.sort( fieldKeys ); // sorting so name clash number assignments will be deterministic
+    for ( String key : fieldKeys ) {
       MongoField m = fieldLookup.get( key );
       m.m_occurenceFraction = "" + m.m_percentageOfSample + "/" //$NON-NLS-1$ //$NON-NLS-2$
         + numDocsProcessed;

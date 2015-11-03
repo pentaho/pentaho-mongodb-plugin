@@ -1,3 +1,20 @@
+/*!
+ * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package org.pentaho.mongo.wrapper;
 
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -19,7 +36,7 @@ public class MongoWrapperUtil {
     }
   };
 
-  protected static void setMongoWrapperClientFactory( MongoWrapperClientFactory mongoWrapperClientFactory ) {
+  public static void setMongoWrapperClientFactory( MongoWrapperClientFactory mongoWrapperClientFactory ) {
     MongoWrapperUtil.mongoWrapperClientFactory = mongoWrapperClientFactory;
   }
 
@@ -29,7 +46,7 @@ public class MongoWrapperUtil {
 
   public static MongoClientWrapper createMongoClientWrapper( MongoDbMeta mongoDbMeta, VariableSpace vars,
                                                              LogChannelInterface log ) throws MongoDbException {
-    MongoProperties.Builder propertiesBuilder = createPropertiesBuilder(mongoDbMeta, vars);
+    MongoProperties.Builder propertiesBuilder = createPropertiesBuilder( mongoDbMeta, vars );
 
     return mongoWrapperClientFactory
       .createMongoClientWrapper( propertiesBuilder.build(), new KettleMongoUtilLogger( log ) );
@@ -70,7 +87,7 @@ public class MongoWrapperUtil {
   }
 
   public static MongoClientWrapper createMongoClientWrapper( MongoProperties.Builder properties, LogChannelInterface log )
-      throws MongoDbException {
+    throws MongoDbException {
     return mongoWrapperClientFactory
         .createMongoClientWrapper( properties.build(), new KettleMongoUtilLogger( log ) );
   }

@@ -791,9 +791,8 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
       }
     }
   }
-  
-  @Override
-  public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step ) throws KettleException {
+
+  @Override public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step ) throws KettleException {
     if ( !Const.isEmpty( getHostnames() ) ) {
       rep.saveStepAttribute( id_transformation, id_step, 0, "mongo_host", //$NON-NLS-1$
           getHostnames() );

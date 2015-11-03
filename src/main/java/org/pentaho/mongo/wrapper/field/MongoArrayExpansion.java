@@ -1,3 +1,20 @@
+/*!
+ * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package org.pentaho.mongo.wrapper.field;
 
 import java.util.ArrayList;
@@ -17,7 +34,9 @@ import com.mongodb.BasicDBObject;
 public class MongoArrayExpansion {
   protected static Class<?> PKG = MongoArrayExpansion.class; // for i18n purposes
 
-  /** The prefix of the full path that defines the expansion */
+  /**
+   * The prefix of the full path that defines the expansion
+   */
   public String m_expansionPath;
 
   /**
@@ -36,9 +55,8 @@ public class MongoArrayExpansion {
 
   /**
    * Initialize this field by parsing the path etc.
-   * 
-   * @throws KettleException
-   *           if a problem occurs
+   *
+   * @throws KettleException if a problem occurs
    */
   public void init() throws KettleException {
     if ( Const.isEmpty( m_expansionPath ) ) {
@@ -77,9 +95,8 @@ public class MongoArrayExpansion {
 
   /**
    * Reset this field. Should be called prior to processing a new field value from the avro file
-   * 
-   * @param space
-   *          environment variables (values that environment variables resolve to cannot contain "."s)
+   *
+   * @param space environment variables (values that environment variables resolve to cannot contain "."s)
    */
   public void reset( VariableSpace space ) {
     m_tempParts.clear();
@@ -107,7 +124,8 @@ public class MongoArrayExpansion {
     }
 
     if ( m_tempParts.size() == 0 ) {
-      throw new KettleException( BaseMessages.getString( PKG, "MongoDbInput.ErrorMessage.MalformedPathRecord" ) ); //$NON-NLS-1$
+      throw new KettleException(
+          BaseMessages.getString( PKG, "MongoDbInput.ErrorMessage.MalformedPathRecord" ) ); //$NON-NLS-1$
     }
 
     String part = m_tempParts.remove( 0 );
@@ -152,7 +170,8 @@ public class MongoArrayExpansion {
     }
 
     if ( m_tempParts.size() == 0 ) {
-      throw new KettleException( BaseMessages.getString( PKG, "MongoDbInput.ErrorMessage.MalformedPathArray" ) ); //$NON-NLS-1$
+      throw new KettleException(
+          BaseMessages.getString( PKG, "MongoDbInput.ErrorMessage.MalformedPathArray" ) ); //$NON-NLS-1$
     }
 
     String part = m_tempParts.remove( 0 );
@@ -199,8 +218,8 @@ public class MongoArrayExpansion {
       try {
         arrayI = Integer.parseInt( index.trim() );
       } catch ( NumberFormatException e ) {
-        throw new KettleException( BaseMessages.getString( PKG,
-            "MongoDbInput.ErrorMessage.UnableToParseArrayIndex", index ) ); //$NON-NLS-1$
+        throw new KettleException(
+            BaseMessages.getString( PKG, "MongoDbInput.ErrorMessage.UnableToParseArrayIndex", index ) ); //$NON-NLS-1$
       }
 
       if ( arrayI >= mongoList.size() || arrayI < 0 ) {

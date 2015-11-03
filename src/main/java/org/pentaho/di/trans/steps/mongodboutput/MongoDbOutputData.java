@@ -17,21 +17,17 @@
 
 package org.pentaho.di.trans.steps.mongodboutput;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import com.mongodb.MongoException;
+import com.mongodb.util.JSON;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
-import org.pentaho.di.core.row.value.ValueMetaFactory;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.i18n.BaseMessages;
@@ -42,15 +38,16 @@ import org.pentaho.mongo.wrapper.MongoClientWrapper;
 import org.pentaho.mongo.wrapper.collection.MongoCollectionWrapper;
 import org.pentaho.mongo.wrapper.cursor.MongoCursorWrapper;
 
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
-import com.mongodb.MongoException;
-import com.mongodb.util.JSON;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Data class for the MongoDbOutput step
- * 
+ *
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  */
 public class MongoDbOutputData extends BaseStepData implements StepDataInterface {
@@ -64,18 +61,26 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
   public static final String REPL_SET_SETTINGS = "settings"; //$NON-NLS-1$
   public static final String REPL_SET_LAST_ERROR_MODES = "getLastErrorModes"; //$NON-NLS-1$
 
-  /** Enum for the type of the top level object of the document structure */
+  /**
+   * Enum for the type of the top level object of the document structure
+   */
   public static enum MongoTopLevel {
     RECORD, ARRAY, INCONSISTENT;
   }
 
-  /** The output row format */
+  /**
+   * The output row format
+   */
   protected RowMetaInterface m_outputRowMeta;
 
-  /** Main entry point to the mongo driver */
+  /**
+   * Main entry point to the mongo driver
+   */
   protected MongoClientWrapper clientWrapper;
 
-  /** Collection object for the user-specified document collection */
+  /**
+   * Collection object for the user-specified document collection
+   */
   protected MongoCollectionWrapper m_collection;
 
   protected List<MongoDbOutputMeta.MongoField> m_userFields;
@@ -95,7 +100,9 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
   protected Map<String, List<MongoDbOutputMeta.MongoField>> m_pushComplexStructures =
       new HashMap<String, List<MongoDbOutputMeta.MongoField>>();
 
-  /** all other modifier updates that involve primitive leaf fields */
+  /**
+   * all other modifier updates that involve primitive leaf fields
+   */
   protected Map<String, Object[]> m_primitiveLeafModifiers = new LinkedHashMap<String, Object[]>();
 
   /**
@@ -142,9 +149,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Set the field paths to use for creating the document structure
-   * 
-   * @param fields
-   *          the field paths to use
+   *
+   * @param fields the field paths to use
    */
   public void setMongoFields( List<MongoDbOutputMeta.MongoField> fields ) {
     // copy this list
@@ -156,12 +162,17 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
   }
 
   /**
+   * Gets the field paths to use for creating the document structure
+   */
+  public List<MongoDbOutputMeta.MongoField> getMongoFields() {
+    return m_userFields;
+  }
+
+  /**
    * Initialize field paths
-   * 
-   * @param vars
-   *          variables to use
-   * @throws KettleException
-   *           if a problem occurs
+   *
+   * @param vars variables to use
+   * @throws KettleException if a problem occurs
    */
   public void init( VariableSpace vars ) throws KettleException {
     if ( m_userFields != null ) {
@@ -173,7 +184,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Get the current connection or null if not connected
-   * 
+   *
    * @return the connection or null
    */
   public MongoClientWrapper getConnection() {
@@ -182,9 +193,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Set the current connection
-   * 
-   * @param clientWrapper
-   *          the connection to use
+   *
+   * @param clientWrapper the connection to use
    */
   public void setConnection( MongoClientWrapper clientWrapper ) {
     this.clientWrapper = clientWrapper;
@@ -192,11 +202,9 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Create a collection in the current database
-   * 
-   * @param collectionName
-   *          the name of the collection to create
-   * @throws Exception
-   *           if a problem occurs
+   *
+   * @param collectionName the name of the collection to create
+   * @throws Exception if a problem occurs
    */
   public void createCollection( String db, String collectionName ) throws Exception {
     if ( clientWrapper == null ) {
@@ -208,9 +216,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Set the collection to use
-   * 
-   * @param col
-   *          the collection to use
+   *
+   * @param col the collection to use
    */
   public void setCollection( MongoCollectionWrapper col ) {
     m_collection = col;
@@ -218,7 +225,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Get the collection in use
-   * 
+   *
    * @return the collection in use
    */
   public MongoCollectionWrapper getCollection() {
@@ -227,9 +234,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Set the output row format
-   * 
-   * @param outM
-   *          the output row format
+   *
+   * @param outM the output row format
    */
   public void setOutputRowMeta( RowMetaInterface outM ) {
     m_outputRowMeta = outM;
@@ -237,7 +243,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Get the output row format
-   * 
+   *
    * @return the output row format
    */
   public RowMetaInterface getOutputRowMeta() {
@@ -247,20 +253,16 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
   /**
    * Apply the supplied index operations to the collection. Indexes can be defined on one or more fields in the
    * document. Operation is either create or drop.
-   * 
-   * @param indexes
-   *          a list of index operations
-   * @param log
-   *          the logging object
-   * @param truncate
-   *          true if the collection was truncated in the current execution - in this case drop operations are not
-   *          necessary
-   * @throws MongoException
-   *           if something goes wrong
-   * @throws KettleException 
+   *
+   * @param indexes  a list of index operations
+   * @param log      the logging object
+   * @param truncate true if the collection was truncated in the current execution - in this case drop operations are not
+   *                 necessary
+   * @throws MongoException  if something goes wrong
+   * @throws KettleException
    */
   public void applyIndexes( List<MongoDbOutputMeta.MongoIndex> indexes, LogChannelInterface log, boolean truncate )
-          throws MongoException, KettleException, MongoDbException {
+    throws MongoException, KettleException, MongoDbException {
 
     for ( MongoDbOutputMeta.MongoIndex index : indexes ) {
       String[] indexParts = index.m_pathToFields.split( "," ); //$NON-NLS-1$
@@ -284,7 +286,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
       if ( index.m_drop ) {
         if ( truncate ) {
-          log.logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.TruncateBeforeInsert", index ) ); //$NON-NLS-1$
+          log.logBasic(
+              BaseMessages.getString( PKG, "MongoDbOutput.Messages.TruncateBeforeInsert", index ) ); //$NON-NLS-1$
         } else {
           m_collection.dropIndex( mongoIndex );
         }
@@ -304,43 +307,37 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Get an object that encapsulates the fields and modifier operations to use for a modifier update.
-   * 
+   * <p/>
    * NOTE: that with modifier upserts the query conditions get created if the record does not exist (i.e. insert). This
    * is different than straight non- modifier upsert where the query conditions just locate a matching record (if any)
    * and then a complete object replacement is done. So for standard upsert it is necessary to duplicate the query
    * condition paths in order for these fields to be in the object that is inserted/updated.
-   * 
+   * <p/>
    * This also means that certain modifier upserts are not possible in the case of insert. E.g. here we are wanting to
    * test if the field "f1" in record "rec1" in the first element of array "two" is set to "george". If so, then we want
    * to push a new record to the end of the array; otherwise create a new document with the array containing just the
    * new record:
-   * <p>
-   * 
+   * <p/>
+   * <p/>
    * <pre>
-   * db.collection.update({ "one.two.0.rec1.f1" : "george"}, 
-   * { "$push" : { "one.two" : { "rec1" : { "f1" : "bob" , "f2" : "fred"}}}}, 
+   * db.collection.update({ "one.two.0.rec1.f1" : "george"},
+   * { "$push" : { "one.two" : { "rec1" : { "f1" : "bob" , "f2" : "fred"}}}},
    * true)
    * </pre>
-   * 
+   * <p/>
    * This does not work and results in a "Cannot apply $push/$pushAll modifier to non-array" error if there is no match
    * (i.e. insert condition). This is because the query conditions get created as well as the modifier opps and,
    * furthermore, they get created first. Since mongo doesn't know whether ".0." indicates an array index or a field
    * name it defaults to creating a field with name "0". This means that "one.two" gets created as a record (not an
    * array) before the $push operation is executed. Hence the error.
-   * 
-   * @param fieldDefs
-   *          the list of document field definitions
-   * @param inputMeta
-   *          the input row format
-   * @param row
-   *          the current incoming row
-   * @param vars
-   *          environment variables
-   * @param topLevelStructure
-   *          the top level structure of the document
+   *
+   * @param fieldDefs         the list of document field definitions
+   * @param inputMeta         the input row format
+   * @param row               the current incoming row
+   * @param vars              environment variables
+   * @param topLevelStructure the top level structure of the document
    * @return a DBObject encapsulating the update to make
-   * @throws KettleException
-   *           if a problem occurs
+   * @throws KettleException if a problem occurs
    */
   protected DBObject getModifierUpdateObject( List<MongoDbOutputMeta.MongoField> fieldDefs, RowMetaInterface inputMeta,
       Object[] row, VariableSpace vars, MongoTopLevel topLevelStructure ) throws KettleException, MongoDbException {
@@ -358,9 +355,9 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
     // do we need to determine whether this will be an insert or an update?
     boolean checkForMatch = false;
     for ( MongoDbOutputMeta.MongoField field : fieldDefs ) {
-      if ( !field.m_updateMatchField
-          && ( field.m_modifierOperationApplyPolicy.equals( "Insert" ) || field.m_modifierOperationApplyPolicy //$NON-NLS-1$
-              .equals( "Update" ) ) ) { //$NON-NLS-1$
+      if ( !field.m_updateMatchField && ( field.m_modifierOperationApplyPolicy.equals( "Insert" )
+          || field.m_modifierOperationApplyPolicy //$NON-NLS-1$
+          .equals( "Update" ) ) ) { //$NON-NLS-1$
         checkForMatch = true;
         break;
       }
@@ -549,8 +546,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
     }
 
     if ( !haveUpdateFields ) {
-      throw new KettleException( BaseMessages.getString( PKG,
-          "MongoDbOutput.Messages.Error.NoFieldsToUpdateSpecifiedForModifierOpp" ) ); //$NON-NLS-1$
+      throw new KettleException( BaseMessages
+          .getString( PKG, "MongoDbOutput.Messages.Error.NoFieldsToUpdateSpecifiedForModifierOpp" ) ); //$NON-NLS-1$
     }
 
     if ( !hasNonNullUpdateValues ) {
@@ -562,18 +559,13 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Get an object that encapsulates the query to make for an update/upsert operation
-   * 
-   * @param fieldDefs
-   *          the list of document field definitions
-   * @param inputMeta
-   *          the input row format
-   * @param row
-   *          the current incoming row
-   * @param vars
-   *          environment variables
+   *
+   * @param fieldDefs the list of document field definitions
+   * @param inputMeta the input row format
+   * @param row       the current incoming row
+   * @param vars      environment variables
    * @return a DBObject encapsulating the query
-   * @throws KettleException
-   *           if something goes wrong
+   * @throws KettleException if something goes wrong
    */
   protected static DBObject getQueryObject( List<MongoDbOutputMeta.MongoField> fieldDefs, RowMetaInterface inputMeta,
       Object[] row, VariableSpace vars, MongoTopLevel topLevelStructure ) throws KettleException {
@@ -594,6 +586,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
           continue;
         }
 
+        hasNonNullMatchValues = true;
+
         if ( field.m_JSON && Const.isEmpty( field.m_mongoDocPath ) && !field.m_useIncomingFieldNameAsMongoFieldName ) {
           // We have a query based on a complete incoming JSON doc -
           // i.e. no field processing necessary
@@ -602,13 +596,11 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
             String val = vm.getString( row[index] );
             query = (BasicDBObject) JSON.parse( val );
           } else {
-            throw new KettleException( BaseMessages.getString( PKG,
-                "MongoDbOutput.Messages.MatchFieldJSONButIncomingValueNotString" ) );
+            throw new KettleException(
+                BaseMessages.getString( PKG, "MongoDbOutput.Messages.MatchFieldJSONButIncomingValueNotString" ) );
           }
           break;
         }
-
-        hasNonNullMatchValues = true;
 
         // query objects have fields using "dot" notation to reach into embedded
         // documents
@@ -629,8 +621,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
     }
 
     if ( !haveMatchFields ) {
-      throw new KettleException( BaseMessages.getString( PKG,
-          "MongoDbOutput.Messages.Error.NoFieldsToUpdateSpecifiedForMatch" ) ); //$NON-NLS-1$
+      throw new KettleException( BaseMessages
+          .getString( PKG, "MongoDbOutput.Messages.Error.NoFieldsToUpdateSpecifiedForMatch" ) ); //$NON-NLS-1$
     }
 
     if ( !hasNonNullMatchValues ) {
@@ -644,23 +636,16 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
   /**
    * Converts a kettle row to a Mongo Object for inserting/updating
-   * 
-   * @param fieldDefs
-   *          the document field definitions
-   * @param inputMeta
-   *          the incoming row format
-   * @param row
-   *          the current incoming row
-   * @param vars
-   *          environment variables
-   * @param topLevelStructure
-   *          the top level structure of the Mongo document
-   * @param hasTopLevelJSONDocInsert
-   *          true if the user-specified paths include a single incoming Kettle field value that contains a JSON
-   *          document that is to be inserted as is
+   *
+   * @param fieldDefs                the document field definitions
+   * @param inputMeta                the incoming row format
+   * @param row                      the current incoming row
+   * @param vars                     environment variables
+   * @param topLevelStructure        the top level structure of the Mongo document
+   * @param hasTopLevelJSONDocInsert true if the user-specified paths include a single incoming Kettle field value that contains a JSON
+   *                                 document that is to be inserted as is
    * @return a DBObject encapsulating the document to insert/upsert or null if there are no non-null incoming fields
-   * @throws KettleException
-   *           if a problem occurs
+   * @throws KettleException if a problem occurs
    */
   protected static DBObject kettleRowToMongo( List<MongoDbOutputMeta.MongoField> fieldDefs, RowMetaInterface inputMeta,
       Object[] row, VariableSpace vars, MongoTopLevel topLevelStructure, boolean hasTopLevelJSONDocInsert )
@@ -729,11 +714,13 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
               // end of the path?
               if ( pathParts.size() == 0 ) {
                 if ( field.m_useIncomingFieldNameAsMongoFieldName ) {
-                  boolean res = setMongoValueFromKettleValue( current, incomingFieldName, vm, row[index], field.m_JSON );
+                  boolean
+                      res =
+                      setMongoValueFromKettleValue( current, incomingFieldName, vm, row[index], field.m_JSON );
                   haveNonNullFields = ( haveNonNullFields || res );
                 } else {
-                  throw new KettleException( BaseMessages.getString( PKG,
-                      "MongoDbOutput.Messages.Error.NoFieldNameSpecifiedForPath" ) ); //$NON-NLS-1$
+                  throw new KettleException( BaseMessages
+                      .getString( PKG, "MongoDbOutput.Messages.Error.NoFieldNameSpecifiedForPath" ) ); //$NON-NLS-1$
                 }
               }
             }
@@ -747,11 +734,13 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
             if ( pathParts == null || pathParts.size() == 0 ) {
               if ( current instanceof BasicDBObject ) {
                 if ( field.m_useIncomingFieldNameAsMongoFieldName ) {
-                  boolean res = setMongoValueFromKettleValue( current, incomingFieldName, vm, row[index], field.m_JSON );
+                  boolean
+                      res =
+                      setMongoValueFromKettleValue( current, incomingFieldName, vm, row[index], field.m_JSON );
                   haveNonNullFields = ( haveNonNullFields || res );
                 } else {
-                  throw new KettleException( BaseMessages.getString( PKG,
-                      "MongoDbOutput.Messages.Error.NoFieldNameSpecifiedForPath" ) ); //$NON-NLS-1$
+                  throw new KettleException( BaseMessages
+                      .getString( PKG, "MongoDbOutput.Messages.Error.NoFieldNameSpecifiedForPath" ) ); //$NON-NLS-1$
                 }
               }
             }
@@ -763,8 +752,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
               boolean res = setMongoValueFromKettleValue( current, incomingFieldName, vm, row[index], field.m_JSON );
               haveNonNullFields = ( haveNonNullFields || res );
             } else {
-              throw new KettleException( BaseMessages.getString( PKG,
-                  "MongoDbOutput.Messages.Error.NoFieldNameSpecifiedForPath" ) ); //$NON-NLS-1$
+              throw new KettleException( BaseMessages
+                  .getString( PKG, "MongoDbOutput.Messages.Error.NoFieldNameSpecifiedForPath" ) ); //$NON-NLS-1$
             }
           } else {
             if ( pathParts.size() == 0 ) {
@@ -841,8 +830,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
       return true;
     }
     if ( kettleType.isSerializableType() ) {
-      throw new KettleValueException( BaseMessages.getString( PKG,
-          "MongoDbOutput.Messages.Error.CantStoreKettleSerializableVals" ) ); //$NON-NLS-1$
+      throw new KettleValueException(
+          BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.CantStoreKettleSerializableVals" ) ); //$NON-NLS-1$
     }
 
     return false;
@@ -883,8 +872,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
       } else {
         // check type - should be an array
         if ( !( mongoField instanceof BasicDBList ) ) {
-          throw new KettleException( BaseMessages.getString( PKG,
-              "MongoDbOutput.Messages.Error.FieldExistsButIsntAnArray", part ) ); //$NON-NLS-1$
+          throw new KettleException( BaseMessages
+              .getString( PKG, "MongoDbOutput.Messages.Error.FieldExistsButIsntAnArray", part ) ); //$NON-NLS-1$
         }
       }
       part = part.substring( part.indexOf( '[' ) );
@@ -906,8 +895,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
     } else {
       // check type = should be a record (object)
       if ( !( mongoField instanceof BasicDBObject ) && pathParts.size() > 1 ) {
-        throw new KettleException( BaseMessages.getString( PKG,
-            "MongoDbOutput.Messages.Error.FieldExistsButIsntARecord", part ) ); //$NON-NLS-1$
+        throw new KettleException( BaseMessages
+            .getString( PKG, "MongoDbOutput.Messages.Error.FieldExistsButIsntARecord", part ) ); //$NON-NLS-1$
       }
     }
     pathParts.remove( 0 );
@@ -918,11 +907,9 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    * Determines the top level structure of the outgoing Mongo document from the user-specified field paths. This can be
    * either RECORD ( for a top level structure that is an object), ARRAY or INCONSISTENT (if the user has some field
    * paths that start with an array and some that start with an object).
-   * 
-   * @param fieldDefs
-   *          the list of document field paths
-   * @param vars
-   *          environment variables
+   *
+   * @param fieldDefs the list of document field paths
+   * @param vars      environment variables
    * @return the top level structure
    */
   protected static MongoTopLevel checkTopLevelConsistency( List<MongoDbOutputMeta.MongoField> fieldDefs,
@@ -958,44 +945,4 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
     return MongoTopLevel.ARRAY;
   }
 
-  public static void main( String[] args ) {
-    try {
-      List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>();
-
-      MongoDbOutputMeta.MongoField mf = new MongoDbOutputMeta.MongoField();
-
-      mf.m_incomingFieldName = "field1"; //$NON-NLS-1$
-      mf.m_mongoDocPath = "bob.fred[0].george"; //$NON-NLS-1$
-      mf.m_useIncomingFieldNameAsMongoFieldName = true;
-      mf.m_modifierUpdateOperation = "$set"; //$NON-NLS-1$
-      mf.m_modifierOperationApplyPolicy = "Insert&Update"; //$NON-NLS-1$
-      paths.add( mf );
-
-      mf = new MongoDbOutputMeta.MongoField();
-      mf.m_incomingFieldName = "field2"; //$NON-NLS-1$
-      mf.m_mongoDocPath = "bob.fred[0].george"; //$NON-NLS-1$
-      mf.m_useIncomingFieldNameAsMongoFieldName = true;
-      mf.m_modifierUpdateOperation = "$set"; //$NON-NLS-1$
-      mf.m_modifierOperationApplyPolicy = "Insert&Update"; //$NON-NLS-1$
-      paths.add( mf );
-
-      RowMetaInterface rmi = new RowMeta();
-      ValueMetaInterface vm = ValueMetaFactory.createValueMeta( "field1", ValueMetaInterface.TYPE_STRING ); //$NON-NLS-1$
-      rmi.addValueMeta( vm );
-      vm = ValueMetaFactory.createValueMeta( "field2", ValueMetaInterface.TYPE_STRING ); //$NON-NLS-1$
-      rmi.addValueMeta( vm );
-
-      Object[] row = new Object[2];
-      row[0] = "value1"; //$NON-NLS-1$
-      row[1] = "value2"; //$NON-NLS-1$
-      VariableSpace vs = new Variables();
-
-      DBObject result =
-          new MongoDbOutputData().getModifierUpdateObject( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD );
-
-      System.out.println( result );
-    } catch ( Exception ex ) {
-      ex.printStackTrace();
-    }
-  }
 }
