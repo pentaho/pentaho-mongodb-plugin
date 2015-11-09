@@ -1,31 +1,26 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-
-  <groupId>pentaho</groupId>
-  <artifactId>pentaho-mongodb-plugin</artifactId>
-  <packaging>bundle</packaging>
-  <version>6.0-SNAPSHOT</version>
-
   <parent>
     <groupId>org.pentaho</groupId>
     <artifactId>pentaho-ce-jar-parent-pom</artifactId>
     <version>1.0.13</version>
   </parent>
-
+  <groupId>pentaho</groupId>
+  <artifactId>pentaho-mongodb-plugin</artifactId>
+  <version>6.0.0.1-364</version>
+  <packaging>bundle</packaging>
   <name>Pentaho Enterprise Edition Project: ${project.artifactId}</name>
   <description>a Pentaho closed source project</description>
   <url>http://www.pentaho.com</url>
-
   <licenses>
     <license>
       <name>Pentaho Proprietary License</name>
-      <!-- TODO: figure out if the proprietary license is publically available -->
       <url>http://www.pentaho.com</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
-
   <developers>
     <developer>
       <name>Bryan Rosander</name>
@@ -35,20 +30,28 @@
       </roles>
     </developer>
   </developers>
-
-  <properties>
-    <mongo-driver.version>2.11.1</mongo-driver.version>
-    <mockito.version>1.9.5</mockito.version>
-    <junit.version>4.11</junit.version>
-  </properties>
-
   <scm>
     <connection>scm:git:git@github.com:${github.user}/${project.artifactId}.git</connection>
-    <url>scm:git:git@github.com:${github.user}/${project.artifactId}.git</url>
     <developerConnection>scm:git:git@github.com:${github.user}/${project.artifactId}.git</developerConnection>
-    <tag>HEAD</tag>
+    <url>scm:git:git@github.com:${github.user}/${project.artifactId}.git</url>
   </scm>
-
+  <distributionManagement>
+    <repository>
+      <id>pentaho.public.release.repo</id>
+      <name>Pentaho Public Release Repository</name>
+      <url>${pentaho.public.release.repo}</url>
+    </repository>
+    <snapshotRepository>
+      <id>pentaho.public.snapshot.repo</id>
+      <name>Pentaho Public Snapshot Repository</name>
+      <url>${pentaho.public.snapshot.repo}</url>
+    </snapshotRepository>
+  </distributionManagement>
+  <properties>
+    <mockito.version>1.9.5</mockito.version>
+    <junit.version>4.11</junit.version>
+    <mongo-driver.version>2.11.1</mongo-driver.version>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>pentaho-kettle</groupId>
@@ -104,7 +107,26 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
+  <repositories>
+    <repository>
+      <releases>
+        <updatePolicy>always</updatePolicy>
+        <checksumPolicy>fail</checksumPolicy>
+      </releases>
+      <snapshots>
+        <updatePolicy>always</updatePolicy>
+        <checksumPolicy>fail</checksumPolicy>
+      </snapshots>
+      <id>pentaho.resolve.repo</id>
+      <name>Pentaho Group Resolve Repository</name>
+      <url>http://nexus.pentaho.org/content/groups/omni/</url>
+    </repository>
+    <repository>
+      <id>repo.pentaho.org</id>
+      <name>repo.pentaho.org</name>
+      <url>http://repository.pentaho.org/artifactory/pentaho</url>
+    </repository>
+  </repositories>
   <build>
     <finalName>${project.artifactId}</finalName>
     <plugins>
@@ -129,7 +151,6 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.0</version>
         <configuration>
@@ -150,47 +171,4 @@
       </plugin>
     </plugins>
   </build>
-  <distributionManagement>
-    <!--
-     if you plan on releasing anything that inherits this parent pom
-          you will need your Maven settings.xml to have the appropriate entries ...
-          we recommend something like this: <servers> <server> <id>pentaho.public.release.repo</id>
-          <username>YOUR_REPO_USERNAME</username> <password>YOUR_REPO_PASSWORD</password>
-          </server> <server> <id>pentaho.public.snapshot.repo</id> <username>YOUR_REPO_USERNAME</username>
-          <password>YOUR_REPO_PASSWORD</password> </server> </servers> requests for
-          repo credentials should be made to buildteam@pentaho.com
-    -->
-    <repository>
-      <id>pentaho.public.release.repo</id>
-      <name>Pentaho Public Release Repository</name>
-      <url>${pentaho.public.release.repo}</url>
-    </repository>
-    <snapshotRepository>
-      <id>pentaho.public.snapshot.repo</id>
-      <name>Pentaho Public Snapshot Repository</name>
-      <url>${pentaho.public.snapshot.repo}</url>
-    </snapshotRepository>
-  </distributionManagement>
-  <!-- this is for bootstrapping only; you should really just add this to your settings.xml -->
-  <repositories>
-    <repository>
-      <id>pentaho.resolve.repo</id>
-      <name>Pentaho Group Resolve Repository</name>
-      <url>http://nexus.pentaho.org/content/groups/omni/</url>
-      <releases>
-        <updatePolicy>always</updatePolicy>
-        <checksumPolicy>fail</checksumPolicy>
-      </releases>
-      <snapshots>
-        <updatePolicy>always</updatePolicy>
-        <checksumPolicy>fail</checksumPolicy>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>repo.pentaho.org</id>
-      <name>repo.pentaho.org</name>
-      <url>http://repository.pentaho.org/artifactory/pentaho</url>
-    </repository>
-  </repositories>
-
 </project>
