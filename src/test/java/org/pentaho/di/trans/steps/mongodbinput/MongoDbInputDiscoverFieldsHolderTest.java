@@ -18,6 +18,7 @@
 package org.pentaho.di.trans.steps.mongodbinput;
 
 import com.google.common.collect.ImmutableMap;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -34,10 +35,15 @@ public class MongoDbInputDiscoverFieldsHolderTest {
   @Mock MongoDbInputDiscoverFields discoverFields2;
   @Mock MongoDbInputDiscoverFields discoverFields3b;
   @Mock MongoDbInputDiscoverFields discoverFields3;
-  MongoDbInputDiscoverFieldsHolder holder = new MongoDbInputDiscoverFieldsHolder();
+  MongoDbInputDiscoverFieldsHolder holder;
 
   @Before public void before() {
     MockitoAnnotations.initMocks( this );
+    holder = new MongoDbInputDiscoverFieldsHolder();
+  }
+
+  @After public void after() {
+    holder.destroy();
   }
 
   @Test public void testImplAddedRemoved() throws Exception {
@@ -55,4 +61,8 @@ public class MongoDbInputDiscoverFieldsHolderTest {
     assertThat( holder.getMongoDbInputDiscoverFields(), equalTo( discoverFields2 ) );
   }
 
+  @Test public void testDestroy() {
+    holder.destroy();
+    holder = new MongoDbInputDiscoverFieldsHolder();
+  }
 }

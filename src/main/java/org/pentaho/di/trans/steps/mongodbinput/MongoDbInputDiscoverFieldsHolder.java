@@ -41,6 +41,15 @@ public class MongoDbInputDiscoverFieldsHolder {
     }
   }
 
+  /**
+   * This method is to clean up on bundle shutdown and should only be called by blueprint when bundle is stopped
+   */
+  public void destroy() {
+    synchronized ( MongoDbInputDiscoverFieldsHolder.class ) {
+      INSTANCE = null;
+    }
+  }
+
   public static MongoDbInputDiscoverFieldsHolder getInstance() {
     return INSTANCE;
   }

@@ -15,7 +15,7 @@
     <bean id="mongodbInputDiscoverFieldsImpl" class="org.pentaho.mongo.wrapper.field.MongodbInputDiscoverFieldsImpl"/>
 
     <bean id="mongoDbInputDiscoverFieldsHolder"
-          class="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFieldsHolder" scope="singleton"/>
+          class="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFieldsHolder" destroy-method="destroy" scope="singleton"/>
 
     <service id="mongodbInputDiscoverFieldsImplService" ref="mongodbInputDiscoverFieldsImpl"
              interface="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFields"/>
