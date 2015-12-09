@@ -108,6 +108,14 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     public String m_modifierOperationApplyPolicy = "Insert&Update"; //$NON-NLS-1$
 
     /**
+     * This flag determines the strategy of handling {@code null} values. By default, {@code null}s are ignored. If
+     * this flag is set to {@code true}, the corresponding output value is sent as {@code null}.
+     * <br/>
+     * Note: {@code null} and {@code undefined} are different values in Mongo!
+     */
+    public boolean allowNull = false;
+
+    /**
      * If true, then the incoming Kettle field value for this mongo field is expected to be of type String and hold a
      * Mongo doc fragment in JSON format. The doc fragment will be converted into BSON and added into the overall
      * document at the point specified by this MongoField's path
@@ -123,6 +131,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
       newF.m_modifierUpdateOperation = m_modifierUpdateOperation;
       newF.m_modifierOperationApplyPolicy = m_modifierOperationApplyPolicy;
       newF.m_JSON = m_JSON;
+      newF.allowNull = allowNull;
 
       return newF;
     }
@@ -567,6 +576,8 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
                 field.m_modifierOperationApplyPolicy ) );
         retval.append( "\n         " ).append( //$NON-NLS-1$
             XMLHandler.addTagValue( "json_field", field.m_JSON ) ); //$NON-NLS-1$
+        retval.append( "\n         " ).append( //$NON-NLS-1$
+            XMLHandler.addTagValue( "allow_null", field.allowNull ) ); //$NON-NLS-1$
 
         retval.append( "\n      " ).append( XMLHandler.closeTag( "mongo_field" ) ); //$NON-NLS-1$ //$NON-NLS-2$
       }
@@ -679,6 +690,8 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
         if ( !Const.isEmpty( jsonField ) ) {
           newField.m_JSON = jsonField.equalsIgnoreCase( "Y" ); //$NON-NLS-1$
         }
+        String allowNull = XMLHandler.getTagValue( fieldNode, "allow_null" ); //$NON-NLS-1$
+        newField.allowNull = "Y".equalsIgnoreCase( allowNull );
 
         m_mongoFields.add( newField );
       }
@@ -770,6 +783,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
           newField.m_modifierOperationApplyPolicy = policy;
         }
         newField.m_JSON = rep.getStepAttributeBoolean( id_step, i, "json_field" ); //$NON-NLS-1$
+        newField.allowNull = rep.getStepAttributeBoolean( id_step, i, "allow_null" ); //$NON-NLS-1$
 
         m_mongoFields.add( newField );
       }
@@ -867,6 +881,8 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
             field.m_modifierOperationApplyPolicy );
         rep.saveStepAttribute( id_transformation, id_step, i, "json_field", //$NON-NLS-1$
             field.m_JSON );
+        rep.saveStepAttribute( id_transformation, id_step, i, "allow_null", //$NON-NLS-1$
+            field.allowNull );
       }
     }
 

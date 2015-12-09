@@ -866,30 +866,15 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
           new ColumnInfo( BaseMessages.getString( PKG, "MongoDbOutputDialog.Fields.Path" ),
               ColumnInfo.COLUMN_TYPE_TEXT, //$NON-NLS-1$
               false ),
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbOutputDialog.Fields.UseIncomingName" ), //$NON-NLS-1$
-              ColumnInfo.COLUMN_TYPE_CCOMBO, false ),
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbOutputDialog.Fields.JSON" ),
-              ColumnInfo.COLUMN_TYPE_CCOMBO, //$NON-NLS-1$
-              false ),
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbOutputDialog.Fields.UpdateMatchField" ), //$NON-NLS-1$
-              ColumnInfo.COLUMN_TYPE_CCOMBO, false ),
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbOutputDialog.Fields.ModifierUpdateOperation" ),
-              //$NON-NLS-1$
-              ColumnInfo.COLUMN_TYPE_CCOMBO, false ),
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbOutputDialog.Fields.ModifierApplyPolicy" ),
-              //$NON-NLS-1$
-              ColumnInfo.COLUMN_TYPE_CCOMBO, false ) };
-
-    colInf[2].setComboValues( new String[] { "Y", "N" } ); //$NON-NLS-1$ //$NON-NLS-2$
-    colInf[2].setReadOnly( true );
-    colInf[3].setComboValues( new String[] { "Y", "N" } ); //$NON-NLS-1$ //$NON-NLS-2$
-    colInf[3].setReadOnly( true );
-    colInf[4].setComboValues( new String[] { "Y", "N" } ); //$NON-NLS-1$ //$NON-NLS-2$
-    colInf[4].setReadOnly( true );
-    colInf[5].setComboValues(
-        new String[] { "N/A", "$set", "$inc", "$push" } ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-    colInf[6].setComboValues(
-        new String[] { "Insert&Update", "Insert", "Update" } ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+          createReadOnlyComboBox( "MongoDbOutputDialog.Fields.UseIncomingName", "Y", "N" ),
+          createReadOnlyComboBox( "MongoDbOutputDialog.Fields.AllowNull", "Y", "N" ),
+          createReadOnlyComboBox( "MongoDbOutputDialog.Fields.JSON", "Y", "N" ),
+          createReadOnlyComboBox( "MongoDbOutputDialog.Fields.UpdateMatchField", "Y", "N" ),
+          createReadOnlyComboBox( "MongoDbOutputDialog.Fields.ModifierUpdateOperation",
+            "N/A", "$set", "$inc", "$push" ),
+          createReadOnlyComboBox( "MongoDbOutputDialog.Fields.ModifierApplyPolicy",
+            "Insert&Update", "Insert", "Update" )
+        };
 
     // get fields but
     m_getFieldsBut = new Button( wFieldsComp, SWT.PUSH | SWT.CENTER );
@@ -1067,6 +1052,14 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     return stepname;
   }
 
+  private ColumnInfo createReadOnlyComboBox( String i18nKey, String... values ) {
+    ColumnInfo info =
+      new ColumnInfo( BaseMessages.getString( PKG, i18nKey ), ColumnInfo.COLUMN_TYPE_CCOMBO, false );
+    info.setReadOnly( true );
+    info.setComboValues( values );
+    return info;
+  }
+
   protected void cancel() {
     stepname = null;
     m_currentMeta.setChanged( changed );
@@ -1155,23 +1148,25 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
   private List<MongoDbOutputMeta.MongoField> tableToMongoFieldList() {
     int numNonEmpty = m_mongoFieldsView.nrNonEmpty();
     if ( numNonEmpty > 0 ) {
-      List<MongoDbOutputMeta.MongoField> mongoFields = new ArrayList<MongoDbOutputMeta.MongoField>();
+      List<MongoDbOutputMeta.MongoField> mongoFields = new ArrayList<MongoDbOutputMeta.MongoField>( numNonEmpty );
 
       for ( int i = 0; i < numNonEmpty; i++ ) {
         TableItem item = m_mongoFieldsView.getNonEmpty( i );
         String incoming = item.getText( 1 ).trim();
         String path = item.getText( 2 ).trim();
         String useIncoming = item.getText( 3 ).trim();
-        String json = item.getText( 4 ).trim();
-        String updateMatch = item.getText( 5 ).trim();
-        String modifierOp = item.getText( 6 ).trim();
-        String modifierPolicy = item.getText( 7 ).trim();
+        String allowNull = item.getText(4).trim();
+        String json = item.getText( 5 ).trim();
+        String updateMatch = item.getText( 6 ).trim();
+        String modifierOp = item.getText( 7 ).trim();
+        String modifierPolicy = item.getText( 8 ).trim();
 
         MongoDbOutputMeta.MongoField newField = new MongoDbOutputMeta.MongoField();
         newField.m_incomingFieldName = incoming;
         newField.m_mongoDocPath = path;
         newField.m_useIncomingFieldNameAsMongoFieldName =
             ( ( useIncoming.length() > 0 ) ? useIncoming.equals( "Y" ) : true ); //$NON-NLS-1$
+        newField.allowNull = "Y".equals( allowNull );
         newField.m_JSON = ( ( json.length() > 0 ) ? json.equals( "Y" ) : false ); //$NON-NLS-1$
         newField.m_updateMatchField = ( updateMatch.equals( "Y" ) ); //$NON-NLS-1$
         if ( modifierOp.length() == 0 ) {
@@ -1238,13 +1233,12 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
 
         item.setText( 1, Const.NVL( field.m_incomingFieldName, "" ) ); //$NON-NLS-1$
         item.setText( 2, Const.NVL( field.m_mongoDocPath, "" ) ); //$NON-NLS-1$
-        item.setText( 3, Const.NVL( field.m_useIncomingFieldNameAsMongoFieldName ? "Y" : "N",
-            "" ) ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-        item.setText( 4, Const.NVL( field.m_JSON ? "Y" : "N", "" ) ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-        item.setText( 5,
-            Const.NVL( field.m_updateMatchField ? "Y" : "N", "" ) ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-        item.setText( 6, Const.NVL( field.m_modifierUpdateOperation, "" ) ); //$NON-NLS-1$
-        item.setText( 7, Const.NVL( field.m_modifierOperationApplyPolicy, "" ) ); //$NON-NLS-1$
+        item.setText( 3, field.m_useIncomingFieldNameAsMongoFieldName ? "Y" : "N" ); //$NON-NLS-1$ //$NON-NLS-2$
+        item.setText( 4, field.allowNull ? "Y" : "N" );
+        item.setText( 5, field.m_JSON ? "Y" : "N" ); //$NON-NLS-1$ //$NON-NLS-2$
+        item.setText( 6, field.m_updateMatchField ? "Y" : "N" ); //$NON-NLS-1$ //$NON-NLS-2$
+        item.setText( 7, Const.NVL( field.m_modifierUpdateOperation, "" ) ); //$NON-NLS-1$
+        item.setText( 8, Const.NVL( field.m_modifierOperationApplyPolicy, "" ) ); //$NON-NLS-1$
       }
 
       m_mongoFieldsView.removeEmptyRows();
