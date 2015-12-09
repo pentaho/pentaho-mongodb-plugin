@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2013 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -158,9 +158,9 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rmi.addValueMeta( new ValueMetaString( "field1" ) );
     rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
 
-    Object[] row = new Object[2];
-    row[0] = "value1";
-    row[1] = 12L;
+    Object[] row = new Object[ 2 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -201,9 +201,9 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rmi.addValueMeta( new ValueMetaString( "field1" ) );
     rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
 
-    Object[] row = new Object[2];
-    row[0] = "value1";
-    row[1] = 12L;
+    Object[] row = new Object[ 2 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -223,9 +223,9 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rmi.addValueMeta( new ValueMetaString( "field1" ) );
     rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
 
-    Object[] row = new Object[2];
-    row[0] = "value1";
-    row[1] = 12L;
+    Object[] row = new Object[ 2 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -245,9 +245,9 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rmi.addValueMeta( new ValueMetaString( "field1" ) );
     rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
 
-    Object[] row = new Object[2];
-    row[0] = "value1";
-    row[1] = 12L;
+    Object[] row = new Object[ 2 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -266,9 +266,9 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rmi.addValueMeta( new ValueMetaString( "field1" ) );
     rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
 
-    Object[] row = new Object[2];
-    row[0] = "value1";
-    row[1] = 12L;
+    Object[] row = new Object[ 2 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -287,9 +287,9 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rmi.addValueMeta( new ValueMetaString( "field1" ) );
     rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
 
-    Object[] row = new Object[2];
-    row[0] = "value1";
-    row[1] = 12L;
+    Object[] row = new Object[ 2 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -320,9 +320,9 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rmi.addValueMeta( new ValueMetaString( "field1" ) );
     rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
 
-    Object[] row = new Object[2];
-    row[0] = "value1";
-    row[1] = 12L;
+    Object[] row = new Object[ 2 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -341,9 +341,9 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rmi.addValueMeta( new ValueMetaString( "field1" ) );
     rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
 
-    Object[] row = new Object[2];
-    row[0] = "value1";
-    row[1] = 12L;
+    Object[] row = new Object[ 2 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -374,9 +374,9 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rmi.addValueMeta( new ValueMetaString( "field1" ) );
     rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
 
-    Object[] row = new Object[2];
-    row[0] = "value1";
-    row[1] = 12L;
+    Object[] row = new Object[ 2 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -386,7 +386,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
     assertEquals( result.toString(),
-        "{ \"nestedDoc\" : { \"secondNested\" : { \"field1\" : \"value1\"} , \"field2\" : 12}}" );
+      "{ \"nestedDoc\" : { \"secondNested\" : { \"field1\" : \"value1\"} , \"field2\" : 12}}" );
   }
 
   @Test public void testModifierUpdateWithMultipleModifiersOfSameType() throws Exception {
@@ -414,8 +414,8 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     // results
     // in an update object with two entries
     DBObject
-        modifierUpdate =
-        data.getModifierUpdateObject( paths, rm, dummyRow, vars, MongoDbOutputData.MongoTopLevel.RECORD );
+      modifierUpdate =
+      data.getModifierUpdateObject( paths, rm, dummyRow, vars, MongoDbOutputData.MongoTopLevel.RECORD );
 
     assertTrue( modifierUpdate != null );
     assertTrue( modifierUpdate.get( "$set" ) != null );
@@ -445,8 +445,8 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     Object[] dummyRow = new Object[] { "value1", "value2" };
 
     DBObject
-        modifierUpdate =
-        data.getModifierUpdateObject( paths, rm, dummyRow, vars, MongoDbOutputData.MongoTopLevel.RECORD );
+      modifierUpdate =
+      data.getModifierUpdateObject( paths, rm, dummyRow, vars, MongoDbOutputData.MongoTopLevel.RECORD );
 
     assertTrue( modifierUpdate != null );
     assertTrue( modifierUpdate.get( "$set" ) != null );
@@ -461,7 +461,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     // check the resulting update structure
     assertEquals( modifierUpdate.toString(),
-        "{ \"$set\" : { \"bob.fred\" : [ { \"george\" : { \"field1\" : \"value1\" , \"field2\" : \"value2\"}}]}}" );
+      "{ \"$set\" : { \"bob.fred\" : [ { \"george\" : { \"field1\" : \"value1\" , \"field2\" : \"value2\"}}]}}" );
   }
 
   @Test public void testModifierPushComplexObject() throws Exception {
@@ -486,8 +486,8 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     Object[] dummyRow = new Object[] { "value1", "value2" };
 
     DBObject
-        modifierUpdate =
-        data.getModifierUpdateObject( paths, rm, dummyRow, vars, MongoDbOutputData.MongoTopLevel.RECORD );
+      modifierUpdate =
+      data.getModifierUpdateObject( paths, rm, dummyRow, vars, MongoDbOutputData.MongoTopLevel.RECORD );
 
     assertTrue( modifierUpdate != null );
     assertTrue( modifierUpdate.get( "$push" ) != null );
@@ -501,7 +501,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     assertEquals( setOpp.keySet().size(), 1 );
 
     assertEquals( modifierUpdate.toString(),
-        "{ \"$push\" : { \"bob.fred\" : { \"george\" : { \"field1\" : \"value1\" , \"field2\" : \"value2\"}}}}" );
+      "{ \"$push\" : { \"bob.fred\" : { \"george\" : { \"field1\" : \"value1\" , \"field2\" : \"value2\"}}}}" );
   }
 
   @Test public void testModifierPushComplexObjectWithJsonNestedDoc() throws Exception {
@@ -533,8 +533,8 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     Object[] dummyRow = new Object[] { "value1", "value2", "{\"jsonDocField1\" : \"aval\", \"jsonDocField2\" : 42}" };
 
     DBObject
-        modifierUpdate =
-        data.getModifierUpdateObject( paths, rm, dummyRow, vars, MongoDbOutputData.MongoTopLevel.RECORD );
+      modifierUpdate =
+      data.getModifierUpdateObject( paths, rm, dummyRow, vars, MongoDbOutputData.MongoTopLevel.RECORD );
 
     assertTrue( modifierUpdate != null );
     assertTrue( modifierUpdate.get( "$push" ) != null );
@@ -548,8 +548,9 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     assertEquals( setOpp.keySet().size(), 1 );
 
     assertEquals( modifierUpdate.toString(),
-        "{ \"$push\" : { \"bob.fred\" : { \"george\" : { \"field1\" : \"value1\" , \"field2\" : \"value2\" , \"jsonField\" : "
-            + "{ \"jsonDocField1\" : \"aval\" , \"jsonDocField2\" : 42}}}}}" );
+      "{ \"$push\" : { \"bob.fred\" : { \"george\" : { \"field1\" : \"value1\" , \"field2\" : \"value2\" , "
+        + "\"jsonField\" : "
+        + "{ \"jsonDocField1\" : \"aval\" , \"jsonDocField2\" : 42}}}}}" );
   }
 
   @Test public void testInsertKettleFieldThatContainsJsonIntoTopLevelRecord() throws Exception {
@@ -570,10 +571,10 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rm.addValueMeta( new ValueMetaInteger( "field2" ) );
     rm.addValueMeta( new ValueMetaString( "jsonField" ) );
 
-    Object[] row = new Object[3];
-    row[0] = "value1";
-    row[1] = 12L;
-    row[2] = "{\"jsonDocField1\" : \"aval\", \"jsonDocField2\" : 42}";
+    Object[] row = new Object[ 3 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
+    row[ 2 ] = "{\"jsonDocField1\" : \"aval\", \"jsonDocField2\" : 42}";
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -583,7 +584,8 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     DBObject result = kettleRowToMongo( paths, rm, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
     assertEquals( result.toString(),
-        "{ \"field1\" : \"value1\" , \"field2\" : 12 , \"jsonField\" : { \"jsonDocField1\" : \"aval\" , \"jsonDocField2\" : 42}}" );
+      "{ \"field1\" : \"value1\" , \"field2\" : 12 , \"jsonField\" : { \"jsonDocField1\" : \"aval\" , "
+        + "\"jsonDocField2\" : 42}}" );
 
   }
 
@@ -646,10 +648,10 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
     rmi.addValueMeta( new ValueMetaString( "jsonField" ) );
 
-    Object[] row = new Object[3];
-    row[0] = "value1";
-    row[1] = 12L;
-    row[2] = "{\"jsonDocField1\" : \"aval\", \"jsonDocField2\" : 42}";
+    Object[] row = new Object[ 3 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
+    row[ 2 ] = "{\"jsonDocField1\" : \"aval\", \"jsonDocField2\" : 42}";
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -659,7 +661,8 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
     assertEquals( result.toString(),
-        "{ \"field1\" : \"value1\" , \"nestedDoc\" : { \"field2\" : 12 , \"jsonField\" : { \"jsonDocField1\" : \"aval\" , \"jsonDocField2\" : 42}}}" );
+      "{ \"field1\" : \"value1\" , \"nestedDoc\" : { \"field2\" : 12 , \"jsonField\" : { \"jsonDocField1\" : \"aval\""
+        + " , \"jsonDocField2\" : 42}}}" );
   }
 
   @Test public void testInsertKettleFieldThatContainsJsonIntoTopLevelArray() throws Exception {
@@ -680,10 +683,10 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
     rmi.addValueMeta( new ValueMetaString( "jsonField" ) );
 
-    Object[] row = new Object[3];
-    row[0] = "value1";
-    row[1] = 12L;
-    row[2] = "{\"jsonDocField1\" : \"aval\", \"jsonDocField2\" : 42}";
+    Object[] row = new Object[ 3 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
+    row[ 2 ] = "{\"jsonDocField1\" : \"aval\", \"jsonDocField2\" : 42}";
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -693,12 +696,12 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.ARRAY, false );
 
     assertEquals( result.toString(),
-        "[ { \"field1\" : \"value1\"} , { \"field2\" : 12} , { \"jsonDocField1\" : \"aval\" , \"jsonDocField2\" : 42}]" );
+      "[ { \"field1\" : \"value1\"} , { \"field2\" : 12} , { \"jsonDocField1\" : \"aval\" , \"jsonDocField2\" : 42}]" );
 
   }
 
   @Test public void testGetQueryObjectThatContainsJsonNestedDoc() throws Exception {
-    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>(3);
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>( 3 );
 
     MongoDbOutputMeta.MongoField mf = mf( "field1", true, "" );
     mf.m_updateMatchField = true;
@@ -718,10 +721,10 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
     rmi.addValueMeta( new ValueMetaString( "jsonField" ) );
 
-    Object[] row = new Object[3];
-    row[0] = "value1";
-    row[1] = 12L;
-    row[2] = "{\"jsonDocField1\" : \"aval\", \"jsonDocField2\" : 42}";
+    Object[] row = new Object[ 3 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
+    row[ 2 ] = "{\"jsonDocField1\" : \"aval\", \"jsonDocField2\" : 42}";
     VariableSpace vs = new Variables();
 
     for ( MongoDbOutputMeta.MongoField f : paths ) {
@@ -731,7 +734,8 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     DBObject query = MongoDbOutputData.getQueryObject( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD );
 
     assertEquals( query.toString(),
-        "{ \"field1\" : \"value1\" , \"field2\" : 12 , \"jsonField\" : { \"jsonDocField1\" : \"aval\" , \"jsonDocField2\" : 42}}" );
+      "{ \"field1\" : \"value1\" , \"field2\" : 12 , \"jsonField\" : { \"jsonDocField1\" : \"aval\" , "
+        + "\"jsonDocField2\" : 42}}" );
   }
 
   /**
@@ -739,7 +743,6 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
    * throw exception, with detailed information.
    * <p/>
    * (expected mongo field name b1 has no equivalent in input row meta)
-   *
    */
   @Test( expected = KettleException.class )
   public void testStepIsFailedIfOneOfMongoFieldsNotFound() throws Exception {
@@ -764,7 +767,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     assertFalse( "init should return false on fail", dbOutput.init( stepMetaInterface, stepDataInterace ) );
     verify( mockLog ).logError( stringCaptor.capture(), throwableCaptor.capture() );
     assertThat( stringCaptor.getValue(),
-        equalTo( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.ProblemConnecting", "host", "1010" ) ) );
+      equalTo( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.ProblemConnecting", "host", "1010" ) ) );
   }
 
   @Test public void collectionRequiredOnInit() {
@@ -773,7 +776,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     assertFalse( "init should return false on fail", dbOutput.init( stepMetaInterface, stepDataInterace ) );
     verify( mockLog ).logError( stringCaptor.capture(), throwableCaptor.capture() );
     assertThat( stringCaptor.getValue(),
-        equalTo( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.ProblemConnecting", "host", "1010" ) ) );
+      equalTo( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Error.ProblemConnecting", "host", "1010" ) ) );
   }
 
   @Test public void testInit() {
@@ -849,7 +852,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     when( commandResult.ok() ).thenReturn( true );
     when( result.getLastError() ).thenReturn( commandResult );
     when( mongoCollectionWrapper.update( any( DBObject.class ), any( DBObject.class ), anyBoolean(), anyBoolean() ) )
-        .thenReturn( result );
+      .thenReturn( result );
     when( stepMetaInterface.getUpdate() ).thenReturn( true );
 
     // flag a field for update = "foo"
@@ -864,14 +867,14 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     // update is executed
     verify( mongoCollectionWrapper )
-        .update( updateQueryCaptor.capture(), insertCaptor.capture(), anyBoolean(), anyBoolean() );
+      .update( updateQueryCaptor.capture(), insertCaptor.capture(), anyBoolean(), anyBoolean() );
     // result is checked
     verify( result ).getLastError();
     // updated field is expected
     assertThat( updateQueryCaptor.getValue(), equalTo( new BasicDBObject( "foo", "foo" ) ) );
     // insert document is expected
     assertThat( insertCaptor.getValue(),
-        equalTo( new BasicDBObject( ( ImmutableMap.of( "foo", "foo", "bar", "bar", "baz", "baz" ) ) ) ) );
+      equalTo( new BasicDBObject( ( ImmutableMap.of( "foo", "foo", "bar", "bar", "baz", "baz" ) ) ) ) );
   }
 
   @Test public void updateFailureRetries() throws Exception {
@@ -885,7 +888,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     mongoField.m_updateMatchField = true;
 
     when( mongoCollectionWrapper.update( any( DBObject.class ), any( DBObject.class ), anyBoolean(), anyBoolean() ) )
-        .thenThrow( mock( MongoDbException.class ) );
+      .thenThrow( mock( MongoDbException.class ) );
 
     dbOutput.init( stepMetaInterface, stepDataInterace );
     try {
@@ -894,7 +897,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     } catch ( KettleException ke ) {
       // update should be called 3 times (first time plus 2 retries)
       verify( mongoCollectionWrapper, times( 3 ) )
-          .update( any( DBObject.class ), any( DBObject.class ), anyBoolean(), anyBoolean() );
+        .update( any( DBObject.class ), any( DBObject.class ), anyBoolean(), anyBoolean() );
     }
   }
 
@@ -959,7 +962,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     Assert.assertEquals( "We have one mockLog record generated", 1, logRecords.size() );
     Assert.assertTrue( "We have a mockLog record mentions that 'a3' field will not be used.",
-        logRecords.get( 0 ).contains( "a3" ) );
+      logRecords.get( 0 ).contains( "a3" ) );
   }
 
   /**
@@ -1023,13 +1026,13 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
   private MongoDbOutput prepareMongoDbOutputMock() {
     MongoDbOutput output = EasyMock.createNiceMock( MongoDbOutput.class );
     EasyMock.expect( output.environmentSubstitute( EasyMock.anyObject( String.class ) ) )
-        .andAnswer( new IAnswer<String>() {
-          @Override public String answer() throws Throwable {
-            Object[] args = EasyMock.getCurrentArguments();
-            String ret = String.valueOf( args[0] );
-            return ret;
-          }
-        } ).anyTimes();
+      .andAnswer( new IAnswer<String>() {
+        @Override public String answer() throws Throwable {
+          Object[] args = EasyMock.getCurrentArguments();
+          String ret = String.valueOf( args[ 0 ] );
+          return ret;
+        }
+      } ).anyTimes();
     return output;
   }
 
@@ -1040,8 +1043,8 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     EasyMock.expect( rmi.getValueMeta( EasyMock.anyInt() ) ).andAnswer( new IAnswer<ValueMetaInterface>() {
       @Override public ValueMetaInterface answer() throws Throwable {
         Object[] args = EasyMock.getCurrentArguments();
-        int i = Integer.class.cast( args[0] );
-        ValueMetaInterface ret = new ValueMetaString( metaNames[i] );
+        int i = Integer.class.cast( args[ 0 ] );
+        ValueMetaInterface ret = new ValueMetaString( metaNames[ i ] );
         return ret;
       }
     } ).anyTimes();
