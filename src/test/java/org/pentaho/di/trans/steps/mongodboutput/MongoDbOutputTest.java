@@ -1077,12 +1077,12 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     MongoDbOutputMeta.MongoField permittedNull = mf( "permittedNull", true, "" );
     permittedNull.m_modifierUpdateOperation = "$set";
     permittedNull.m_modifierOperationApplyPolicy = "Insert&Update";
-    permittedNull.allowNull = true;
+    permittedNull.insertNull = true;
 
     MongoDbOutputMeta.MongoField prohibitedNull = mf( "prohibitedNull", true, "" );
     prohibitedNull.m_modifierUpdateOperation = "$set";
     prohibitedNull.m_modifierOperationApplyPolicy = "Insert&Update";
-    prohibitedNull.allowNull = false;
+    prohibitedNull.insertNull = false;
 
     MongoDbOutputMeta.MongoField anotherField = mf( "anotherField", true, "" );
     anotherField.m_modifierUpdateOperation = "$set";

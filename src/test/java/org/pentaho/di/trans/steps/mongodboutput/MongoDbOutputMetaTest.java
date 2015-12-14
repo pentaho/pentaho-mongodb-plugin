@@ -91,7 +91,7 @@ public class MongoDbOutputMetaTest {
       new ListLoadSaveValidator<MongoField>( new ObjectValidator<MongoField>( validatorFactory, MongoField.class,
         Arrays.<String>asList( "m_incomingFieldName", "m_mongoDocPath", "m_useIncomingFieldNameAsMongoFieldName",
           "m_updateMatchField", "m_modifierUpdateOperation", "m_modifierOperationApplyPolicy", "m_JSON",
-          "allowNull" ) ) ) );
+          "insertNull" ) ) ) );
 
     validatorFactory.registerValidator( validatorFactory.getName( List.class, MongoIndex.class ),
       new ListLoadSaveValidator<MongoIndex>( new ObjectValidator<MongoIndex>( validatorFactory, MongoIndex.class,

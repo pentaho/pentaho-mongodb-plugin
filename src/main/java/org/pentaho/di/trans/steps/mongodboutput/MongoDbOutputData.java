@@ -399,7 +399,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
         int index = inputMeta.indexOfValue( incomingFieldName );
         ValueMetaInterface vm = inputMeta.getValueMeta( index );
 
-        if ( !vm.isNull( row[ index ] ) || field.allowNull ) {
+        if ( !vm.isNull( row[ index ] ) || field.insertNull ) {
           hasNonNullUpdateValues = true;
 
           // modifier update objects have fields using "dot" notation to reach
@@ -467,7 +467,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
             params[ 0 ] = modifierUpdateOpp;
             params[ 1 ] = index;
             params[ 2 ] = field.m_JSON;
-            params[ 3 ] = field.allowNull;
+            params[ 3 ] = field.insertNull;
             m_primitiveLeafModifiers.put( path, params );
           }
         }
@@ -587,7 +587,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
         ValueMetaInterface vm = inputMeta.getValueMeta( index );
 
         // ignore null fields is not prohibited
-        if ( vm.isNull( row[ index ] ) && !field.allowNull ) {
+        if ( vm.isNull( row[ index ] ) && !field.insertNull ) {
           continue;
         }
 
@@ -621,7 +621,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
           path = path.replace( "[", "." ).replace( "]", "" ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
         }
 
-        setMongoValueFromKettleValue( query, path, vm, row[ index ], field.m_JSON, field.allowNull );
+        setMongoValueFromKettleValue( query, path, vm, row[ index ], field.m_JSON, field.insertNull );
       }
     }
 
@@ -706,7 +706,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
               // leaf - primitive element of the array (unless kettle field
               // value is JSON)
               boolean res =
-                setMongoValueFromKettleValue( temp, lookup, vm, row[ index ], field.m_JSON, field.allowNull );
+                setMongoValueFromKettleValue( temp, lookup, vm, row[ index ], field.m_JSON, field.insertNull );
               haveNonNullFields = ( haveNonNullFields || res );
             } else {
               // must be a record here (since multi-dimensional array creation
@@ -724,7 +724,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
                   boolean
                     res =
                     setMongoValueFromKettleValue( current, incomingFieldName, vm, row[ index ], field.m_JSON,
-                      field.allowNull );
+                      field.insertNull );
                   haveNonNullFields = ( haveNonNullFields || res );
                 } else {
                   throw new KettleException( BaseMessages
@@ -745,7 +745,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
                   boolean
                     res =
                     setMongoValueFromKettleValue( current, incomingFieldName, vm, row[ index ], field.m_JSON,
-                      field.allowNull );
+                      field.insertNull );
                   haveNonNullFields = ( haveNonNullFields || res );
                 } else {
                   throw new KettleException( BaseMessages
@@ -759,7 +759,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
           if ( lookup == null && pathParts.size() == 0 ) {
             if ( field.m_useIncomingFieldNameAsMongoFieldName ) {
               boolean res = setMongoValueFromKettleValue( current, incomingFieldName, vm, row[ index ], field.m_JSON,
-                field.allowNull );
+                field.insertNull );
               haveNonNullFields = ( haveNonNullFields || res );
             } else {
               throw new KettleException( BaseMessages
@@ -769,12 +769,12 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
             if ( pathParts.size() == 0 ) {
               if ( !field.m_useIncomingFieldNameAsMongoFieldName ) {
                 boolean res = setMongoValueFromKettleValue( current, lookup.toString(), vm, row[ index ], field.m_JSON,
-                  field.allowNull );
+                  field.insertNull );
                 haveNonNullFields = ( haveNonNullFields || res );
               } else {
                 current = (DBObject) current.get( lookup.toString() );
                 boolean res = setMongoValueFromKettleValue( current, incomingFieldName, vm, row[ index ], field.m_JSON,
-                  field.allowNull );
+                  field.insertNull );
                 haveNonNullFields = ( haveNonNullFields || res );
               }
             } else {
