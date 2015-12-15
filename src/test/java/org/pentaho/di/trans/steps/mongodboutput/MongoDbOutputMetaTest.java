@@ -49,18 +49,17 @@ public class MongoDbOutputMetaTest {
     PluginRegistry.addPluginType( TwoWayPasswordEncoderPluginType.getInstance() );
     PluginRegistry.init();
     String
-        passwordEncoderPluginID =
-        Const.NVL( EnvUtil.getSystemProperty( Const.KETTLE_PASSWORD_ENCODER_PLUGIN ), "Kettle" );
+      passwordEncoderPluginID =
+      Const.NVL( EnvUtil.getSystemProperty( Const.KETTLE_PASSWORD_ENCODER_PLUGIN ), "Kettle" );
     Encr.init( passwordEncoderPluginID );
   }
 
   @Test public void testRoundTrips() throws KettleException {
-    List<String>
-        commonFields =
-        Arrays.asList( "mongo_host", "mongo_port", "use_all_replica_members", "mongo_user", "mongo_password",
-            "auth_kerberos", "mongo_db", "mongo_collection", "batch_insert_size", "connect_timeout", "socket_timeout",
-            "read_preference", "write_concern", "w_timeout", "journaled_writes", "truncate", "update", "upsert",
-            "multi", "modifier_update", "write_retries", "write_retry_delay", "mongo_fields", "mongo_indexes" );
+    List<String> commonFields =
+      Arrays.asList( "mongo_host", "mongo_port", "use_all_replica_members", "mongo_user", "mongo_password",
+        "auth_kerberos", "mongo_db", "mongo_collection", "batch_insert_size", "connect_timeout", "socket_timeout",
+        "read_preference", "write_concern", "w_timeout", "journaled_writes", "truncate", "update", "upsert",
+        "multi", "modifier_update", "write_retries", "write_retry_delay", "mongo_fields", "mongo_indexes" );
     Map<String, String> getterMap = new HashMap<String, String>();
     getterMap.put( "mongo_host", "getHostnames" );
     getterMap.put( "mongo_port", "getPort" );
@@ -89,13 +88,14 @@ public class MongoDbOutputMetaTest {
     FieldLoadSaveValidatorFactory validatorFactory = tester.getFieldLoadSaveValidatorFactory();
 
     validatorFactory.registerValidator( validatorFactory.getName( List.class, MongoField.class ),
-        new ListLoadSaveValidator<MongoField>( new ObjectValidator<MongoField>( validatorFactory, MongoField.class,
-            Arrays.<String>asList( "m_incomingFieldName", "m_mongoDocPath", "m_useIncomingFieldNameAsMongoFieldName",
-                "m_updateMatchField", "m_modifierUpdateOperation", "m_modifierOperationApplyPolicy", "m_JSON" ) ) ) );
+      new ListLoadSaveValidator<MongoField>( new ObjectValidator<MongoField>( validatorFactory, MongoField.class,
+        Arrays.<String>asList( "m_incomingFieldName", "m_mongoDocPath", "m_useIncomingFieldNameAsMongoFieldName",
+          "m_updateMatchField", "m_modifierUpdateOperation", "m_modifierOperationApplyPolicy", "m_JSON",
+          "insertNull" ) ) ) );
 
     validatorFactory.registerValidator( validatorFactory.getName( List.class, MongoIndex.class ),
-        new ListLoadSaveValidator<MongoIndex>( new ObjectValidator<MongoIndex>( validatorFactory, MongoIndex.class,
-            Arrays.<String>asList( "m_pathToFields", "m_drop", "m_unique", "m_sparse" ) ) ) );
+      new ListLoadSaveValidator<MongoIndex>( new ObjectValidator<MongoIndex>( validatorFactory, MongoIndex.class,
+        Arrays.<String>asList( "m_pathToFields", "m_drop", "m_unique", "m_sparse" ) ) ) );
 
     tester.testXmlRoundTrip();
     tester.testRepoRoundTrip();
