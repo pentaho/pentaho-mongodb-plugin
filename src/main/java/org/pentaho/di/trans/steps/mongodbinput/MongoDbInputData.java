@@ -27,11 +27,7 @@ import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
-import org.pentaho.di.ui.spoon.Spoon;
-import org.pentaho.di.ui.trans.steps.mongodbinput.MongoDbInputDialog;
-import org.pentaho.mongo.MongoProperties;
 import org.pentaho.mongo.wrapper.MongoClientWrapper;
-import org.pentaho.mongo.wrapper.MongoWrapperUtil;
 import org.pentaho.mongo.wrapper.collection.MongoCollectionWrapper;
 import org.pentaho.mongo.wrapper.cursor.MongoCursorWrapper;
 import org.pentaho.mongo.wrapper.field.MongoArrayExpansion;
@@ -70,6 +66,10 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   private MongoArrayExpansion m_expansionHandler;
   private static MongoDbInputDiscoverFieldsHolder mongoDbInputDiscoverFieldsHolder =
       MongoDbInputDiscoverFieldsHolder.getInstance();
+
+  public static MongoDbInputDiscoverFieldsHolder getMongoDbInputDiscoverFieldsHolder() {
+    return mongoDbInputDiscoverFieldsHolder;
+  }
 
   protected void setMongoDbInputDiscoverFieldsHolder( MongoDbInputDiscoverFieldsHolder holder ) {
     mongoDbInputDiscoverFieldsHolder = holder;
@@ -290,78 +290,6 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     for ( MongoField f : fields ) {
       m_userFields.add( f.copy() );
     }
-  }
-
-  public static void discoverFields( final MongoDbInputMeta meta, final VariableSpace vars, final int docsToSample,
-      final MongoDbInputDialog mongoDialog ) throws KettleException {
-    MongoProperties.Builder propertiesBuilder = MongoWrapperUtil.createPropertiesBuilder( meta, vars );
-    String db = vars.environmentSubstitute( meta.getDbName() );
-    String collection = vars.environmentSubstitute( meta.getCollection() );
-    String query = vars.environmentSubstitute( meta.getJsonQuery() );
-    String fields = vars.environmentSubstitute( meta.getFieldsName() );
-    int numDocsToSample = docsToSample;
-    if ( numDocsToSample < 1 ) {
-      numDocsToSample = 100; // default
-    }
-    try {
-      mongoDbInputDiscoverFieldsHolder.getMongoDbInputDiscoverFields()
-          .discoverFields( propertiesBuilder, db, collection, query, fields, meta.getQueryIsPipeline(), numDocsToSample,
-              meta, new DiscoverFieldsCallback() {
-                @Override public void notifyFields( final List<MongoField> fields ) {
-                  if ( fields.size() > 0 ) {
-                    Spoon.getInstance().getDisplay().asyncExec( new Runnable() {
-                      @Override public void run() {
-                        if ( !mongoDialog.isTableDisposed() ) {
-                          meta.setMongoFields( fields );
-                          mongoDialog.updateFieldTableFields( meta.getMongoFields() );
-                        }
-                      }
-                    } );
-                  }
-                }
-
-                @Override public void notifyException( Exception exception ) {
-                  mongoDialog.handleNotificationException( exception );
-                }
-              } );
-    } catch ( KettleException e ) {
-      throw new KettleException( "Unable to discover fields from MongoDB", e );
-    }
-  }
-
-  public static boolean discoverFields( final MongoDbInputMeta meta, final VariableSpace vars, final int docsToSample )
-    throws KettleException {
-
-    MongoProperties.Builder propertiesBuilder = MongoWrapperUtil.createPropertiesBuilder( meta, vars );
-    try {
-      String db = vars.environmentSubstitute( meta.getDbName() );
-      String collection = vars.environmentSubstitute( meta.getCollection() );
-      String query = vars.environmentSubstitute( meta.getJsonQuery() );
-      String fields = vars.environmentSubstitute( meta.getFieldsName() );
-      int numDocsToSample = docsToSample;
-      if ( numDocsToSample < 1 ) {
-        numDocsToSample = 100; // default
-      }
-      List<MongoField>
-          discoveredFields =
-          mongoDbInputDiscoverFieldsHolder.getMongoDbInputDiscoverFields()
-              .discoverFields( propertiesBuilder, db, collection, query, fields, meta.getQueryIsPipeline(),
-                  numDocsToSample, meta );
-
-      // return true if query resulted in documents being returned and fields
-      // getting extracted
-      if ( discoveredFields.size() > 0 ) {
-        meta.setMongoFields( discoveredFields );
-        return true;
-      }
-    } catch ( Exception e ) {
-      if ( e instanceof KettleException ) {
-        throw (KettleException) e;
-      } else {
-        throw new KettleException( "Unable to discover fields from MongoDB", e );
-      }
-    }
-    return false;
   }
 
   /**
