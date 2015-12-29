@@ -108,11 +108,11 @@ public class MongoDbInputDataTest {
     when( holder.getMongoDbInputDiscoverFields() ).thenReturn( mongoDbInputDiscoverFields );
     mongoDbInputData.setMongoDbInputDiscoverFieldsHolder( holder );
 
-    mongoDbInputData.discoverFields( meta, vars, docsToSample, dialog );
+    MongoDbInputDialog.discoverFields( meta, vars, docsToSample, dialog );
     verify( holder, atLeastOnce() ).getMongoDbInputDiscoverFields();
 
     //Test case when docsToSample is zero
-    mongoDbInputData.discoverFields( meta, vars, 0, dialog );
+    MongoDbInputDialog.discoverFields( meta, vars, 0, dialog );
     verify( holder, atLeastOnce() ).getMongoDbInputDiscoverFields();
   }
 
@@ -154,7 +154,7 @@ public class MongoDbInputDataTest {
     when( holder.getMongoDbInputDiscoverFields() ).thenReturn( mongoDbInputDiscoverFields );
     mongoDbInputData.setMongoDbInputDiscoverFieldsHolder( holder );
 
-    mongoDbInputData.discoverFields( meta, vars, docsToSample, dialog );
+    MongoDbInputDialog.discoverFields( meta, vars, docsToSample, dialog );
     verify( dialog, atLeastOnce() ).handleNotificationException( any( Exception.class ) );
   }
 
@@ -192,7 +192,7 @@ public class MongoDbInputDataTest {
     mongoDbInputData.setMongoDbInputDiscoverFieldsHolder( holder );
 
     try {
-      mongoDbInputData.discoverFields( meta, vars, docsToSample, dialog );
+      MongoDbInputDialog.discoverFields( meta, vars, docsToSample, dialog );
     } catch ( Exception expected ) {
       //expected
     }
@@ -229,16 +229,16 @@ public class MongoDbInputDataTest {
     when( holder.getMongoDbInputDiscoverFields() ).thenReturn( mongoDbInputDiscoverFields );
     mongoDbInputData.setMongoDbInputDiscoverFieldsHolder( holder );
 
-    boolean result = mongoDbInputData.discoverFields( meta, vars, docsToSample );
+    boolean result = MongoDbInputDialog.discoverFields( meta, vars, docsToSample );
     assertTrue( result );
 
     //Test case when docsToSample is zero
-    result = mongoDbInputData.discoverFields( meta, vars, 0 );
+    result = MongoDbInputDialog.discoverFields( meta, vars, 0 );
     assertTrue( result );
 
     //Test case when no fields are found
     mongoFields.clear();
-    result = mongoDbInputData.discoverFields( meta, vars, docsToSample );
+    result = MongoDbInputDialog.discoverFields( meta, vars, docsToSample );
     assertFalse( result );
   }
 
@@ -273,7 +273,7 @@ public class MongoDbInputDataTest {
     mongoDbInputData.setMongoDbInputDiscoverFieldsHolder( holder );
 
     try {
-      mongoDbInputData.discoverFields( meta, vars, docsToSample );
+      MongoDbInputDialog.discoverFields( meta, vars, docsToSample );
     } catch ( KettleException e ) {
       //Expected
     }
@@ -309,7 +309,7 @@ public class MongoDbInputDataTest {
     mongoDbInputData.setMongoDbInputDiscoverFieldsHolder( holder );
 
     try {
-      mongoDbInputData.discoverFields( meta, vars, docsToSample );
+      MongoDbInputDialog.discoverFields( meta, vars, docsToSample );
     } catch ( KettleException e ) {
       //Expected
     }

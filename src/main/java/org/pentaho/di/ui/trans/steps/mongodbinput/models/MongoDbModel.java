@@ -27,8 +27,8 @@ import org.pentaho.di.core.parameters.NamedParams;
 import org.pentaho.di.core.parameters.NamedParamsDefault;
 import org.pentaho.di.core.util.StringUtil;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
+import org.pentaho.di.ui.trans.steps.mongodbinput.MongoDbInputDialog;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.NamedReadPreference;
 import org.pentaho.mongo.wrapper.MongoClientWrapper;
@@ -633,7 +633,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
       try {
 
         saveMeta( meta );
-        boolean result = MongoDbInputData.discoverFields( meta, new TransMeta(), samples );
+        boolean result = MongoDbInputDialog.discoverFields( meta, new TransMeta(), samples );
 
         if ( !result ) {
           log.logBasic( "No fields were returned from MongoDb. Check your query, and/or connection details." );
