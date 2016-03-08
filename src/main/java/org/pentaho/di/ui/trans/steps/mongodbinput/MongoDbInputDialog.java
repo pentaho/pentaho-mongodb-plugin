@@ -83,6 +83,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -114,6 +115,9 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
   private TextVar wAuthUser;
   private TextVar wAuthPass;
+
+  private TextVar wAuthDB;
+  private CCombo m_dbAuthMec;
 
   private Button m_kerberosBut;
 
@@ -251,19 +255,19 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     useAllReplicaLab
         .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.UseAllReplicaSetMembers.TipText" ) );
     props.setLook( useAllReplicaLab );
-    FormData fd = new FormData();
-    fd.left = new FormAttachment( 0, 0 );
-    fd.right = new FormAttachment( middle, -margin );
-    fd.top = new FormAttachment( lastControl, margin );
-    useAllReplicaLab.setLayoutData( fd );
+    FormData fdlRep = new FormData();
+    fdlRep.left = new FormAttachment( 0, 0 );
+    fdlRep.right = new FormAttachment( middle, -margin );
+    fdlRep.top = new FormAttachment( lastControl, margin );
+    useAllReplicaLab.setLayoutData( fdlRep );
 
     m_useAllReplicaSetMembersBut = new Button( wConfigComp, SWT.CHECK );
     props.setLook( m_useAllReplicaSetMembersBut );
-    fd = new FormData();
-    fd.left = new FormAttachment( middle, 0 );
-    fd.right = new FormAttachment( 100, 0 );
-    fd.top = new FormAttachment( lastControl, margin );
-    m_useAllReplicaSetMembersBut.setLayoutData( fd );
+    FormData  fdbRep = new FormData();
+    fdbRep.left = new FormAttachment( middle, 0 );
+    fdbRep.top = new FormAttachment( lastControl, margin );
+    fdbRep.right = new FormAttachment( 100, 0 );
+    m_useAllReplicaSetMembersBut.setLayoutData( fdbRep );
     lastControl = m_useAllReplicaSetMembersBut;
     m_useAllReplicaSetMembersBut.addSelectionListener( new SelectionAdapter() {
       @Override public void widgetSelected( SelectionEvent e ) {
@@ -278,9 +282,9 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     wlAuthUser.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.AuthenticationUser.Label" ) ); //$NON-NLS-1$
     props.setLook( wlAuthUser );
     FormData fdlAuthUser = new FormData();
-    fdlAuthUser.left = new FormAttachment( 0, -margin );
-    fdlAuthUser.top = new FormAttachment( lastControl, margin );
+    fdlAuthUser.left = new FormAttachment( 0, 0 );
     fdlAuthUser.right = new FormAttachment( middle, -margin );
+    fdlAuthUser.top = new FormAttachment( lastControl, margin );
     wlAuthUser.setLayoutData( fdlAuthUser );
 
     wAuthUser = new TextVar( transMeta, wConfigComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
@@ -309,18 +313,67 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     wAuthPass.addModifyListener( lsMod );
     FormData fdAuthPass = new FormData();
     fdAuthPass.left = new FormAttachment( middle, 0 );
-    fdAuthPass.top = new FormAttachment( wAuthUser, margin );
+    fdAuthPass.top = new FormAttachment( lastControl, margin );
     fdAuthPass.right = new FormAttachment( 100, 0 );
     wAuthPass.setLayoutData( fdAuthPass );
     lastControl = wAuthPass;
 
-    // use kerberos authentication
+    // AuthDatabase line
+    Label wlAuthDB = new Label( wConfigComp, SWT.RIGHT );
+    wlAuthDB.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.AuthDB.Label" ) ); //$NON-NLS-1$
+    props.setLook( wlAuthDB );
+    FormData fd = new FormData();
+    fd.left = new FormAttachment( 0, 0 );
+    fd.top = new FormAttachment( lastControl, margin );
+    fd.right = new FormAttachment( middle, -margin );
+    wlAuthDB.setLayoutData( fd );
+
+    wAuthDB = new TextVar( transMeta, wConfigComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
+    props.setLook( wAuthDB );
+    wAuthDB.addModifyListener( lsMod );
+    fd = new FormData();
+    fd.left = new FormAttachment( middle, 0 );
+    fd.top = new FormAttachment( lastControl, margin );
+    fd.right = new FormAttachment( 100, 0 );
+    wAuthDB.setLayoutData( fd );
+    lastControl = wAuthDB;
+
+      // Authentication Mechanisms
+    Label wlAuthMec = new Label( wConfigComp, SWT.RIGHT );
+    wlAuthMec.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.AuthMechanism.Label" ) ); //$NON-NLS-1$
+    props.setLook( wlAuthMec );
+    fd = new FormData();
+    fd.left = new FormAttachment( 0, 0 );
+    fd.top = new FormAttachment( lastControl, margin );
+    fd.right = new FormAttachment( middle, -margin );
+    wlAuthMec.setLayoutData( fd );
+
+
+    m_dbAuthMec = new CCombo( wConfigComp, SWT.BORDER );
+    props.setLook( m_dbAuthMec );
+
+    m_dbAuthMec.addModifyListener( new ModifyListener() {
+          @Override public void modifyText( ModifyEvent e ) {
+            transMeta.setChanged();
+            m_dbAuthMec.setToolTipText( m_dbAuthMec.getText()  );
+        }
+      } );
+    m_dbAuthMec.add("SCRAM-SHA-1");
+    m_dbAuthMec.add("MONGODB-CR");
+    fd = new FormData();
+    fd.left = new FormAttachment( middle, 0 );
+    fd.top = new FormAttachment( lastControl, margin );
+    fd.right = new FormAttachment( 100, 0 );
+    m_dbAuthMec.setLayoutData( fd );
+    lastControl = m_dbAuthMec;
+
+      // use kerberos authentication
     Label kerbLab = new Label( wConfigComp, SWT.RIGHT );
     kerbLab.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.Kerberos.Label" ) );
     props.setLook( kerbLab );
     fd = new FormData();
     fd.left = new FormAttachment( 0, 0 );
-    fd.top = new FormAttachment( wAuthPass, margin );
+    fd.top = new FormAttachment( lastControl, margin );
     fd.right = new FormAttachment( middle, -margin );
     kerbLab.setLayoutData( fd );
 
@@ -329,7 +382,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     fd = new FormData();
     fd.left = new FormAttachment( middle, 0 );
     fd.right = new FormAttachment( 100, 0 );
-    fd.top = new FormAttachment( wAuthPass, margin );
+    fd.top = new FormAttachment( lastControl, margin );
     m_kerberosBut.setLayoutData( fd );
 
     m_kerberosBut.addSelectionListener( new SelectionAdapter() {
@@ -1032,6 +1085,9 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     wHostname.setText( Const.NVL( meta.getHostnames(), "" ) ); //$NON-NLS-1$
     wPort.setText( Const.NVL( meta.getPort(), "" ) ); //$NON-NLS-1$
     m_useAllReplicaSetMembersBut.setSelection( meta.getUseAllReplicaSetMembers() );
+    m_dbAuthMec.setText(Const.NVL( meta.getAuthenticationMechanism(), "" ));
+    wAuthDB.setText(Const.NVL( meta.getAuthDB(), "" ));
+
     wDbName.setText( Const.NVL( meta.getDbName(), "" ) ); //$NON-NLS-1$
     wFieldsName.setText( Const.NVL( meta.getFieldsName(), "" ) ); //$NON-NLS-1$
     wCollection.setText( Const.NVL( meta.getCollection(), "" ) ); //$NON-NLS-1$
@@ -1091,6 +1147,9 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
     meta.setAuthenticationUser( wAuthUser.getText() );
     meta.setAuthenticationPassword( wAuthPass.getText() );
+    meta.setAuthenticationMechanism(m_dbAuthMec.getText());
+    meta.setAuthDB(wAuthDB.getText());
+
     meta.setUseKerberosAuthentication( m_kerberosBut.getSelection() );
     meta.setConnectTimeout( m_connectionTimeout.getText() );
     meta.setSocketTimeout( m_socketTimeout.getText() );

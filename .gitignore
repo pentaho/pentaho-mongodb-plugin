@@ -13,3 +13,4 @@ override.properties
 /pdi-null
 /pdi-bin
 target/
+.idea
