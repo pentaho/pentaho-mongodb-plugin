@@ -66,6 +66,7 @@ public class MongoWrapperUtil {
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.JOURNALED, Boolean.toString( mongoDbMeta.getJournal() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.USE_ALL_REPLICA_SET_MEMBERS,
         Boolean.toString( mongoDbMeta.getUseAllReplicaSetMembers() ) );
+    setIfNotNullOrEmpty( propertiesBuilder, MongoProp.AUTH_DATABASE, vars.environmentSubstitute( mongoDbMeta.getAuthenticationDatabaseName() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.USERNAME, vars.environmentSubstitute( mongoDbMeta.getAuthenticationUser() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.PASSWORD, vars.environmentSubstitute( mongoDbMeta.getAuthenticationPassword() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.USE_KERBEROS,

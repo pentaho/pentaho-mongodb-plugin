@@ -108,6 +108,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
       setCollection( XMLHandler.getTagValue( stepnode, "collection" ) ); //$NON-NLS-1$
       jsonFieldName = XMLHandler.getTagValue( stepnode, "json_field_name" ); //$NON-NLS-1$
       jsonQuery = XMLHandler.getTagValue( stepnode, "json_query" ); //$NON-NLS-1$
+      setAuthenticationDatabaseName( XMLHandler.getTagValue( stepnode, "auth_database" ) ); //$NON-NLS-1$
       setAuthenticationUser( XMLHandler.getTagValue( stepnode, "auth_user" ) ); //$NON-NLS-1$
       setAuthenticationPassword( Encr.decryptPasswordOptionallyEncrypted( XMLHandler.getTagValue( stepnode,
           "auth_password" ) ) ); //$NON-NLS-1$
@@ -243,6 +244,8 @@ public class MongoDbInputMeta extends MongoDbMeta {
     retval.append( "    " ).append( XMLHandler.addTagValue( "json_field_name", jsonFieldName ) ); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append( "    " ).append( XMLHandler.addTagValue( "json_query", jsonQuery ) ); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append( "    " ).append( //$NON-NLS-1$
+            XMLHandler.addTagValue( "auth_database", getAuthenticationDatabaseName() ) ); //$NON-NLS-1$
+    retval.append( "    " ).append( //$NON-NLS-1$
         XMLHandler.addTagValue( "auth_user", getAuthenticationUser() ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
         XMLHandler.addTagValue( "auth_password", //$NON-NLS-1$
@@ -305,6 +308,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
       jsonFieldName = rep.getStepAttributeString( id_step, "json_field_name" ); //$NON-NLS-1$
       jsonQuery = rep.getStepAttributeString( id_step, "json_query" ); //$NON-NLS-1$
 
+      setAuthenticationDatabaseName( rep.getStepAttributeString( id_step, "auth_database" ) ); //$NON-NLS-1$
       setAuthenticationUser( rep.getStepAttributeString( id_step, "auth_user" ) ); //$NON-NLS-1$
       setAuthenticationPassword( Encr.decryptPasswordOptionallyEncrypted( rep.getStepAttributeString( id_step,
           "auth_password" ) ) ); //$NON-NLS-1$
@@ -364,6 +368,8 @@ public class MongoDbInputMeta extends MongoDbMeta {
       rep.saveStepAttribute( id_transformation, id_step, "json_field_name", jsonFieldName ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, "json_query", jsonQuery ); //$NON-NLS-1$
 
+      rep.saveStepAttribute( id_transformation, id_step, "auth_database", //$NON-NLS-1$
+              getAuthenticationDatabaseName() );
       rep.saveStepAttribute( id_transformation, id_step, "auth_user", //$NON-NLS-1$
           getAuthenticationUser() );
       rep.saveStepAttribute( id_transformation, id_step, "auth_password", //$NON-NLS-1$
@@ -433,8 +439,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
   }
 
   /**
-   * @param dbName
-   *          the dbName to set
+   * @param fields a field name to set
    */
   public void setFieldsName( String fields ) {
     this.fields = fields;

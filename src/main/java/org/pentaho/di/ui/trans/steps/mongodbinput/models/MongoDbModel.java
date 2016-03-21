@@ -88,6 +88,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
   private MongoDbInputMeta mongo;
 
   private LogChannel log;
+  private String authenticationDatabaseName;
 
   public MongoDbModel( MongoDbInputMeta mongo ) {
     super();
@@ -192,7 +193,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
   }
 
   /**
-   * @param dbName the dbName to set
+   * @param fields a field name to set
    */
   public void setFieldsName( String fields ) {
     String prevVal = this.fieldsQuery;
@@ -237,6 +238,17 @@ public class MongoDbModel extends XulEventSourceAdapter {
     }
 
     firePropertyChange( "collection", prevVal, collections );
+  }
+
+  public String getAuthenticationDatabaseName() {
+    return authenticationDatabaseName;
+  }
+
+  public void setAuthenticationDatabaseName(String authenticationDatabaseName) {
+    String prevVal = this.authenticationDatabaseName;
+    this.authenticationDatabaseName = authenticationDatabaseName;
+
+    firePropertyChange( "authenticationDatabaseName", prevVal, authenticationDatabaseName );
   }
 
   /**
@@ -486,6 +498,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
   public void saveMeta( MongoDbInputMeta meta ) {
     meta.setOutputJson( false );
     meta.setJsonQuery( this.jsonQuery );
+    meta.setAuthenticationDatabaseName( this.authenticationDatabaseName );
     meta.setAuthenticationPassword( this.authenticationPassword );
     meta.setAuthenticationUser( this.authenticationUser );
     meta.setCollection( collection );
@@ -505,6 +518,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
 
   private void initialize( MongoDbInputMeta m ) {
     setJsonQuery( m.getJsonQuery() );
+    setAuthenticationDatabaseName( m.getAuthenticationDatabaseName() );
     setAuthenticationPassword( m.getAuthenticationPassword() );
     setAuthenticationUser( m.getAuthenticationUser() );
     setCollection( m.getCollection() );
@@ -767,5 +781,4 @@ public class MongoDbModel extends XulEventSourceAdapter {
 
     return tagSets;
   }
-
 }
