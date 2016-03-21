@@ -1,5 +1,5 @@
 /*!
-* Copyright 2010 - 2013 Pentaho Corporation.  All rights reserved.
+* Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 
 package org.pentaho.di.trans.steps.mongodbinput;
 
-import java.util.List;
-
+import com.mongodb.AggregationOutput;
+import com.mongodb.DBObject;
+import com.mongodb.ServerAddress;
+import com.mongodb.util.JSON;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
@@ -33,12 +35,9 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.wrapper.MongoWrapperUtil;
-
-import com.mongodb.AggregationOutput;
-import com.mongodb.DBObject;
-import com.mongodb.ServerAddress;
-import com.mongodb.util.JSON;
 import org.pentaho.mongo.wrapper.field.MongodbInputDiscoverFieldsImpl;
+
+import java.util.List;
 
 public class MongoDbInput extends BaseStep implements StepInterface {
   private static Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes,
@@ -191,17 +190,6 @@ public class MongoDbInput extends BaseStep implements StepInterface {
 
         AggregationOutput result = data.collection.aggregate( firstP, remainder );
         data.m_pipelineResult = result.results().iterator();
-        if ( first ) {
-          // log the server used for the first query at the basic level
-          logBasic( BaseMessages.getString( PKG, "MongoDbInput.Message.AggregationPulledDataFrom", result //$NON-NLS-1$
-                  .getServerUsed().toString() ) );
-        } else {
-          // only log the server used to pull for each subsequent row at the
-          // detailed level
-          logDetailed(
-              BaseMessages.getString( PKG, "MongoDbInput.Message.AggregationPulledDataFrom", result //$NON-NLS-1$
-                      .getServerUsed().toString() ) );
-        }
       } else {
         if ( meta.getExecuteForEachIncomingRow() && m_currentInputRowDrivingQuery != null ) {
           // do field value substitution

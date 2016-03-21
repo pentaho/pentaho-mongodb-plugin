@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -850,7 +850,6 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     WriteResult result = mock( WriteResult.class );
     CommandResult commandResult = mock( CommandResult.class );
     when( commandResult.ok() ).thenReturn( true );
-    when( result.getLastError() ).thenReturn( commandResult );
     when( mongoCollectionWrapper.update( any( DBObject.class ), any( DBObject.class ), anyBoolean(), anyBoolean() ) )
       .thenReturn( result );
     when( stepMetaInterface.getUpdate() ).thenReturn( true );
@@ -868,8 +867,6 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     // update is executed
     verify( mongoCollectionWrapper )
       .update( updateQueryCaptor.capture(), insertCaptor.capture(), anyBoolean(), anyBoolean() );
-    // result is checked
-    verify( result ).getLastError();
     // updated field is expected
     assertThat( updateQueryCaptor.getValue(), equalTo( new BasicDBObject( "foo", "foo" ) ) );
     // insert document is expected
@@ -917,7 +914,6 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     WriteResult result = mock( WriteResult.class );
     CommandResult commandResult = mock( CommandResult.class );
     when( commandResult.ok() ).thenReturn( true );
-    when( result.getLastError() ).thenReturn( commandResult );
     when( mongoCollectionWrapper.save( dbOutput.m_batch.get( 0 ) ) ).thenReturn( result );
 
     doThrow( mock( MongoException.class ) ).when( mongoCollectionWrapper ).insert( anyList() );
