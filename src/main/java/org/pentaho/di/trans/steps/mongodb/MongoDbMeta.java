@@ -169,7 +169,7 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
    *
    * @param authenticationDatabaseName an authentication database to set.
    */
-  public void setAuthenticationDatabaseName(String authenticationDatabaseName) {
+  public void setAuthenticationDatabaseName( String authenticationDatabaseName ) {
     this.authenticationDatabaseName = authenticationDatabaseName;
   }
 
