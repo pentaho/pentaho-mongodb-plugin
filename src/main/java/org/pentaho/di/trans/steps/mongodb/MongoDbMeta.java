@@ -35,6 +35,10 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   private String authenticationUser;
   private String authenticationPassword;
 
+  private String authenticationMechanism="";
+
+  private String authDB="";
+
   private boolean m_kerberos;
 
   private String m_connectTimeout = ""; // default - never time out //$NON-NLS-1$
@@ -313,4 +317,29 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   public boolean getJournal() {
     return m_journal;
   }
+
+    /**
+     *Get Mongo authentication mechanism
+     */
+    public String getAuthenticationMechanism() {
+        return authenticationMechanism;
+    }
+    /**
+     *Set Mongo authentication mechanism
+     */
+    public void setAuthenticationMechanism(String authenticationMechanism) {
+        this.authenticationMechanism = authenticationMechanism;
+    }
+    /**
+     *get Mongo authentication Database
+     */
+    public String getAuthDB() {
+        return authDB;
+    }
+    /**
+     *Set Mongo authentication Database
+     */
+    public void setAuthDB(String authDB) {
+        this.authDB = authDB;
+    }
 }
