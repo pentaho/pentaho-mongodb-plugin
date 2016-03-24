@@ -112,6 +112,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
   private Label wlJsonQuery;
   private Button m_queryIsPipelineBut;
 
+  private TextVar wAuthDbName;
   private TextVar wAuthUser;
   private TextVar wAuthPass;
 
@@ -273,11 +274,32 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
     // Authentication...
     //
+
+    // AuthDbName line
+    Label wlAuthDbName = new Label( wConfigComp, SWT.RIGHT );
+    wlAuthDbName.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.AuthenticationDatabaseName.Label" ) ); //$NON-NLS-1$
+    props.setLook( wlAuthDbName );
+    FormData fdlAuthUser = new FormData();
+    fdlAuthUser.left = new FormAttachment( 0, -margin );
+    fdlAuthUser.top = new FormAttachment( lastControl, margin );
+    fdlAuthUser.right = new FormAttachment( middle, -margin );
+    wlAuthDbName.setLayoutData( fdlAuthUser );
+
+    wAuthDbName = new TextVar( transMeta, wConfigComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
+    props.setLook( wAuthDbName );
+    wAuthDbName.addModifyListener( lsMod );
+    FormData fdAuthUser = new FormData();
+    fdAuthUser.left = new FormAttachment( middle, 0 );
+    fdAuthUser.top = new FormAttachment( lastControl, margin );
+    fdAuthUser.right = new FormAttachment( 100, 0 );
+    wAuthDbName.setLayoutData( fdAuthUser );
+    lastControl = wAuthDbName;
+
     // AuthUser line
     Label wlAuthUser = new Label( wConfigComp, SWT.RIGHT );
     wlAuthUser.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.AuthenticationUser.Label" ) ); //$NON-NLS-1$
     props.setLook( wlAuthUser );
-    FormData fdlAuthUser = new FormData();
+    fdlAuthUser = new FormData();
     fdlAuthUser.left = new FormAttachment( 0, -margin );
     fdlAuthUser.top = new FormAttachment( lastControl, margin );
     fdlAuthUser.right = new FormAttachment( middle, -margin );
@@ -286,7 +308,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     wAuthUser = new TextVar( transMeta, wConfigComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER );
     props.setLook( wAuthUser );
     wAuthUser.addModifyListener( lsMod );
-    FormData fdAuthUser = new FormData();
+    fdAuthUser = new FormData();
     fdAuthUser.left = new FormAttachment( middle, 0 );
     fdAuthUser.top = new FormAttachment( lastControl, margin );
     fdAuthUser.right = new FormAttachment( 100, 0 );
@@ -1038,6 +1060,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     wJsonField.setText( Const.NVL( meta.getJsonFieldName(), "" ) ); //$NON-NLS-1$
     wJsonQuery.setText( Const.NVL( meta.getJsonQuery(), "" ) ); //$NON-NLS-1$
 
+    wAuthDbName.setText( Const.NVL( meta.getAuthenticationDatabaseName(), "" ) ); // $NON-NLS-1$ //$NON-NLS-1$
     wAuthUser.setText( Const.NVL( meta.getAuthenticationUser(), "" ) ); // $NON-NLS-1$ //$NON-NLS-1$
     wAuthPass.setText( Const.NVL( meta.getAuthenticationPassword(), "" ) ); // $NON-NLS-1$ //$NON-NLS-1$
     m_kerberosBut.setSelection( meta.getUseKerberosAuthentication() );
@@ -1089,6 +1112,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     meta.setJsonFieldName( wJsonField.getText() );
     meta.setJsonQuery( wJsonQuery.getText() );
 
+    meta.setAuthenticationDatabaseName( wAuthDbName.getText() );
     meta.setAuthenticationUser( wAuthUser.getText() );
     meta.setAuthenticationPassword( wAuthPass.getText() );
     meta.setUseKerberosAuthentication( m_kerberosBut.getSelection() );
