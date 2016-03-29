@@ -39,6 +39,10 @@
 									<checkbox id="isUseAllReplicas" label="${use-all-replicas}"/>
 								</row>
 								<row>
+									<label value="${auth-database}" />
+									<textbox id="authDatabase" width="350"/>
+								</row>
+								<row>
 									<label value="${auth-user}" />
 									<textbox id="authUser" width="350"/>
 								</row>

@@ -103,6 +103,7 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
       bf.createBinding( model, "hostnames", "hostName", "value" ).fireSourceChanged();
       bf.createBinding( model, "port", "port", "value" ).fireSourceChanged();
       bf.createBinding( model, "jsonQuery", "jsonQuery", "value" ).fireSourceChanged();
+      bf.createBinding( model, "authenticationDatabaseName", "authDatabase", "value" ).fireSourceChanged();
       bf.createBinding( model, "authenticationPassword", "authPassword", "value" ).fireSourceChanged();
       bf.createBinding( model, "authenticationUser", "authUser", "value" ).fireSourceChanged();
       bf.createBinding( model, "fieldsName", "fieldsQuery", "value" ).fireSourceChanged();
