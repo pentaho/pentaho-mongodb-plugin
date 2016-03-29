@@ -58,6 +58,8 @@ public class MongoDbModel extends XulEventSourceAdapter {
 
   private String fieldsQuery;
 
+  private String authenticationDatabaseName;
+
   private String authenticationUser;
 
   private String authenticationPassword;
@@ -88,7 +90,6 @@ public class MongoDbModel extends XulEventSourceAdapter {
   private MongoDbInputMeta mongo;
 
   private LogChannel log;
-  private String authenticationDatabaseName;
 
   public MongoDbModel( MongoDbInputMeta mongo ) {
     super();
