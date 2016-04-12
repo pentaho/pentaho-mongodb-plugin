@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
  */
 
 package org.pentaho.di.trans.steps.mongodboutput;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
@@ -43,6 +40,8 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.steps.mongodb.MongoDbMeta;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Class providing an output step for writing data to a MongoDB collection. Supports insert, truncate, upsert,
@@ -238,6 +237,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     setPort( "27017" ); //$NON-NLS-1$
     setCollection( "" ); //$NON-NLS-1$
     setDbName( "" ); //$NON-NLS-1$
+    setAuthenticationMechanism( "" );
     m_upsert = false;
     m_modifierUpdate = false;
     m_truncate = false;
@@ -512,6 +512,8 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
           XMLHandler.addTagValue( "mongo_password", //$NON-NLS-1$
               Encr.encryptPasswordIfNotUsingVariables( getAuthenticationPassword() ) ) );
     }
+    retval.append( "    " ).append( //$NON-NLS-1$
+        XMLHandler.addTagValue( "auth_mech", getAuthenticationMechanism() ) );
 
     retval.append( "    " ).append( //$NON-NLS-1$
         XMLHandler.addTagValue( "auth_kerberos", getUseKerberosAuthentication() ) ); //$NON-NLS-1$
@@ -623,6 +625,8 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     if ( !Const.isEmpty( getAuthenticationPassword() ) ) {
       setAuthenticationPassword( Encr.decryptPasswordOptionallyEncrypted( getAuthenticationPassword() ) );
     }
+
+    setAuthenticationMechanism( XMLHandler.getTagValue( stepnode, "auth_mech" ) );
 
     setUseKerberosAuthentication( "Y".equalsIgnoreCase( XMLHandler.getTagValue( stepnode, "auth_kerberos" ) ) ); //$NON-NLS-1$
     setDbName( XMLHandler.getTagValue( stepnode, "mongo_db" ) ); //$NON-NLS-1$
@@ -738,6 +742,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     if ( !Const.isEmpty( getAuthenticationPassword() ) ) {
       setAuthenticationPassword( Encr.decryptPasswordOptionallyEncrypted( getAuthenticationPassword() ) );
     }
+    setAuthenticationMechanism( rep.getStepAttributeString( id_step, "auth_mech" ) );
     setUseKerberosAuthentication( rep.getStepAttributeBoolean( id_step, "auth_kerberos" ) ); //$NON-NLS-1$
     setDbName( rep.getStepAttributeString( id_step, 0, "mongo_db" ) ); //$NON-NLS-1$
     setCollection( rep.getStepAttributeString( id_step, 0, "mongo_collection" ) ); //$NON-NLS-1$
@@ -835,6 +840,8 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
       rep.saveStepAttribute( id_transformation, id_step, 0, "mongo_password", //$NON-NLS-1$
           Encr.encryptPasswordIfNotUsingVariables( getAuthenticationPassword() ) );
     }
+
+    rep.saveStepAttribute( id_transformation, id_step, "auth_mech", getAuthenticationMechanism() );
 
     rep.saveStepAttribute( id_transformation, id_step, "auth_kerberos", //$NON-NLS-1$
         getUseKerberosAuthentication() );
