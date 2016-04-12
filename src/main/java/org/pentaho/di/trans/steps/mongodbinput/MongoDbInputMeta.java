@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2013 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
  */
 
 package org.pentaho.di.trans.steps.mongodbinput;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
@@ -45,6 +42,8 @@ import org.pentaho.di.trans.steps.mongodb.MongoDbMeta;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.mongo.wrapper.field.MongoField;
 import org.w3c.dom.Node;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created on 8-apr-2011
@@ -113,6 +112,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
       setAuthenticationPassword( Encr.decryptPasswordOptionallyEncrypted( XMLHandler.getTagValue( stepnode,
           "auth_password" ) ) ); //$NON-NLS-1$
 
+      setAuthenticationMechanism( XMLHandler.getTagValue( stepnode, "auth_mech" ) );
       m_kerberos = false;
       String useKerberos = XMLHandler.getTagValue( stepnode, "auth_kerberos" ); //$NON-NLS-1$
       if ( !Const.isEmpty( useKerberos ) ) {
@@ -251,6 +251,8 @@ public class MongoDbInputMeta extends MongoDbMeta {
         XMLHandler.addTagValue( "auth_password", //$NON-NLS-1$
             Encr.encryptPasswordIfNotUsingVariables( getAuthenticationPassword() ) ) );
     retval.append( "    " ).append( //$NON-NLS-1$
+        XMLHandler.addTagValue( "auth_mech", getAuthenticationMechanism() ) );
+    retval.append( "    " ).append( //$NON-NLS-1$
         XMLHandler.addTagValue( "auth_kerberos", m_kerberos ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
         XMLHandler.addTagValue( "connect_timeout", getConnectTimeout() ) ); //$NON-NLS-1$
@@ -309,6 +311,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
       jsonQuery = rep.getStepAttributeString( id_step, "json_query" ); //$NON-NLS-1$
 
       setAuthenticationDatabaseName( rep.getStepAttributeString( id_step, "auth_database" ) ); //$NON-NLS-1$
+      setAuthenticationMechanism( rep.getStepAttributeString( id_step, "auth_mech" ) );
       setAuthenticationUser( rep.getStepAttributeString( id_step, "auth_user" ) ); //$NON-NLS-1$
       setAuthenticationPassword( Encr.decryptPasswordOptionallyEncrypted( rep.getStepAttributeString( id_step,
           "auth_password" ) ) ); //$NON-NLS-1$
@@ -374,8 +377,8 @@ public class MongoDbInputMeta extends MongoDbMeta {
           getAuthenticationUser() );
       rep.saveStepAttribute( id_transformation, id_step, "auth_password", //$NON-NLS-1$
           Encr.encryptPasswordIfNotUsingVariables( getAuthenticationPassword() ) );
-      rep.saveStepAttribute( id_transformation, id_step, "auth_kerberos", //$NON-NLS-1$
-          m_kerberos );
+      rep.saveStepAttribute( id_transformation, id_step, "auth_mech", getAuthenticationMechanism() );
+      rep.saveStepAttribute( id_transformation, id_step, "auth_kerberos", m_kerberos );
       rep.saveStepAttribute( id_transformation, id_step, "connect_timeout", getConnectTimeout() ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, "socket_timeout", getSocketTimeout() ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, "read_preference", getReadPreference() ); //$NON-NLS-1$

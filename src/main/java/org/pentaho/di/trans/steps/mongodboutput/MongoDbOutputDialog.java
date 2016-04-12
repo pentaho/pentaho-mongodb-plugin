@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
@@ -106,6 +107,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
   private TextVar m_authDbName;
   private TextVar m_usernameField;
   private TextVar m_passField;
+  private CCombo  m_dbAuthMec;
 
   private Button m_kerberosBut;
 
@@ -340,6 +342,35 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     fd.top = new FormAttachment( m_usernameField, margin );
     fd.left = new FormAttachment( middle, 0 );
     m_passField.setLayoutData( fd );
+    Control lastControl = m_passField;
+
+    // Authentication Mechanisms
+    Label wlAuthMec = new Label( wConfigComp, SWT.RIGHT );
+    wlAuthMec.setText( getString( "MongoDbOutputDialog.AuthMechanism.Label" ) ); //$NON-NLS-1$
+    props.setLook( wlAuthMec );
+    fd = new FormData();
+    fd.left = new FormAttachment( 0, 0 );
+    fd.top = new FormAttachment( lastControl, margin );
+    fd.right = new FormAttachment( middle, -margin );
+    wlAuthMec.setLayoutData( fd );
+
+    m_dbAuthMec = new CCombo( wConfigComp, SWT.BORDER );
+    props.setLook( m_dbAuthMec );
+    m_dbAuthMec.addModifyListener( new ModifyListener() {
+        @Override public void modifyText( ModifyEvent e ) {
+          transMeta.setChanged();
+          m_dbAuthMec.setToolTipText( m_dbAuthMec.getText()  );
+        }
+    } );
+    m_dbAuthMec.add( "SCRAM-SHA-1" );
+    m_dbAuthMec.add( "MONGODB-CR" );
+    fd = new FormData();
+    fd.left = new FormAttachment( middle, 0 );
+    fd.top = new FormAttachment( lastControl, margin );
+    fd.right = new FormAttachment( 100, 0 );
+    m_dbAuthMec.setLayoutData( fd );
+    lastControl = m_dbAuthMec;
+
 
     // use kerberos authentication
     Label kerbLab = new Label( wConfigComp, SWT.RIGHT );
@@ -347,7 +378,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     props.setLook( kerbLab );
     fd = new FormData();
     fd.left = new FormAttachment( 0, 0 );
-    fd.top = new FormAttachment( m_passField, margin );
+    fd.top = new FormAttachment( lastControl, margin );
     fd.right = new FormAttachment( middle, -margin );
     kerbLab.setLayoutData( fd );
 
@@ -356,7 +387,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     fd = new FormData();
     fd.left = new FormAttachment( middle, 0 );
     fd.right = new FormAttachment( 100, 0 );
-    fd.top = new FormAttachment( m_passField, margin );
+    fd.top = new FormAttachment( lastControl, margin );
     m_kerberosBut.setLayoutData( fd );
 
     m_kerberosBut.addSelectionListener( new SelectionAdapter() {
@@ -1111,6 +1142,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     meta.setAuthenticationDatabaseName( m_authDbName.getText() );
     meta.setAuthenticationUser( m_usernameField.getText() );
     meta.setAuthenticationPassword( m_passField.getText() );
+    meta.setAuthenticationMechanism( m_dbAuthMec.getText() );
     meta.setUseKerberosAuthentication( m_kerberosBut.getSelection() );
     meta.setDbName( m_dbNameField.getText() );
     meta.setCollection( m_collectionField.getText() );
@@ -1201,6 +1233,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     m_authDbName.setText( Const.NVL( m_currentMeta.getAuthenticationDatabaseName(), "" ) ); //$NON-NLS-1$
     m_usernameField.setText( Const.NVL( m_currentMeta.getAuthenticationUser(), "" ) ); //$NON-NLS-1$
     m_passField.setText( Const.NVL( m_currentMeta.getAuthenticationPassword(), "" ) ); //$NON-NLS-1$
+    m_dbAuthMec.setText( Const.NVL( m_currentMeta.getAuthenticationMechanism(), "" ) );
     m_kerberosBut.setSelection( m_currentMeta.getUseKerberosAuthentication() );
     m_passField.setEnabled( !m_kerberosBut.getSelection() );
     m_dbNameField.setText( Const.NVL( m_currentMeta.getDbName(), "" ) ); //$NON-NLS-1$
@@ -1562,7 +1595,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
         String val = ""; //$NON-NLS-1$
         if ( gotGenuineRowMeta && actualR.indexOfValue( field.m_incomingFieldName ) >= 0 ) {
           int index = actualR.indexOfValue( field.m_incomingFieldName );
-          switch( actualR.getValueMeta( index ).getType() ) {
+          switch ( actualR.getValueMeta( index ).getType() ) {
             case ValueMetaInterface.TYPE_STRING:
               if ( field.m_JSON ) {
                 if ( !field.m_useIncomingFieldNameAsMongoFieldName && Const.isEmpty( field.m_mongoDocPath ) ) {
@@ -1629,8 +1662,8 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
           new MongoDbOutputData().getModifierUpdateObject( mongoFields, r, dummyRow, vs, topLevelStruct );
         toDisplay = getString( "MongoDbOutputDialog.PreviewModifierUpdate.Heading1" ) //$NON-NLS-1$
           + ":\n\n" //$NON-NLS-1$
-          + prettyPrintDocStructure( query.toString() ) +
-          getString( "MongoDbOutputDialog.PreviewModifierUpdate.Heading2" ) //$NON-NLS-1$
+          + prettyPrintDocStructure( query.toString() )
+          + getString( "MongoDbOutputDialog.PreviewModifierUpdate.Heading2" ) //$NON-NLS-1$
           + ":\n\n" //$NON-NLS-1$
           + prettyPrintDocStructure( modifier.toString() );
         windowTitle = getString( "MongoDbOutputDialog.PreviewModifierUpdate.Title" ); //$NON-NLS-1$
