@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.List;
 import org.bson.types.Binary;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.injection.Injection;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaFactory;
@@ -39,12 +40,15 @@ public class MongoField implements Comparable<MongoField> {
   protected static Class<?> PKG = MongoField.class; // for i18n purposes
 
   /** The name the the field will take in the outputted kettle stream */
+  @Injection( name = "FIELD_NAME", group = "FIELDS" )
   public String m_fieldName = ""; //$NON-NLS-1$
 
   /** The path to the field in the Mongo object */
+  @Injection( name = "FIELD_PATH", group = "FIELDS" )
   public String m_fieldPath = ""; //$NON-NLS-1$
 
   /** The kettle type for this field */
+  @Injection( name = "FIELD_TYPE", group = "FIELDS" )
   public String m_kettleType = ""; //$NON-NLS-1$
 
   /** User-defined indexed values for String types */
@@ -54,11 +58,13 @@ public class MongoField implements Comparable<MongoField> {
    * Temporary variable to hold the min:max array index info for fields determined when sampling documents for
    * paths/types
    */
+  @Injection( name = "FIELD_ARRAY_INDEX", group = "FIELDS" )
   public transient String m_arrayIndexInfo;
 
   /**
    * Temporary variable to hold the number of times this path was seen when sampling documents to determine paths/types.
    */
+  @Injection( name = "FIELD_PERCENTAGE", group = "FIELDS" )
   public transient int m_percentageOfSample = -1;
 
   /**
@@ -73,6 +79,7 @@ public class MongoField implements Comparable<MongoField> {
    * Temporary variable used to indicate that this path occurs multiple times over the sampled documents and that the
    * types differ. In this case we should default to Kettle type String as a catch-all
    */
+  @Injection( name = "FIELD_DISPARATE_TYPES", group = "FIELDS" )
   public transient boolean m_disparateTypes;
 
   /** The index that this field is in the output row structure */
@@ -384,5 +391,10 @@ public class MongoField implements Comparable<MongoField> {
   @Override
   public int compareTo( MongoField comp ) {
     return m_fieldName.compareTo( comp.m_fieldName );
+  }
+
+  @Injection( name = "FIELD_INDEXED", group = "FIELDS" )
+  public void setIndexedVals( String vals ) {
+    m_indexedVals = MongoDbInputData.indexedValsList( vals );
   }
 }

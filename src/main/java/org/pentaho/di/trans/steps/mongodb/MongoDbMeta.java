@@ -19,6 +19,7 @@ package org.pentaho.di.trans.steps.mongodb;
 
 import java.util.List;
 
+import org.pentaho.di.core.injection.Injection;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
@@ -27,36 +28,50 @@ import org.pentaho.mongo.NamedReadPreference;
 public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterface {
   protected static Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes
 
+  @Injection( name = "HOSTNAME" )
   private String hostname = "localhost"; //$NON-NLS-1$
+  @Injection( name = "PORT" )
   private String port = "27017"; //$NON-NLS-1$
+  @Injection( name = "DATABASE_NAME" )
   private String dbName;
+  @Injection( name = "COLLECTION" )
   private String collection;
 
+  @Injection( name = "AUTH_DATABASE" )
   private String authenticationDatabaseName;
+  @Injection( name = "AUTH_USERNAME" )
   private String authenticationUser;
+  @Injection( name = "AUTH_PASSWORD" )
   private String authenticationPassword;
 
+  @Injection( name = "AUTH_MECHANISM" )
   private String authenticationMechanism = "";
+  @Injection( name = "AUTH_KERBEROS" )
   private boolean m_kerberos;
 
+  @Injection( name = "TIMEOUT_CONNECTION" )
   private String m_connectTimeout = ""; // default - never time out //$NON-NLS-1$
 
+  @Injection( name = "TIMEOUT_SOCKET" )
   private String m_socketTimeout = ""; // default - never time out //$NON-NLS-1$
 
   /**
    * primary, primaryPreferred, secondary, secondaryPreferred, nearest
    */
+  @Injection( name = "READ_PREFERENCE" )
   private String m_readPreference = NamedReadPreference.PRIMARY.getName();
 
   /**
    * whether to discover and use all replica set members (if not already
    * specified in the hosts field)
    */
+  @Injection( name = "USE_ALL_REPLICA_SET_MEMBERS" )
   private boolean m_useAllReplicaSetMembers;
 
   /**
    * optional tag sets to use with read preference settings
    */
+  @Injection( name = "TAG_SET" )
   private List<String> m_readPrefTagSets;
 
   /**
