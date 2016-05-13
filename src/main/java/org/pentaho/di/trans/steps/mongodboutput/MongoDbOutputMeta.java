@@ -25,6 +25,9 @@ import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleXMLException;
+import org.pentaho.di.core.injection.Injection;
+import org.pentaho.di.core.injection.InjectionDeep;
+import org.pentaho.di.core.injection.InjectionSupported;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.xml.XMLHandler;
@@ -52,6 +55,7 @@ import java.util.List;
  */
 @Step( id = "MongoDbOutput", image = "MongoDB.png", name = "MongoDB Output",
     description = "Writes to a Mongo DB collection", categoryDescription = "Big Data" )
+@InjectionSupported( localizationPrefix = "MongoDbOutput.Injection.", groups = { "FIELDS", "INDEXES" } )
 public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface {
 
   private static Class<?> PKG = MongoDbOutputMeta.class; // for i18n purposes
@@ -64,11 +68,13 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
   public static class MongoField {
 
     /** Incoming Kettle field name */
+    @Injection( name = "INCOMING_FIELD_NAME", group = "FIELDS" )
     public String m_incomingFieldName = ""; //$NON-NLS-1$
 
     /**
      * Dot separated path to the corresponding mongo field
      */
+    @Injection( name = "MONGO_DOCUMENT_PATH", group = "FIELDS" )
     public String m_mongoDocPath = ""; //$NON-NLS-1$
 
     protected List<String> m_pathList;
@@ -78,9 +84,11 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
      * Whether to use the incoming field name as the mongo field key name. If false then the user must supply the
      * terminating field/key name.
      */
+    @Injection( name = "INCOMING_AS_MONGO", group = "FIELDS" )
     public boolean m_useIncomingFieldNameAsMongoFieldName;
 
     /** Whether this field is used in the query for an update operation */
+    @Injection( name = "UPDATE_MATCH_FIELD", group = "FIELDS" )
     public boolean m_updateMatchField;
 
     /**
@@ -91,6 +99,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
      * 
      * (support any others?)
      */
+    @Injection( name = "MODIFIER_OPERATION", group = "FIELDS" )
     public String m_modifierUpdateOperation = "N/A"; //$NON-NLS-1$
 
     /**
@@ -104,6 +113,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
      * the target document does not exist). Whereas the $push operation should occur only on updates. A single operation
      * can't combine these two as it will result in a conflict (since they operate on the same array).
      */
+    @Injection( name = "MODIFIER_POLICY", group = "FIELDS" )
     public String m_modifierOperationApplyPolicy = "Insert&Update"; //$NON-NLS-1$
 
     /**
@@ -112,6 +122,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
      * <br/>
      * Note: {@code null} and {@code undefined} are different values in Mongo!
      */
+    @Injection( name = "INSERT_NULL", group = "FIELDS" )
     public boolean insertNull = false;
 
     /**
@@ -119,6 +130,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
      * Mongo doc fragment in JSON format. The doc fragment will be converted into BSON and added into the overall
      * document at the point specified by this MongoField's path
      */
+    @Injection( name = "JSON", group = "FIELDS" )
     public boolean m_JSON = false;
 
     public MongoField copy() {
@@ -172,13 +184,17 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
      * Multiple fields are comma-separated followed by an optional "direction" indicator for the index (1 or -1). If
      * omitted, direction is assumed to be 1.
      */
+    @Injection( name = "INDEX_FIELD", group = "INDEXES" )
     public String m_pathToFields = ""; //$NON-NLS-1$
 
     /** whether to drop this index - default is create */
+    @Injection( name = "DROP", group = "INDEXES" )
     public boolean m_drop;
 
     // other options unique, sparse
+    @Injection( name = "UNIQUE", group = "INDEXES" )
     public boolean m_unique;
+    @Injection( name = "SPARSE", group = "INDEXES" )
     public boolean m_sparse;
 
     @Override
@@ -193,17 +209,21 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
   }
 
   /** Whether to truncate the collection */
+  @Injection( name = "TRUNCATE" )
   protected boolean m_truncate;
 
   /** True if updates (rather than inserts) are to be performed */
+  @Injection( name = "UPDATE" )
   protected boolean m_update;
 
   /** True if upserts are to be performed */
+  @Injection( name = "UPSERT" )
   protected boolean m_upsert;
 
   /**
    * whether to update all records that match during an upsert or just the first
    */
+  @Injection( name = "MULTI" )
   protected boolean m_multi;
 
   /**
@@ -214,21 +234,27 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
    * If modifier update is false, then the standard update/insert operation is performed which involves replacing the
    * matched object with a new object involving all the user-defined mongo paths
    */
+  @Injection( name = "MODIFIER_UPDATE" )
   protected boolean m_modifierUpdate;
 
   /** The batch size for inserts */
+  @Injection( name = "BATCH_INSERT_SIZE" )
   protected String m_batchInsertSize = "100"; //$NON-NLS-1$
 
   /** The list of paths to document fields for incoming kettle values */
+  @InjectionDeep
   protected List<MongoField> m_mongoFields;
 
   /** The list of index definitions (if any) */
+  @InjectionDeep
   protected List<MongoIndex> m_mongoIndexes;
 
   public static final int RETRIES = 5;
   public static final int RETRY_DELAY = 10; // seconds
 
+  @Injection( name = "RETRY_NUMBER" )
   private String m_writeRetries = "" + RETRIES; //$NON-NLS-1$
+  @Injection( name = "RETRY_DELAY" )
   private String m_writeRetryDelay = "" + RETRY_DELAY; // seconds //$NON-NLS-1$
 
   @Override
