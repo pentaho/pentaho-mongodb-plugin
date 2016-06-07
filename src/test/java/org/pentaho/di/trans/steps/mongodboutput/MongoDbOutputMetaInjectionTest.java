@@ -17,18 +17,43 @@
 
 package org.pentaho.di.trans.steps.mongodboutput;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.pentaho.di.core.injection.BaseMetadataInjectionTest;
-import org.pentaho.di.core.injection.BaseMetadataInjectionTest.StringGetter;
+import org.pentaho.di.core.logging.KettleLogStore;
+import org.pentaho.di.core.logging.LogChannelInterface;
+import org.pentaho.di.core.logging.LogChannelInterfaceFactory;
+
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * MDI test for MongoDbOutput.
  */
 public class MongoDbOutputMetaInjectionTest extends BaseMetadataInjectionTest<MongoDbOutputMeta> {
+  private LogChannelInterfaceFactory oldLogChannelInterfaceFactory;
+
   @Before
-  public void setup() {
+  public void setup() throws IllegalAccessException {
+    oldLogChannelInterfaceFactory = KettleLogStore.getLogChannelInterfaceFactory();
+    setKettleLogFactoryWithMock();
     setup( new MongoDbOutputMeta() );
+  }
+
+  public static void setKettleLogFactoryWithMock() {
+    LogChannelInterfaceFactory logChannelInterfaceFactory = mock( LogChannelInterfaceFactory.class );
+    LogChannelInterface logChannelInterface = mock( LogChannelInterface.class );
+    when( logChannelInterfaceFactory.create( any() ) ).thenReturn(
+            logChannelInterface );
+    KettleLogStore.setLogChannelInterfaceFactory( logChannelInterfaceFactory );
+  }
+
+  @After
+  public void tearDown() {
+    KettleLogStore.setLogChannelInterfaceFactory( oldLogChannelInterfaceFactory );
   }
 
   @Test

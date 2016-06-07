@@ -17,17 +17,31 @@
 
 package org.pentaho.di.trans.steps.mongodbinput;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.pentaho.di.core.injection.BaseMetadataInjectionTest;
+import org.pentaho.di.core.logging.KettleLogStore;
+import org.pentaho.di.core.logging.LogChannelInterfaceFactory;
+import org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMetaInjectionTest;
 
 /**
  * MDI test for MongoDbInput.
  */
 public class MongoDbInputMetaInjectionTest extends BaseMetadataInjectionTest<MongoDbInputMeta> {
+
+  private LogChannelInterfaceFactory oldLogChannelInterfaceFactory;
+
   @Before
   public void setup() {
+    oldLogChannelInterfaceFactory = KettleLogStore.getLogChannelInterfaceFactory();
+    MongoDbOutputMetaInjectionTest.setKettleLogFactoryWithMock();
     setup( new MongoDbInputMeta() );
+  }
+
+  @After
+  public void tearDown() {
+    KettleLogStore.setLogChannelInterfaceFactory( oldLogChannelInterfaceFactory );
   }
 
   @Test
