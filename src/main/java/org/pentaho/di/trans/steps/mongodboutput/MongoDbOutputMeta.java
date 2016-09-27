@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ import org.w3c.dom.Node;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  */
 @Step( id = "MongoDbOutput", image = "MongoDB.png", name = "MongoDB Output",
-    description = "Writes to a Mongo DB collection", categoryDescription = "Big Data" )
+    description = "Writes to a Mongo DB collection", documentationUrl = "http://wiki.pentaho.com/display/EAI/MongoDB+Output", categoryDescription = "Big Data" )
 public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface {
 
   private static Class<?> PKG = MongoDbOutputMeta.class; // for i18n purposes
