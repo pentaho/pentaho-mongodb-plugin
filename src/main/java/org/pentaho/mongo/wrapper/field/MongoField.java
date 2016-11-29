@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,7 +184,7 @@ public class MongoField implements Comparable<MongoField> {
           fieldValue = new Boolean( ( (Number) fieldValue ).intValue() != 0 );
         } else if ( fieldValue instanceof Date ) {
           fieldValue = new Boolean( ( (Date) fieldValue ).getTime() != 0 );
-        } else {
+        } else if ( !( fieldValue instanceof Boolean ) ) {
           fieldValue = new Boolean( fieldValue.toString().equalsIgnoreCase( "Y" ) //$NON-NLS-1$
               || fieldValue.toString().equalsIgnoreCase( "T" ) //$NON-NLS-1$
               || fieldValue.toString().equalsIgnoreCase( "1" ) ); //$NON-NLS-1$
