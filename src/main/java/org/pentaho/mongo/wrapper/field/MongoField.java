@@ -191,7 +191,7 @@ public class MongoField implements Comparable<MongoField> {
           fieldValue = new Boolean( ( (Number) fieldValue ).intValue() != 0 );
         } else if ( fieldValue instanceof Date ) {
           fieldValue = new Boolean( ( (Date) fieldValue ).getTime() != 0 );
-        } else {
+        } else if ( !( fieldValue instanceof Boolean ) ) {
           fieldValue = new Boolean( fieldValue.toString().equalsIgnoreCase( "Y" ) //$NON-NLS-1$
               || fieldValue.toString().equalsIgnoreCase( "T" ) //$NON-NLS-1$
               || fieldValue.toString().equalsIgnoreCase( "1" ) ); //$NON-NLS-1$
