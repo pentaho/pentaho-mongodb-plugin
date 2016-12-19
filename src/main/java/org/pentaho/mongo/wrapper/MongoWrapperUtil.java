@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,8 +58,8 @@ public class MongoWrapperUtil {
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.HOST, vars.environmentSubstitute( mongoDbMeta.getHostnames() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.PORT, vars.environmentSubstitute( mongoDbMeta.getPort() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.DBNAME, vars.environmentSubstitute( mongoDbMeta.getDbName() ) );
-    setIfNotNullOrEmpty( propertiesBuilder, MongoProp.connectTimeout, mongoDbMeta.getConnectTimeout() );
-    setIfNotNullOrEmpty( propertiesBuilder, MongoProp.socketTimeout, mongoDbMeta.getSocketTimeout() );
+    setIfNotNullOrEmpty( propertiesBuilder, MongoProp.connectTimeout, vars.environmentSubstitute( mongoDbMeta.getConnectTimeout() ) );
+    setIfNotNullOrEmpty( propertiesBuilder, MongoProp.socketTimeout, vars.environmentSubstitute( mongoDbMeta.getSocketTimeout() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.readPreference, mongoDbMeta.getReadPreference() );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.writeConcern, mongoDbMeta.getWriteConcern() );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.wTimeout, mongoDbMeta.getWTimeout() );
