@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.variables.VariableSpace;
+import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.trans.steps.mongodb.MongoDbMeta;
+import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.mongo.MongoDbException;
+import org.pentaho.mongo.MongoProp;
 import org.pentaho.mongo.MongoProperties;
 
 import java.util.Arrays;
@@ -37,6 +40,9 @@ import static org.mockito.Mockito.when;
  * Created by bryan on 8/22/14.
  */
 public class MongoWrapperUtilTest {
+  private static final String SOCKET_TIMEOUT = "mongoDbSocketTimeout";
+  private static final String CONNECTION_TIMEOUT = "mongoDbConnectionTimeout";
+
   private MongoWrapperClientFactory cachedFactory;
   private MongoWrapperClientFactory mockFactory;
 
@@ -73,5 +79,33 @@ public class MongoWrapperUtilTest {
         .thenReturn( wrapper );
     assertEquals( wrapper,
         MongoWrapperUtil.createMongoClientWrapper( mongoDbMeta, variableSpace, logChannelInterface ) );
+  }
+
+  @Test public void testCreatePropertiesBuilder() {
+    MongoDbMeta input = new MongoDbInputMeta();
+    setSocetAndConnectionTimeouts( input, "${" + CONNECTION_TIMEOUT + "}", "${" + SOCKET_TIMEOUT + "}" );
+
+    MongoDbMeta output = new MongoDbInputMeta();
+    setSocetAndConnectionTimeouts( output, "${" + CONNECTION_TIMEOUT + "}", "${" + SOCKET_TIMEOUT + "}" );
+
+    VariableSpace vars = new Variables();
+    vars.setVariable( CONNECTION_TIMEOUT, "200" );
+    vars.setVariable( SOCKET_TIMEOUT, "500" );
+
+    MongoProperties inProps = MongoWrapperUtil.createPropertiesBuilder( input, vars ).build();
+    MongoProperties outProps = MongoWrapperUtil.createPropertiesBuilder( output, vars ).build();
+
+    checkProps( inProps, "200", "500" );
+    checkProps( outProps, "200", "500" );
+  }
+
+  private void setSocetAndConnectionTimeouts(MongoDbMeta meta, String connection, String session) {
+    meta.setConnectTimeout( connection );
+    meta.setSocketTimeout( session );
+  }
+
+  private void checkProps(MongoProperties props, String cTimeout, String sTimeout) {
+    assertEquals( cTimeout , props.get( MongoProp.connectTimeout ) );
+    assertEquals( sTimeout , props.get( MongoProp.socketTimeout ) );
   }
 }
