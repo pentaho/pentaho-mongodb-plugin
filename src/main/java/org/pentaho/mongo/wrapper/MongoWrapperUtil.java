@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2017 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package org.pentaho.mongo.wrapper;
 
+import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.trans.steps.mongodb.MongoDbMeta;
@@ -96,6 +97,10 @@ public class MongoWrapperUtil {
 
   private static void setIfNotNullOrEmpty( MongoProperties.Builder builder, MongoProp prop, String value ) {
     if ( value != null && value.trim().length() > 0 ) {
+      boolean isPassword = MongoProp.PASSWORD.equals( prop );
+      if ( isPassword ) {
+        value = Encr.decryptPasswordOptionallyEncrypted( value );
+      }
       builder.set( prop, value );
     }
   }
