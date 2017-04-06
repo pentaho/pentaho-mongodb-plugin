@@ -39,6 +39,9 @@
 									<checkbox id="isUseAllReplicas" label="${use-all-replicas}"/>
 								</row>
 								<row>
+									<checkbox id="isMongoDBAtlas" label="${use-mongo-Atlas}"/>
+								</row>
+								<row>
 									<label value="${auth-database}" />
 									<textbox id="authDatabase" width="350"/>
 								</row>
