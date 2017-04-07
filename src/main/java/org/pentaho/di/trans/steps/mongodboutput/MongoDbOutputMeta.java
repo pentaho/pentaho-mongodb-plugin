@@ -525,6 +525,8 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
     retval.append( "    " ).append( XMLHandler.addTagValue( "use_all_replica_members", getUseAllReplicaSetMembers() ) ); //$NON-NLS-1$ //$NON-NLS-2$
 
+    retval.append( "    " ).append( XMLHandler.addTagValue( "use_mongo_db_atlas", getMongoDBAtlas() ) );
+
     if ( !Const.isEmpty( getAuthenticationDatabaseName() ) ) {
       retval.append( "\n    " ).append( //$NON-NLS-1$
               XMLHandler.addTagValue( "mongo_auth_database", getAuthenticationDatabaseName() ) ); //$NON-NLS-1$
@@ -691,6 +693,8 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
     setUseAllReplicaSetMembers( "Y".equalsIgnoreCase( XMLHandler.getTagValue( stepnode, "use_all_replica_members" ) ) ); //$NON-NLS-1$ //$NON-NLS-2$
 
+    setMongoDBAtlas( "Y".equalsIgnoreCase( XMLHandler.getTagValue( stepnode, "use_mongo_db_atlas" ) ) );
+
     String writeRetries = XMLHandler.getTagValue( stepnode, "write_retries" ); //$NON-NLS-1$
     if ( !Const.isEmpty( writeRetries ) ) {
       m_writeRetries = writeRetries;
@@ -762,6 +766,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     setHostnames( rep.getStepAttributeString( id_step, 0, "mongo_host" ) ); //$NON-NLS-1$
     setPort( rep.getStepAttributeString( id_step, 0, "mongo_port" ) ); //$NON-NLS-1$
     setUseAllReplicaSetMembers( rep.getStepAttributeBoolean( id_step, 0, "use_all_replica_members" ) ); //$NON-NLS-1$
+    setMongoDBAtlas( rep.getStepAttributeBoolean( id_step, 0 , "use_mongo_db_atlas" ) );
     setAuthenticationDatabaseName( rep.getStepAttributeString( id_step, 0, "mongo_auth_database" ) ); //$NON-NLS-1$
     setAuthenticationUser( rep.getStepAttributeString( id_step, 0, "mongo_user" ) ); //$NON-NLS-1$
     setAuthenticationPassword( rep.getStepAttributeString( id_step, 0, "mongo_password" ) ); //$NON-NLS-1$
@@ -853,6 +858,8 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     }
 
     rep.saveStepAttribute( id_transformation, id_step, "use_all_replica_members", getUseAllReplicaSetMembers() ); //$NON-NLS-1$
+
+    rep.saveStepAttribute( id_transformation, id_step, "use_mongo_db_atlas", getMongoDBAtlas() );
 
     if ( !Const.isEmpty( getAuthenticationDatabaseName() ) ) {
       rep.saveStepAttribute( id_transformation, id_step, 0, "mongo_auth_database", //$NON-NLS-1$

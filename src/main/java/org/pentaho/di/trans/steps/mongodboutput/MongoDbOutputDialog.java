@@ -104,6 +104,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
   private TextVar m_hostnameField;
   private TextVar m_portField;
   private Button m_useAllReplicaSetMembersBut;
+  private Button m_useMongoDBAtlasBut;
   private TextVar m_authDbName;
   private TextVar m_usernameField;
   private TextVar m_passField;
@@ -285,13 +286,35 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     fd.top = new FormAttachment( m_portField, margin );
     m_useAllReplicaSetMembersBut.setLayoutData( fd );
 
+    // Use mongodbAtlas check box
+
+    Label useMongoDBAtlasLab = new Label( wConfigComp, SWT.RIGHT );
+    useMongoDBAtlasLab
+            .setText( getString( "MongoDbOutputDialog.UseMongoDBAtlas.Label" ) ); //$NON-NLS-1$
+    useAllReplicaLab.setToolTipText( getString( "MongoDbOutputDialog.UseMongoDBAtlas.TipText" ) ); //$NON-NLS-1$
+    props.setLook( useMongoDBAtlasLab );
+    fd = new FormData();
+    fd.left = new FormAttachment( 0, 0 );
+    fd.right = new FormAttachment( middle, -margin );
+    fd.top = new FormAttachment( m_useAllReplicaSetMembersBut, margin );
+    useMongoDBAtlasLab.setLayoutData( fd );
+
+    m_useMongoDBAtlasBut = new Button( wConfigComp, SWT.CHECK );
+    props.setLook( m_useMongoDBAtlasBut );
+    fd = new FormData();
+    fd.left = new FormAttachment( middle, 0 );
+    fd.right = new FormAttachment( 100, 0 );
+    fd.top = new FormAttachment( m_useAllReplicaSetMembersBut, margin );
+    m_useMongoDBAtlasBut.setLayoutData( fd );
+
+
     // authentication database field
     Label authBdLab = new Label( wConfigComp, SWT.RIGHT );
     authBdLab.setText( getString( "MongoDbOutputDialog.AuthenticationDatabaseName.Label" ) ); //$NON-NLS-1$
     props.setLook( authBdLab );
     fd = new FormData();
     fd.left = new FormAttachment( 0, 0 );
-    fd.top = new FormAttachment( m_useAllReplicaSetMembersBut, margin );
+    fd.top = new FormAttachment( m_useMongoDBAtlasBut, margin );
     fd.right = new FormAttachment( middle, -margin );
     authBdLab.setLayoutData( fd );
 
@@ -300,7 +323,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     m_authDbName.addModifyListener( lsMod );
     fd = new FormData();
     fd.right = new FormAttachment( 100, 0 );
-    fd.top = new FormAttachment( m_useAllReplicaSetMembersBut, margin );
+    fd.top = new FormAttachment( m_useMongoDBAtlasBut, margin );
     fd.left = new FormAttachment( middle, 0 );
     m_authDbName.setLayoutData( fd );
 
@@ -1139,6 +1162,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     meta.setHostnames( m_hostnameField.getText() );
     meta.setPort( m_portField.getText() );
     meta.setUseAllReplicaSetMembers( m_useAllReplicaSetMembersBut.getSelection() );
+    meta.setMongoDBAtlas(m_useMongoDBAtlasBut.getSelection());
     meta.setAuthenticationDatabaseName( m_authDbName.getText() );
     meta.setAuthenticationUser( m_usernameField.getText() );
     meta.setAuthenticationPassword( m_passField.getText() );
@@ -1230,6 +1254,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     m_hostnameField.setText( Const.NVL( m_currentMeta.getHostnames(), "" ) ); //$NON-NLS-1$
     m_portField.setText( Const.NVL( m_currentMeta.getPort(), "" ) ); //$NON-NLS-1$
     m_useAllReplicaSetMembersBut.setSelection( m_currentMeta.getUseAllReplicaSetMembers() );
+    m_useMongoDBAtlasBut.setSelection(m_currentMeta.getMongoDBAtlas());
     m_authDbName.setText( Const.NVL( m_currentMeta.getAuthenticationDatabaseName(), "" ) ); //$NON-NLS-1$
     m_usernameField.setText( Const.NVL( m_currentMeta.getAuthenticationUser(), "" ) ); //$NON-NLS-1$
     m_passField.setText( Const.NVL( m_currentMeta.getAuthenticationPassword(), "" ) ); //$NON-NLS-1$

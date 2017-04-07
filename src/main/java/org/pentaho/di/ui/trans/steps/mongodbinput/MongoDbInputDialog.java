@@ -283,7 +283,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
                 .setText(BaseMessages.getString(PKG, "MongoDbInputDialog.UseMongoDBAtlas.Label")); //$NON-NLS-1$
         useMongoDBAtlasLab
                 .setToolTipText(BaseMessages.getString(PKG, "MongoDbInputDialog.UseMongoDBAtlas.TipText"));
-        props.setLook(useAllReplicaLab);
+        props.setLook(useMongoDBAtlasLab);
         FormData fmaRep = new FormData();
         fmaRep.left = new FormAttachment(0, 0);
         fmaRep.right = new FormAttachment(middle, -margin);
