@@ -163,6 +163,11 @@ public class MongoDbOutputMetaInjectionTest extends BaseMetadataInjectionTest<Mo
         return meta.getUseAllReplicaSetMembers();
       }
     } );
+    check( "USE_MONGODB_ATLAS", new BooleanGetter() {
+      public boolean get() {
+        return meta.getMongoDBAtlas();
+      }
+    } );
     check( "INCOMING_FIELD_NAME", new StringGetter() {
       public String get() {
         return meta.getMongoFields().get( 0 ).m_incomingFieldName;

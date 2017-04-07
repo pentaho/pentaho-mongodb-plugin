@@ -68,8 +68,12 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   @Injection( name = "USE_ALL_REPLICA_SET_MEMBERS" )
   private boolean m_useAllReplicaSetMembers;
 
+  /**
+   * whether is to connect to MongoDB Atlas
+   */
   @Injection( name = "USE_MONGODB_ATLAS")
   private boolean mongoDBAtlas;
+
   /**
    * optional tag sets to use with read preference settings
    */
@@ -118,7 +122,7 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
     this.mongoDBAtlas = mongoDBAtlas;
   }
 
-  public boolean isMongoDBAtlas() {
+  public boolean getMongoDBAtlas() {
     return mongoDBAtlas;
   }
 

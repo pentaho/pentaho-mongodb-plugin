@@ -25,7 +25,6 @@ import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.parameters.DuplicateParamException;
 import org.pentaho.di.core.parameters.NamedParams;
 import org.pentaho.di.core.parameters.NamedParamsDefault;
-import org.pentaho.di.core.util.BooleanPluginProperty;
 import org.pentaho.di.core.util.StringUtil;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
@@ -550,7 +549,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     setSocketTimeout( m.getSocketTimeout() );
     MongoDocumentField.convertList( m.getMongoFields(), getFields() );
     setUseAllReplicaMembers( m.getUseAllReplicaSetMembers() );
-    setUseMongoDBAtlas(m.isMongoDBAtlas());
+    setUseMongoDBAtlas(m.getMongoDBAtlas());
     setUseKerberosAuthentication( m.getUseKerberosAuthentication() );
     MongoTag.convertList( m.getReadPrefTagSets(), getTags() );
   }

@@ -121,6 +121,11 @@ public class MongoDbInputMetaInjectionTest extends BaseMetadataInjectionTest<Mon
         return meta.getUseAllReplicaSetMembers();
       }
     } );
+    check( "USE_MONGODB_ATLAS", new BooleanGetter() {
+      public boolean get() {
+        return meta.getMongoDBAtlas();
+      }
+    } );
     check( "TAG_SET", new StringGetter() {
       public String get() {
         return meta.getReadPrefTagSets().get( 0 );

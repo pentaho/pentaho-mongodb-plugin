@@ -54,6 +54,7 @@ public class MongoDbInputMetaTest {
     getterMap.put( "auth_password", "getAuthenticationPassword" );
     getterMap.put( "auth_kerberos", "getUseKerberosAuthentication" );
     getterMap.put( "use_all_replica_members", "getUseAllReplicaSetMembers" );
+    getterMap.put( "use_mongo_db_atlas", "getMongoDBAtlas" );
     getterMap.put( "execute_for_each_row", "getExecuteForEachIncomingRow" );
     getterMap.put( "mongo_fields", "getMongoFields" );
     getterMap.put( "tag_sets", "getReadPrefTagSets" );
@@ -63,6 +64,7 @@ public class MongoDbInputMetaTest {
     setterMap.put( "auth_password", "setAuthenticationPassword" );
     setterMap.put( "auth_kerberos", "setUseKerberosAuthentication" );
     setterMap.put( "use_all_replica_members", "setUseAllReplicaSetMembers" );
+    setterMap.put( "use_mongo_db_atlas", "setMongoDBAtlas" );
     setterMap.put( "execute_for_each_row", "setExecuteForEachIncomingRow" );
     setterMap.put( "mongo_fields", "setMongoFields" );
     setterMap.put( "tag_sets", "setReadPrefTagSets" );
@@ -92,7 +94,7 @@ public class MongoDbInputMetaTest {
         new LoadSaveTester( MongoDbInputMeta.class, Arrays.<String>asList( "hostname", "port", "db_name",
             "fields_name", "collection", "json_field_name", "json_query", "auth_user", "auth_password",
             "auth_kerberos", "connect_timeout", "socket_timeout", "read_preference", "output_json",
-            "use_all_replica_members", "query_is_pipeline", "execute_for_each_row", "mongo_fields", "tag_sets" ),
+            "use_all_replica_members","use_mongo_db_atlas" , "query_is_pipeline", "execute_for_each_row", "mongo_fields", "tag_sets" ),
             getterMap, setterMap, fieldLoadSaveValidatorAttributeMap, fieldLoadSaveValidatorTypeMap );
 
     FieldLoadSaveValidatorFactory validatorFactory = tester.getFieldLoadSaveValidatorFactory();

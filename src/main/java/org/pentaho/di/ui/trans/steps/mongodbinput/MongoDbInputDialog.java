@@ -1135,7 +1135,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
         wHostname.setText(Const.NVL(meta.getHostnames(), "")); //$NON-NLS-1$
         wPort.setText(Const.NVL(meta.getPort(), "")); //$NON-NLS-1$
         m_useAllReplicaSetMembersBut.setSelection(meta.getUseAllReplicaSetMembers());
-        m_useMongoDBAtlasBut.setSelection(meta.isMongoDBAtlas());
+        m_useMongoDBAtlasBut.setSelection(meta.getMongoDBAtlas());
         m_dbAuthMec.setText(Const.NVL(meta.getAuthenticationMechanism(), ""));
         wDbName.setText(Const.NVL(meta.getDbName(), "")); //$NON-NLS-1$
         wFieldsName.setText(Const.NVL(meta.getFieldsName(), "")); //$NON-NLS-1$
