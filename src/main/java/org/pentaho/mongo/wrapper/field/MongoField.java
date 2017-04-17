@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2017 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.bson.BsonUndefined;
 import org.bson.types.Binary;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
@@ -271,7 +272,7 @@ public class MongoField implements Comparable<MongoField> {
 
     // part is a named field of this record
     Object fieldValue = mongoObject.get( part );
-    if ( fieldValue == null ) {
+    if ( fieldValue == null || fieldValue.getClass().equals( BsonUndefined.class ) ) {
       return null;
     }
 

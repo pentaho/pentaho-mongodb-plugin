@@ -1,7 +1,7 @@
 /*!
  * PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2016 Pentaho Corporation (Pentaho). All rights reserved.
+ * Copyright 2002 - 2017 Pentaho Corporation (Pentaho). All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Pentaho and its licensors. The intellectual
@@ -42,7 +42,12 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -134,6 +139,18 @@ public class MongoFieldTest {
     assertThat( field.convertToKettleValue( dbObj ), equalTo( (Object) "valA" ) );
     initField( "fieldName", "$.parent.fieldName[1]", "String" );
     assertThat( field.convertToKettleValue( dbObj ), equalTo( (Object) "valB" ) );
+  }
+
+  @Test
+  public void testConvertUndefinedOrNullToKettleValue() throws KettleException {
+    BasicDBObject dbObj = BasicDBObject.parse( "{ test1 : undefined, test2 : null } " );
+    initField( "fieldName", "$.test1", "String" );
+    //PDI-16090S
+    assertNull( "Undefined should be interpreted as null ", field.convertToKettleValue( dbObj ) );
+    initField( "fieldName", "$.test2", "String" );
+    assertNull( field.convertToKettleValue( dbObj ) );
+    initField( "fieldName", "$.test3", "String" );
+    assertNull( field.convertToKettleValue( dbObj ) );
   }
 
   private void initField( String type ) throws KettleException {
