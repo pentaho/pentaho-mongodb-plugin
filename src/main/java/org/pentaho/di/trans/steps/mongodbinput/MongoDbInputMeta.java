@@ -140,7 +140,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
       }
 
       setUseAllReplicaSetMembers( "Y".equalsIgnoreCase( XMLHandler.getTagValue( stepnode, "use_all_replica_members" ) ) ); //$NON-NLS-1$
-      setMongoDBAtlas("Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "use_mongo_db_atlas")));
+      setMongoDBAtlas( "Y".equalsIgnoreCase( XMLHandler.getTagValue( stepnode, "use_mongo_db_atlas" ) ) );
 
       String queryIsPipe = XMLHandler.getTagValue( stepnode, "query_is_pipeline" ); //$NON-NLS-1$
       if ( !Const.isEmpty( queryIsPipe ) ) {
@@ -249,7 +249,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
     retval.append( "    " ).append( XMLHandler.addTagValue( "hostname", getHostnames() ) ); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append( "    " ).append( XMLHandler.addTagValue( "port", getPort() ) ); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append( "    " ).append( XMLHandler.addTagValue( "use_all_replica_members", getUseAllReplicaSetMembers() ) ); //$NON-NLS-1$ //$NON-NLS-2$
-    retval.append( "    " ).append( XMLHandler.addTagValue( "use_mongo_db_atlas", getMongoDBAtlas() ));
+    retval.append( "    " ).append( XMLHandler.addTagValue( "use_mongo_db_atlas", getMongoDBAtlas() ) );
     retval.append( "    " ).append( XMLHandler.addTagValue( "db_name", getDbName() ) ); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append( "    " ).append( XMLHandler.addTagValue( "fields_name", fields ) ); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append( "    " ).append( XMLHandler.addTagValue( "collection", getCollection() ) ); //$NON-NLS-1$ //$NON-NLS-2$
@@ -316,7 +316,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
       setHostnames( rep.getStepAttributeString( id_step, "hostname" ) ); //$NON-NLS-1$
       setPort( rep.getStepAttributeString( id_step, "port" ) ); //$NON-NLS-1$
       setUseAllReplicaSetMembers( rep.getStepAttributeBoolean( id_step, 0, "use_all_replica_members" ) ); //$NON-NLS-1$
-      setMongoDBAtlas(rep.getStepAttributeBoolean(id_step, 0, "use_mongo_db_atlas"));
+      setMongoDBAtlas( rep.getStepAttributeBoolean( id_step, 0, "use_mongo_db_atlas" ) );
       setDbName( rep.getStepAttributeString( id_step, "db_name" ) ); //$NON-NLS-1$
       fields = rep.getStepAttributeString( id_step, "fields_name" ); //$NON-NLS-1$
       setCollection( rep.getStepAttributeString( id_step, "collection" ) ); //$NON-NLS-1$
@@ -378,7 +378,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
       rep.saveStepAttribute( id_transformation, id_step, "hostname", getHostnames() ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, "port", getPort() ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, "use_all_replica_members", getUseAllReplicaSetMembers() ); //$NON-NLS-1$
-      rep.saveStepAttribute(id_transformation, id_step, "use_mongo_db_atlas", getMongoDBAtlas());
+      rep.saveStepAttribute( id_transformation, id_step, "use_mongo_db_atlas", getMongoDBAtlas() );
       rep.saveStepAttribute( id_transformation, id_step, "db_name", getDbName() ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, "fields_name", fields ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, "collection", getCollection() ); //$NON-NLS-1$

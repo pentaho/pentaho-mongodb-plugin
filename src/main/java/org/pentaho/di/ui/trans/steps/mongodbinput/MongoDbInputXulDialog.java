@@ -112,7 +112,7 @@ public class MongoDbInputXulDialog extends BaseStepGenericXulDialog {
 
       bf.createBinding( model, "queryIsPipeline", "isAggPipeline", "checked" ).fireSourceChanged();
       bf.createBinding( model, "useAllReplicaMembers", "isUseAllReplicas", "checked" ).fireSourceChanged();
-      bf.createBinding(model, "useMongoDBAtlas", "getMongoDBAtlas", "checked").fireSourceChanged();
+      bf.createBinding( model, "useMongoDBAtlas", "getMongoDBAtlas", "checked" ).fireSourceChanged();
 
       bf.createBinding( model, "useKerberosAuthentication", "isUseKerberosAuthentication", "checked" )
           .fireSourceChanged();

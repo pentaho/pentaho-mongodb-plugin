@@ -766,7 +766,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     setHostnames( rep.getStepAttributeString( id_step, 0, "mongo_host" ) ); //$NON-NLS-1$
     setPort( rep.getStepAttributeString( id_step, 0, "mongo_port" ) ); //$NON-NLS-1$
     setUseAllReplicaSetMembers( rep.getStepAttributeBoolean( id_step, 0, "use_all_replica_members" ) ); //$NON-NLS-1$
-    setMongoDBAtlas( rep.getStepAttributeBoolean( id_step, 0 , "use_mongo_db_atlas" ) );
+    setMongoDBAtlas( rep.getStepAttributeBoolean( id_step, 0, "use_mongo_db_atlas" ) );
     setAuthenticationDatabaseName( rep.getStepAttributeString( id_step, 0, "mongo_auth_database" ) ); //$NON-NLS-1$
     setAuthenticationUser( rep.getStepAttributeString( id_step, 0, "mongo_user" ) ); //$NON-NLS-1$
     setAuthenticationPassword( rep.getStepAttributeString( id_step, 0, "mongo_password" ) ); //$NON-NLS-1$

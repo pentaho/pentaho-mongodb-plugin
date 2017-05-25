@@ -1162,7 +1162,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     meta.setHostnames( m_hostnameField.getText() );
     meta.setPort( m_portField.getText() );
     meta.setUseAllReplicaSetMembers( m_useAllReplicaSetMembersBut.getSelection() );
-    meta.setMongoDBAtlas(m_useMongoDBAtlasBut.getSelection());
+    meta.setMongoDBAtlas( m_useMongoDBAtlasBut.getSelection() );
     meta.setAuthenticationDatabaseName( m_authDbName.getText() );
     meta.setAuthenticationUser( m_usernameField.getText() );
     meta.setAuthenticationPassword( m_passField.getText() );
@@ -1254,7 +1254,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     m_hostnameField.setText( Const.NVL( m_currentMeta.getHostnames(), "" ) ); //$NON-NLS-1$
     m_portField.setText( Const.NVL( m_currentMeta.getPort(), "" ) ); //$NON-NLS-1$
     m_useAllReplicaSetMembersBut.setSelection( m_currentMeta.getUseAllReplicaSetMembers() );
-    m_useMongoDBAtlasBut.setSelection(m_currentMeta.getMongoDBAtlas());
+    m_useMongoDBAtlasBut.setSelection( m_currentMeta.getMongoDBAtlas() );
     m_authDbName.setText( Const.NVL( m_currentMeta.getAuthenticationDatabaseName(), "" ) ); //$NON-NLS-1$
     m_usernameField.setText( Const.NVL( m_currentMeta.getAuthenticationUser(), "" ) ); //$NON-NLS-1$
     m_passField.setText( Const.NVL( m_currentMeta.getAuthenticationPassword(), "" ) ); //$NON-NLS-1$
