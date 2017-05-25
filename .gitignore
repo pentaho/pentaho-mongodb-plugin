@@ -14,3 +14,4 @@ override.properties
 /pdi-bin
 target/
 .idea
+pentaho-mongodb-plugin.iml
