@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2016 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2017 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -85,6 +86,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
   private MongoDbOutput dbOutput;
   RowMeta rowMeta = new RowMeta();
   Object[] rowData;
+  List<Object[]> outputRowData;
 
   private List<MongoDbOutputMeta.MongoField> mongoFields = new ArrayList<MongoDbOutputMeta.MongoField>();
 
@@ -98,6 +100,11 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     dbOutput = new MongoDbOutput( stepMeta, stepDataInterace, 1, transMeta, trans ) {
       public Object[] getRow() {
         return rowData;
+      }
+
+      @Override
+      public void putRow( RowMetaInterface rowMeta, Object[] row ) throws KettleStepException {
+        outputRowData.add( row );
       }
 
       public RowMetaInterface getInputRowMeta() {
@@ -829,6 +836,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     // no input has been defined, so should gracefully finish and clean up.
     assertFalse( dbOutput.processRow( stepMetaInterface, stepDataInterace ) );
     verify( mongoClientWrapper ).dispose();
+    assertEquals( 0, dbOutput.getLinesOutput() );
   }
 
   @Test public void testProcessRowWithInput() throws Exception {
@@ -838,8 +846,20 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     assertTrue( dbOutput.processRow( stepMetaInterface, stepDataInterace ) );
   }
 
+  @Test public void testProcessRowPassRowsToNextStep() throws Exception {
+    setupReturns();
+    setupRowMeta();
+    dbOutput.init( stepMetaInterface, stepDataInterace );
+    assertTrue( dbOutput.processRow( stepMetaInterface, stepDataInterace ) );
+    assertTrue( dbOutput.processRow( stepMetaInterface, stepDataInterace ) );
+    assertTrue( dbOutput.processRow( stepMetaInterface, stepDataInterace ) );
+    assertEquals( 3, outputRowData.size() );
+    assertEquals( 3, dbOutput.getLinesOutput() );
+  }
+
   private void setupRowMeta() {
     rowData = new Object[] { "foo", "bar", "baz" };
+    outputRowData = new ArrayList<Object[]>();
     rowMeta.addValueMeta( new ValueMetaString( "foo" ) );
     rowMeta.addValueMeta( new ValueMetaString( "bar" ) );
     rowMeta.addValueMeta( new ValueMetaString( "baz" ) );
