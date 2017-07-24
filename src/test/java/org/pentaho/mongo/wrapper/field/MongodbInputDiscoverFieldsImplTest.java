@@ -1,7 +1,7 @@
 /*!
  * PENTAHO CORPORATION PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2015 Pentaho Corporation (Pentaho). All rights reserved.
+ * Copyright 2002 - 2017 Pentaho Corporation (Pentaho). All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Pentaho and its licensors. The intellectual
@@ -52,12 +52,16 @@ import org.pentaho.mongo.wrapper.MongoWrapperClientFactory;
 import org.pentaho.mongo.wrapper.MongoWrapperUtil;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -249,6 +253,97 @@ public class MongodbInputDiscoverFieldsImplTest {
       assertThat( fields.get( i ).getKettleValue( expecteds[ i * 3 + 2 ] ),
           equalTo( expecteds[ i * 3 + 2 ] ) );
     }
+  }
+
+  @Test
+  public void testSetMinArrayIndexesNoArraysPresent() {
+    MongoField m = new MongoField();
+    m.m_fieldName = "bob.fred.george";
+    m.m_fieldPath = "bob.fred.george";
+
+    MongodbInputDiscoverFieldsImpl.setMinArrayIndexes( m );
+    assertThat( "bob.fred.george", equalTo( m.m_fieldName ) );
+    assertThat( "bob.fred.george", equalTo( m.m_fieldPath ) );
+  }
+
+  @Test
+  public void testSetMinArrayIndexesOneArray() {
+    MongoField m = new MongoField();
+    m.m_fieldName = "bob.fred[2:10].george";
+    m.m_fieldPath = "bob.fred[-].george";
+
+    MongodbInputDiscoverFieldsImpl.setMinArrayIndexes( m );
+    assertThat( "bob.fred[2].george", equalTo( m.m_fieldPath ) );
+  }
+
+  @Test
+  public void testSetMinArrayIndexesTwoArrays() {
+    MongoField m = new MongoField();
+    m.m_fieldName = "bob[5:5].fred[2:10].george";
+    m.m_fieldPath = "bob[-].fred[-].george";
+
+    MongodbInputDiscoverFieldsImpl.setMinArrayIndexes( m );
+    assertThat( "bob[5].fred[2].george", equalTo( m.m_fieldPath ) );
+  }
+
+  @Test
+  public void testUpdateMinMaxArrayIndexes() {
+
+    MongoField m = new MongoField();
+    m.m_fieldName = "bob.fred[2:4].george";
+    m.m_fieldPath = "bob.fred[-].george";
+
+    MongodbInputDiscoverFieldsImpl.updateMinMaxArrayIndexes( m, "bob.fred[1:1].george" );
+
+    assertThat( "bob.fred[1:4].george", equalTo( m.m_fieldName ) );
+    MongodbInputDiscoverFieldsImpl.updateMinMaxArrayIndexes( m, "bob.fred[5:5].george" );
+    assertThat( "bob.fred[1:5].george", equalTo( m.m_fieldName ) );
+  }
+
+  @Test
+  public void testPostProcessPaths() {
+    Map<String, MongoField> fieldMap = new LinkedHashMap<String, MongoField>();
+    List<MongoField> discovered = new ArrayList<MongoField>();
+
+    MongoField m = new MongoField();
+    m.m_fieldPath = "bob.fred[-].george";
+    m.m_fieldName = "bob.fred[2:10].george";
+    m.m_percentageOfSample = 5;
+    fieldMap.put( m.m_fieldPath, m );
+    m = new MongoField();
+    m.m_fieldPath = "one.two[-]";
+    m.m_fieldName = "one.two[1]";
+    m.m_percentageOfSample = 10;
+    fieldMap.put( m.m_fieldPath, m );
+
+    MongodbInputDiscoverFieldsImpl.postProcessPaths( fieldMap, discovered, 100 );
+
+    assertThat( 2, equalTo( discovered.size() ) );
+    m = discovered.get( 0 );
+    assertThat( "george", equalTo( m.m_fieldName ) );
+    assertThat( "bob.fred[2].george", equalTo( m.m_fieldPath ) );
+    assertThat( "5/100", equalTo( m.m_occurenceFraction ) );
+    assertThat( "bob.fred[2:10].george", equalTo( m.m_arrayIndexInfo ) );
+
+    m = discovered.get( 1 );
+    assertThat( "two[1]", equalTo( m.m_fieldName ) );
+    assertThat( "one.two[1]", equalTo( m.m_fieldPath ) );
+    assertThat( "10/100", equalTo( m.m_occurenceFraction ) );
+    assertThat( null, equalTo( m.m_arrayIndexInfo ) );
+  }
+
+  @Test
+  public void testDocToFields() {
+    Map<String, MongoField> fieldMap = new LinkedHashMap<String, MongoField>();
+    DBObject doc = (DBObject) JSON.parse( "{\"fred\" : {\"george\" : 1}, \"bob\" : [1 , 2]}" );
+
+    MongodbInputDiscoverFieldsImpl.docToFields( doc, fieldMap );
+    assertThat( 3, equalTo( fieldMap.size() ) );
+
+    assertThat( fieldMap.get( "$.fred.george" ),  notNullValue() );
+    assertThat( fieldMap.get( "$.bob[0]" ), notNullValue() );
+    assertThat( fieldMap.get( "$.bob[1]" ), notNullValue() );
+    assertThat( fieldMap.get( "$.bob[2]" ), equalTo( null ) );
   }
 
 }

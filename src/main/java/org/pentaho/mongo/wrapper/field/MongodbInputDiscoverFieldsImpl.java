@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ * Copyright 2010 - 2017 Pentaho Corporation.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -297,7 +297,7 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
             m.m_disparateTypes = true;
           }
           m.m_percentageOfSample++;
-          updateMaxArrayIndexes( m, finalName );
+          updateMinMaxArrayIndexes( m, finalName );
         }
       }
     }
@@ -350,13 +350,13 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
             m.m_disparateTypes = true;
           }
           m.m_percentageOfSample++;
-          updateMaxArrayIndexes( m, finalName );
+          updateMinMaxArrayIndexes( m, finalName );
         }
       }
     }
   }
 
-  protected static void updateMaxArrayIndexes( MongoField m, String update ) {
+  protected static void updateMinMaxArrayIndexes( MongoField m, String update ) {
     // just look at the second (i.e. max index value) in the array parts
     // of update
     if ( m.m_fieldName.indexOf( '[' ) < 0 ) {
@@ -395,17 +395,15 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
 
         String[] origParts = innerPart.split( ":" ); //$NON-NLS-1$
         String[] compParts = innerComp.split( ":" ); //$NON-NLS-1$
+        int origMin = Integer.parseInt( origParts[ 0 ] );
+        int compMin = Integer.parseInt( compParts[ 0 ] );
         int origMax = Integer.parseInt( origParts[ 1 ] );
         int compMax = Integer.parseInt( compParts[ 1 ] );
 
-        if ( compMax > origMax ) {
-          // updated the max index seen for this path
-          String newRange = "[" + origParts[ 0 ] + ":" + compMax + "]"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-          updated.append( newRange );
-        } else {
-          String oldRange = "[" + innerPart + "]"; //$NON-NLS-1$ //$NON-NLS-2$
-          updated.append( oldRange );
-        }
+        String newRange =
+          "[" + ( compMin < origMin ? compMin : origParts[ 0 ] ) + ":" + ( compMax > origMax ? compMax : origParts[ 1 ] )
+          + "]";
+        updated.append( newRange );
       }
     }
 
