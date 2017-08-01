@@ -1,5 +1,5 @@
 /*!
-* Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+* Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.trans.steps.mongodbinput.DiscoverFieldsCallback;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
+import org.pentaho.di.ui.core.FormDataBuilder;
 import org.pentaho.di.ui.core.PropsUI;
 import org.pentaho.di.ui.core.dialog.EnterNumberDialog;
 import org.pentaho.di.ui.core.dialog.EnterTextDialog;
@@ -130,6 +131,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
   private ColumnInfo[] m_colInf;
 
   private Button m_executeForEachRowBut;
+
+  private Button m_useSSLSocketFactory;
 
   private final MongoDbInputMeta input;
   /* Only referenced in commented code, commenting also
@@ -245,6 +248,22 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     fdPort.right = new FormAttachment( 100, 0 );
     wPort.setLayoutData( fdPort );
     lastControl = wPort;
+
+    // enable ssl connection
+    Label useSSLSocketFactoryL = new Label( wConfigComp, SWT.RIGHT );
+    useSSLSocketFactoryL.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.UseSSLSocketFactory.Label" ) );
+    props.setLook( useSSLSocketFactoryL );
+    useSSLSocketFactoryL.setLayoutData( new FormDataBuilder().left( 0, -margin ).top( lastControl, margin ).right( middle, -margin ).result() );
+
+    m_useSSLSocketFactory = new Button( wConfigComp, SWT.CHECK );
+    props.setLook( m_useSSLSocketFactory );
+    m_useSSLSocketFactory.addSelectionListener( new SelectionAdapter() {
+      public void widgetSelected( SelectionEvent arg0 ) {
+        input.setChanged();
+      };
+    } );
+    m_useSSLSocketFactory.setLayoutData( new FormDataBuilder().left( middle, 0 ).top( lastControl, margin ).right( 100, 0 ).result() );
+    lastControl = m_useSSLSocketFactory;
 
     // Use all replica set members/mongos check box
     Label useAllReplicaLab = new Label( wConfigComp, SWT.RIGHT );
@@ -417,7 +436,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     // socket timeout
     Label socketTimeoutL = new Label( wConfigComp, SWT.RIGHT );
     socketTimeoutL.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.SocketTimeout.Label" ) ); //$NON-NLS-1$
-    props.setLook( connectTimeoutL );
+    props.setLook( socketTimeoutL );
     socketTimeoutL
         .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.SocketTimeout.TipText" ) ); //$NON-NLS-1$
 
@@ -1097,6 +1116,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     wAuthPass.setEnabled( !m_kerberosBut.getSelection() );
     m_connectionTimeout.setText( Const.NVL( meta.getConnectTimeout(), "" ) ); //$NON-NLS-1$
     m_socketTimeout.setText( Const.NVL( meta.getSocketTimeout(), "" ) ); //$NON-NLS-1$
+    m_useSSLSocketFactory.setSelection( meta.isUseSSLSocketFactory() );
     m_readPreference.setText( Const.NVL( meta.getReadPreference(), "" ) ); //$NON-NLS-1$
     m_queryIsPipelineBut.setSelection( meta.getQueryIsPipeline() );
     m_outputAsJson.setSelection( meta.getOutputJson() );
@@ -1149,6 +1169,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     meta.setUseKerberosAuthentication( m_kerberosBut.getSelection() );
     meta.setConnectTimeout( m_connectionTimeout.getText() );
     meta.setSocketTimeout( m_socketTimeout.getText() );
+    meta.setUseSSLSocketFactory( m_useSSLSocketFactory.getSelection() );
     meta.setReadPreference( m_readPreference.getText() );
     meta.setOutputJson( m_outputAsJson.getSelection() );
     meta.setQueryIsPipeline( m_queryIsPipelineBut.getSelection() );

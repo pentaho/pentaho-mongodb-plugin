@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
+import org.pentaho.di.ui.core.FormDataBuilder;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.core.dialog.ShowMessageDialog;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
@@ -113,6 +114,8 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
 
   private TextVar m_connectTimeout;
   private TextVar m_socketTimeout;
+
+  private Button m_useSSLSocketFactory;
 
   private CCombo m_dbNameField;
   private Button m_getDBsBut;
@@ -265,6 +268,21 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     fd.left = new FormAttachment( middle, 0 );
     m_portField.setLayoutData( fd );
 
+    // enable ssl connection
+    Label useSSLSocketFactoryL = new Label( wConfigComp, SWT.RIGHT );
+    useSSLSocketFactoryL.setText( BaseMessages.getString( PKG, "MongoDbOutputDialog.UseSSLSocketFactory.Label" ) );
+    props.setLook( useSSLSocketFactoryL );
+    useSSLSocketFactoryL.setLayoutData( new FormDataBuilder().left( 0, -margin ).top( m_portField, margin ).right( middle, -margin ).result() );
+
+    m_useSSLSocketFactory = new Button( wConfigComp, SWT.CHECK );
+    props.setLook( m_useSSLSocketFactory );
+    m_useSSLSocketFactory.addSelectionListener( new SelectionAdapter() {
+      public void widgetSelected( SelectionEvent arg0 ) {
+        m_currentMeta.setChanged();
+      };
+    } );
+    m_useSSLSocketFactory.setLayoutData( new FormDataBuilder().left( middle, 0 ).top( m_portField, margin ).right( 100, 0 ).result() );
+
     // Use all replica set members check box
     Label useAllReplicaLab = new Label( wConfigComp, SWT.RIGHT );
     useAllReplicaLab
@@ -274,7 +292,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     fd = new FormData();
     fd.left = new FormAttachment( 0, 0 );
     fd.right = new FormAttachment( middle, -margin );
-    fd.top = new FormAttachment( m_portField, margin );
+    fd.top = new FormAttachment( m_useSSLSocketFactory, margin );
     useAllReplicaLab.setLayoutData( fd );
 
     m_useAllReplicaSetMembersBut = new Button( wConfigComp, SWT.CHECK );
@@ -282,7 +300,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     fd = new FormData();
     fd.left = new FormAttachment( middle, 0 );
     fd.right = new FormAttachment( 100, 0 );
-    fd.top = new FormAttachment( m_portField, margin );
+    fd.top = new FormAttachment( m_useSSLSocketFactory, margin );
     m_useAllReplicaSetMembersBut.setLayoutData( fd );
 
     // authentication database field
@@ -426,7 +444,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     // socket timeout
     Label socketTimeoutL = new Label( wConfigComp, SWT.RIGHT );
     socketTimeoutL.setText( getString( "MongoDbOutputDialog.SocketTimeout.Label" ) ); //$NON-NLS-1$
-    props.setLook( connectTimeoutL );
+    props.setLook( socketTimeoutL );
     socketTimeoutL.setToolTipText( getString( "MongoDbOutputDialog.SocketTimeout.TipText" ) ); //$NON-NLS-1$
 
     fd = new FormData();
@@ -448,6 +466,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
         m_socketTimeout.setToolTipText( transMeta.environmentSubstitute( m_socketTimeout.getText() ) );
       }
     } );
+    lastControl = m_socketTimeout;
 
     fd = new FormData();
     fd.left = new FormAttachment( 0, 0 );
@@ -1154,6 +1173,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     meta.setModifierUpdate( m_modifierUpdateBut.getSelection() );
     meta.setConnectTimeout( m_connectTimeout.getText() );
     meta.setSocketTimeout( m_socketTimeout.getText() );
+    meta.setUseSSLSocketFactory( m_useSSLSocketFactory.getSelection() );
     meta.setWriteConcern( m_writeConcern.getText() );
     meta.setWTimeout( m_wTimeout.getText() );
     meta.setJournal( m_journalWritesCheck.getSelection() );
@@ -1260,6 +1280,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     m_readPreference.setEnabled( m_modifierUpdateBut.getEnabled() && m_modifierUpdateBut.getSelection() );
     m_connectTimeout.setText( Const.NVL( m_currentMeta.getConnectTimeout(), "" ) ); //$NON-NLS-1$
     m_socketTimeout.setText( Const.NVL( m_currentMeta.getSocketTimeout(), "" ) ); //$NON-NLS-1$
+    m_useSSLSocketFactory.setSelection( m_currentMeta.isUseSSLSocketFactory() );
     m_writeConcern.setText( Const.NVL( m_currentMeta.getWriteConcern(), "" ) ); //$NON-NLS-1$
     m_wTimeout.setText( Const.NVL( m_currentMeta.getWTimeout(), "" ) ); //$NON-NLS-1$
     m_journalWritesCheck.setSelection( m_currentMeta.getJournal() );
