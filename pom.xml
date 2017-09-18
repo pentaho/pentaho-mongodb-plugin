@@ -7,13 +7,16 @@
     <artifactId>pentaho-ce-jar-parent-pom</artifactId>
     <version>8.0-SNAPSHOT</version>
   </parent>
+  
   <groupId>pentaho</groupId>
   <artifactId>pentaho-mongodb-plugin</artifactId>
   <version>8.0-SNAPSHOT</version>
   <packaging>bundle</packaging>
+  
   <name>Pentaho Enterprise Edition Project: ${project.artifactId}</name>
   <description>a Pentaho closed source project</description>
   <url>http://www.pentaho.com</url>
+  
   <licenses>
     <license>
       <name>Pentaho Proprietary License</name>
@@ -21,6 +24,7 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+  
   <developers>
     <developer>
       <name>Bryan Rosander</name>
@@ -30,28 +34,17 @@
       </roles>
     </developer>
   </developers>
+  
   <scm>
-    <connection>scm:git:git@github.com:${github.user}/${project.artifactId}.git</connection>
-    <developerConnection>scm:git:git@github.com:${github.user}/${project.artifactId}.git</developerConnection>
-    <url>scm:git:git@github.com:${github.user}/${project.artifactId}.git</url>
+    <url>scm:git:git@github.com:pentaho/pentaho-mongodb-plugin.git</url>
   </scm>
-  <distributionManagement>
-    <repository>
-      <id>pentaho.public.release.repo</id>
-      <name>Pentaho Public Release Repository</name>
-      <url>${pentaho.public.release.repo}</url>
-    </repository>
-    <snapshotRepository>
-      <id>pentaho.public.snapshot.repo</id>
-      <name>Pentaho Public Snapshot Repository</name>
-      <url>${pentaho.public.snapshot.repo}</url>
-    </snapshotRepository>
-  </distributionManagement>
+  
   <properties>
     <mockito.version>1.9.5</mockito.version>
     <junit.version>4.11</junit.version>
     <mongo-driver.version>3.2.2</mongo-driver.version>
   </properties>
+  
   <dependencies>
     <dependency>
       <groupId>pentaho-kettle</groupId>
@@ -126,49 +119,12 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <repositories>
-    <repository>
-      <releases>
-        <updatePolicy>always</updatePolicy>
-        <checksumPolicy>fail</checksumPolicy>
-      </releases>
-      <snapshots>
-        <updatePolicy>always</updatePolicy>
-        <checksumPolicy>fail</checksumPolicy>
-      </snapshots>
-      <id>pentaho.resolve.repo</id>
-      <name>Pentaho Group Resolve Repository</name>
-      <url>http://nexus.pentaho.org/content/groups/omni/</url>
-    </repository>
-    <repository>
-      <id>repo.pentaho.org</id>
-      <name>repo.pentaho.org</name>
-      <url>http://repository.pentaho.org/artifactory/pentaho</url>
-    </repository>
-  </repositories>
+
   <build>
     <finalName>${project.artifactId}</finalName>
+    
     <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>cobertura-maven-plugin</artifactId>
-        <version>2.6</version>
-        <configuration>
-          <formats>
-            <format>html</format>
-            <format>xml</format>
-          </formats>
-          <check>
-            <branchRate>80</branchRate>
-            <lineRate>90</lineRate>
-            <haltOnFailure>false</haltOnFailure>
-            <totalBranchRate>80</totalBranchRate>
-            <totalLineRate>90</totalLineRate>
-            <packageLineRate>90</packageLineRate>
-            <packageBranchRate>80</packageBranchRate>
-          </check>
-        </configuration>
-      </plugin>
+    
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.0</version>
@@ -177,6 +133,7 @@
           <target>1.6</target>
         </configuration>
       </plugin>
+      
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
@@ -189,6 +146,8 @@
           </instructions>
         </configuration>
       </plugin>
+      
     </plugins>
+    
   </build>
 </project>
