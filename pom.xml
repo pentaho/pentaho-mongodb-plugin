@@ -9,7 +9,7 @@
   </parent>
   <groupId>pentaho</groupId>
   <artifactId>pentaho-mongodb-plugin</artifactId>
-  <version>6.1-SNAPSHOT</version>
+  <version>6.1.0.19-384</version>
   <packaging>bundle</packaging>
   <name>Pentaho Enterprise Edition Project: ${project.artifactId}</name>
   <description>a Pentaho closed source project</description>
@@ -49,8 +49,8 @@
   </distributionManagement>
   <properties>
     <mockito.version>1.9.5</mockito.version>
-    <junit.version>4.11</junit.version>
     <mongo-driver.version>2.11.1</mongo-driver.version>
+    <junit.version>4.11</junit.version>
   </properties>
   <dependencies>
     <dependency>
