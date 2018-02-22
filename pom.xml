@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.pentaho</groupId>
     <artifactId>pentaho-ce-jar-parent-pom</artifactId>
-    <version>7.1-SNAPSHOT</version>
+    <version>7.1.0.9-101</version>
   </parent>
   <groupId>pentaho</groupId>
   <artifactId>pentaho-mongodb-plugin</artifactId>
-  <version>7.1-SNAPSHOT</version>
+  <version>7.1.0.9-101</version>
   <packaging>bundle</packaging>
   <name>Pentaho Enterprise Edition Project: ${project.artifactId}</name>
   <description>a Pentaho closed source project</description>
@@ -49,8 +49,8 @@
   </distributionManagement>
   <properties>
     <mockito.version>1.9.5</mockito.version>
-    <mongo-driver.version>3.2.2</mongo-driver.version>
     <junit.version>4.11</junit.version>
+    <mongo-driver.version>3.2.2</mongo-driver.version>
   </properties>
   <dependencies>
     <dependency>
