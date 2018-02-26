@@ -42,7 +42,7 @@
   <properties>
     <mockito.version>1.9.5</mockito.version>
     <junit.version>4.11</junit.version>
-    <mongo-driver.version>3.2.2</mongo-driver.version>
+    <mongo-driver.version>3.6.3</mongo-driver.version>
   </properties>
   
   <dependencies>
