@@ -65,6 +65,7 @@ public class MongoWrapperUtil {
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.writeConcern, mongoDbMeta.getWriteConcern() );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.wTimeout, mongoDbMeta.getWTimeout() );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.JOURNALED, Boolean.toString( mongoDbMeta.getJournal() ) );
+    setIfNotNullOrEmpty( propertiesBuilder, MongoProp.USE_ATLAS, Boolean.toString( mongoDbMeta.getMongoDBAtlas() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.USE_ALL_REPLICA_SET_MEMBERS,
         Boolean.toString( mongoDbMeta.getUseAllReplicaSetMembers() ) );
     setIfNotNullOrEmpty( propertiesBuilder, MongoProp.AUTH_DATABASE, vars.environmentSubstitute( mongoDbMeta.getAuthenticationDatabaseName() ) );

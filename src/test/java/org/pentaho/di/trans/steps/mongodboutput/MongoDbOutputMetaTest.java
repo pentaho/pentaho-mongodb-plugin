@@ -56,7 +56,7 @@ public class MongoDbOutputMetaTest {
 
   @Test public void testRoundTrips() throws KettleException {
     List<String> commonFields =
-      Arrays.asList( "mongo_host", "mongo_port", "use_all_replica_members", "mongo_user", "mongo_password",
+      Arrays.asList( "mongo_host", "mongo_port", "use_all_replica_members", "use_mongo_db_atlas", "mongo_user", "mongo_password",
         "auth_kerberos", "mongo_db", "mongo_collection", "batch_insert_size", "connect_timeout", "socket_timeout",
         "read_preference", "write_concern", "w_timeout", "journaled_writes", "truncate", "update", "upsert",
         "multi", "modifier_update", "write_retries", "write_retry_delay", "mongo_fields", "mongo_indexes" );
@@ -64,6 +64,7 @@ public class MongoDbOutputMetaTest {
     getterMap.put( "mongo_host", "getHostnames" );
     getterMap.put( "mongo_port", "getPort" );
     getterMap.put( "use_all_replica_members", "getUseAllReplicaSetMembers" );
+    getterMap.put( "use_mongo_db_atlas", "getMongoDBAtlas" );
     getterMap.put( "mongo_user", "getAuthenticationUser" );
     getterMap.put( "mongo_password", "getAuthenticationPassword" );
     getterMap.put( "auth_kerberos", "getUseKerberosAuthentication" );
@@ -75,6 +76,7 @@ public class MongoDbOutputMetaTest {
     setterMap.put( "mongo_host", "setHostnames" );
     setterMap.put( "mongo_port", "setPort" );
     setterMap.put( "use_all_replica_members", "setUseAllReplicaSetMembers" );
+    setterMap.put( "use_mongo_db_atlas", "setMongoDBAtlas" );
     setterMap.put( "mongo_user", "setAuthenticationUser" );
     setterMap.put( "mongo_password", "setAuthenticationPassword" );
     setterMap.put( "auth_kerberos", "setUseKerberosAuthentication" );

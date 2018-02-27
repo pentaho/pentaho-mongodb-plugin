@@ -70,6 +70,8 @@ public class MongoDbModel extends XulEventSourceAdapter {
 
   private boolean m_useAllReplicaSetMembers = false;
 
+  private boolean m_useMongoDBAtlas = false;
+
   private String m_connectTimeout = ""; // default - never time out
 
   private String m_socketTimeout = ""; // default - never time out
@@ -245,7 +247,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     return authenticationDatabaseName;
   }
 
-  public void setAuthenticationDatabaseName(String authenticationDatabaseName) {
+  public void setAuthenticationDatabaseName( String authenticationDatabaseName ) {
     String prevVal = this.authenticationDatabaseName;
     this.authenticationDatabaseName = authenticationDatabaseName;
 
@@ -333,6 +335,17 @@ public class MongoDbModel extends XulEventSourceAdapter {
     m_useAllReplicaSetMembers = u;
 
     firePropertyChange( "m_useAllReplicaSetMembers", prevVal, new Boolean( u ) );
+  }
+
+  public void setUseMongoDBAtlas( boolean u ) {
+    Boolean prevVal = new Boolean( this.m_useMongoDBAtlas );
+    m_useMongoDBAtlas = u;
+
+    firePropertyChange( "m_useMongoDBAtlas", prevVal, new Boolean( u ) );
+  }
+
+  public boolean getUseMongoDBAtlas() {
+    return m_useMongoDBAtlas;
   }
 
   /**
@@ -514,6 +527,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     meta.setMongoFields( MongoDocumentField.convertFromList( this.getFields() ) );
     meta.setUseKerberosAuthentication( m_kerberos );
     meta.setUseAllReplicaSetMembers( this.m_useAllReplicaSetMembers );
+    meta.setMongoDBAtlas( this.m_useMongoDBAtlas );
     meta.setReadPrefTagSets( MongoTag.convertFromList( this.tags ) );
   }
 
@@ -535,6 +549,7 @@ public class MongoDbModel extends XulEventSourceAdapter {
     setSocketTimeout( m.getSocketTimeout() );
     MongoDocumentField.convertList( m.getMongoFields(), getFields() );
     setUseAllReplicaMembers( m.getUseAllReplicaSetMembers() );
+    setUseMongoDBAtlas( m.getMongoDBAtlas() );
     setUseKerberosAuthentication( m.getUseKerberosAuthentication() );
     MongoTag.convertList( m.getReadPrefTagSets(), getTags() );
   }

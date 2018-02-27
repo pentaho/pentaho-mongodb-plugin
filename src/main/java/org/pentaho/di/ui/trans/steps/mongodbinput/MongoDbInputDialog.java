@@ -101,6 +101,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
   private TextVar wHostname;
   private TextVar wPort;
   private Button m_useAllReplicaSetMembersBut;
+  private Button m_useMongoDBAtlasBut;
   private CCombo wDbName;
   private Button m_getDbsBut;
   private TextVar wFieldsName;
@@ -115,7 +116,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
   private TextVar wAuthDbName;
   private TextVar wAuthUser;
   private TextVar wAuthPass;
-  private CCombo  m_dbAuthMec;
+  private CCombo m_dbAuthMec;
 
   private Button m_kerberosBut;
 
@@ -142,7 +143,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     input = (MongoDbInputMeta) in;
   }
 
-  @Override public String open() {
+  @Override
+  public String open() {
     Shell parent = getParent();
     Display display = parent.getDisplay();
 
@@ -151,7 +153,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     setShellImage( shell, input );
 
     ModifyListener lsMod = new ModifyListener() {
-      @Override public void modifyText( ModifyEvent e ) {
+      @Override
+      public void modifyText( ModifyEvent e ) {
         input.setChanged();
       }
     };
@@ -208,7 +211,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     Label wlHostname = new Label( wConfigComp, SWT.RIGHT );
     wlHostname.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.Hostname.Label" ) ); //$NON-NLS-1$
     wlHostname
-        .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.Hostname.Label.TipText" ) ); //$NON-NLS-1$
+      .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.Hostname.Label.TipText" ) ); //$NON-NLS-1$
     props.setLook( wlHostname );
     FormData fdlHostname = new FormData();
     fdlHostname.left = new FormAttachment( 0, 0 );
@@ -249,9 +252,9 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     // Use all replica set members/mongos check box
     Label useAllReplicaLab = new Label( wConfigComp, SWT.RIGHT );
     useAllReplicaLab
-        .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.UseAllReplicaSetMembers.Label" ) ); //$NON-NLS-1$
+      .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.UseAllReplicaSetMembers.Label" ) ); //$NON-NLS-1$
     useAllReplicaLab
-        .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.UseAllReplicaSetMembers.TipText" ) );
+      .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.UseAllReplicaSetMembers.TipText" ) );
     props.setLook( useAllReplicaLab );
     FormData fdlRep = new FormData();
     fdlRep.left = new FormAttachment( 0, 0 );
@@ -261,14 +264,43 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
     m_useAllReplicaSetMembersBut = new Button( wConfigComp, SWT.CHECK );
     props.setLook( m_useAllReplicaSetMembersBut );
-    FormData  fdbRep = new FormData();
+    FormData fdbRep = new FormData();
     fdbRep.left = new FormAttachment( middle, 0 );
     fdbRep.top = new FormAttachment( lastControl, margin );
     fdbRep.right = new FormAttachment( 100, 0 );
     m_useAllReplicaSetMembersBut.setLayoutData( fdbRep );
     lastControl = m_useAllReplicaSetMembersBut;
     m_useAllReplicaSetMembersBut.addSelectionListener( new SelectionAdapter() {
-      @Override public void widgetSelected( SelectionEvent e ) {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
+        input.setChanged();
+      }
+    } );
+
+    // Use mongodbAtlas check box
+    Label useMongoDBAtlasLab = new Label( wConfigComp, SWT.RIGHT );
+    useMongoDBAtlasLab
+      .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.UseMongoDBAtlas.Label" ) ); //$NON-NLS-1$
+    useMongoDBAtlasLab
+      .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.UseMongoDBAtlas.TipText" ) );
+    props.setLook( useMongoDBAtlasLab );
+    FormData fmaRep = new FormData();
+    fmaRep.left = new FormAttachment( 0, 0 );
+    fmaRep.right = new FormAttachment( middle, -margin );
+    fmaRep.top = new FormAttachment( lastControl, margin );
+    useMongoDBAtlasLab.setLayoutData( fmaRep );
+
+    m_useMongoDBAtlasBut = new Button( wConfigComp, SWT.CHECK );
+    props.setLook( m_useMongoDBAtlasBut );
+    FormData fabRep = new FormData();
+    fabRep.left = new FormAttachment( middle, 0 );
+    fabRep.top = new FormAttachment( lastControl, margin );
+    fabRep.right = new FormAttachment( 100, 0 );
+    m_useMongoDBAtlasBut.setLayoutData( fabRep );
+    lastControl = m_useMongoDBAtlasBut;
+    m_useMongoDBAtlasBut.addSelectionListener( new SelectionAdapter() {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
         input.setChanged();
       }
     } );
@@ -278,7 +310,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
     // AuthDbName line
     Label wlAuthDbName = new Label( wConfigComp, SWT.RIGHT );
-    wlAuthDbName.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.AuthenticationDatabaseName.Label" ) ); //$NON-NLS-1$
+    wlAuthDbName
+      .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.AuthenticationDatabaseName.Label" ) ); //$NON-NLS-1$
     props.setLook( wlAuthDbName );
     FormData fdlAuthUser = new FormData();
     fdlAuthUser.left = new FormAttachment( 0, -margin );
@@ -310,9 +343,10 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     props.setLook( m_dbAuthMec );
 
     m_dbAuthMec.addModifyListener( new ModifyListener() {
-      @Override public void modifyText( ModifyEvent e ) {
+      @Override
+      public void modifyText( ModifyEvent e ) {
         transMeta.setChanged();
-        m_dbAuthMec.setToolTipText( m_dbAuthMec.getText()  );
+        m_dbAuthMec.setToolTipText( m_dbAuthMec.getText() );
       }
     } );
     m_dbAuthMec.add( "SCRAM-SHA-1" );
@@ -347,7 +381,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     // AuthPass line
     Label wlAuthPass = new Label( wConfigComp, SWT.RIGHT );
     wlAuthPass
-        .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.AuthenticationPassword.Label" ) ); //$NON-NLS-1$
+      .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.AuthenticationPassword.Label" ) ); //$NON-NLS-1$
     props.setLook( wlAuthPass );
     FormData fdlAuthPass = new FormData();
     fdlAuthPass.left = new FormAttachment( 0, -margin );
@@ -384,7 +418,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     m_kerberosBut.setLayoutData( fd );
 
     m_kerberosBut.addSelectionListener( new SelectionAdapter() {
-      @Override public void widgetSelected( SelectionEvent e ) {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
         wAuthPass.setEnabled( !m_kerberosBut.getSelection() );
       }
     } );
@@ -393,10 +428,10 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     // connection timeout
     Label connectTimeoutL = new Label( wConfigComp, SWT.RIGHT );
     connectTimeoutL
-        .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.ConnectionTimeout.Label" ) ); //$NON-NLS-1$
+      .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.ConnectionTimeout.Label" ) ); //$NON-NLS-1$
     props.setLook( connectTimeoutL );
     connectTimeoutL
-        .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.ConnectionTimeout.TipText" ) ); //$NON-NLS-1$
+      .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.ConnectionTimeout.TipText" ) ); //$NON-NLS-1$
 
     fd = new FormData();
     fd.left = new FormAttachment( 0, -margin );
@@ -419,7 +454,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     socketTimeoutL.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.SocketTimeout.Label" ) ); //$NON-NLS-1$
     props.setLook( connectTimeoutL );
     socketTimeoutL
-        .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.SocketTimeout.TipText" ) ); //$NON-NLS-1$
+      .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.SocketTimeout.TipText" ) ); //$NON-NLS-1$
 
     fd = new FormData();
     fd.left = new FormAttachment( 0, -margin );
@@ -450,7 +485,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     // Input options tab -----
     m_wInputOptionsTab = new CTabItem( m_wTabFolder, SWT.NONE );
     m_wInputOptionsTab
-        .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.InputOptionsTab.TabTitle" ) ); //$NON-NLS-1$
+      .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.InputOptionsTab.TabTitle" ) ); //$NON-NLS-1$
     Composite wInputOptionsComp = new Composite( m_wTabFolder, SWT.NONE );
     props.setLook( wInputOptionsComp );
     FormLayout inputLayout = new FormLayout();
@@ -478,7 +513,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     m_getDbsBut.setLayoutData( fd );
 
     m_getDbsBut.addSelectionListener( new SelectionAdapter() {
-      @Override public void widgetSelected( SelectionEvent e ) {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
         setupDBNames();
       }
     } );
@@ -494,7 +530,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     lastControl = wDbName;
 
     wDbName.addModifyListener( new ModifyListener() {
-      @Override public void modifyText( ModifyEvent e ) {
+      @Override
+      public void modifyText( ModifyEvent e ) {
         input.setChanged();
         wDbName.setToolTipText( transMeta.environmentSubstitute( wDbName.getText() ) );
       }
@@ -514,14 +551,15 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     m_getCollectionsBut = new Button( wInputOptionsComp, SWT.PUSH | SWT.CENTER );
     props.setLook( m_getCollectionsBut );
     m_getCollectionsBut
-        .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.GetCollections.Button" ) ); //$NON-NLS-1$
+      .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.GetCollections.Button" ) ); //$NON-NLS-1$
     fd = new FormData();
     fd.right = new FormAttachment( 100, 0 );
     fd.top = new FormAttachment( lastControl, 0 );
     m_getCollectionsBut.setLayoutData( fd );
 
     m_getCollectionsBut.addSelectionListener( new SelectionAdapter() {
-      @Override public void widgetSelected( SelectionEvent e ) {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
         setupCollectionNamesForDB();
       }
     } );
@@ -537,17 +575,20 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     lastControl = wCollection;
 
     wCollection.addSelectionListener( new SelectionAdapter() {
-      @Override public void widgetSelected( SelectionEvent e ) {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
         updateQueryTitleInfo();
       }
     } );
 
     wCollection.addFocusListener( new FocusListener() {
-      @Override public void focusGained( FocusEvent e ) {
+      @Override
+      public void focusGained( FocusEvent e ) {
 
       }
 
-      @Override public void focusLost( FocusEvent e ) {
+      @Override
+      public void focusLost( FocusEvent e ) {
         updateQueryTitleInfo();
       }
     } );
@@ -570,7 +611,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     fd.right = new FormAttachment( 100, 0 );
     m_readPreference.setLayoutData( fd );
     m_readPreference.addModifyListener( new ModifyListener() {
-      @Override public void modifyText( ModifyEvent e ) {
+      @Override
+      public void modifyText( ModifyEvent e ) {
         input.setChanged();
         m_readPreference.setToolTipText( transMeta.environmentSubstitute( m_readPreference.getText() ) );
       }
@@ -590,14 +632,14 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
      * "MongoDbInputDialog.AddToTable.Button")); //$NON-NLS-1$ fd = new
      * FormData(); fd.top = new FormAttachment(lastControl, 0); fd.right = new
      * FormAttachment(100, 0); addToTableBut.setLayoutData(fd);
-     * 
+     *
      * addToTableBut.addSelectionListener(new SelectionAdapter() {
-     * 
+     *
      * @Override public void widgetSelected(SelectionEvent e) {
      * addTagsToTable(); input.setChanged(); } });
-     * 
-     * 
-     * 
+     *
+     *
+     *
      * // get tags button Button getTagsBut = new Button(wInputOptionsComp,
      * SWT.PUSH | SWT.CENTER); props.setLook(getTagsBut);
      * getTagsBut.setText(BaseMessages.getString(PKG,
@@ -606,12 +648,12 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
      * "MongoDbInputDialog.GetTags.Button.TipText")); //$NON-NLS-1$ fd = new
      * FormData(); fd.top = new FormAttachment(lastControl, 0); fd.right = new
      * FormAttachment(addToTableBut, margin); getTagsBut.setLayoutData(fd);
-     * 
+     *
      * getTagsBut.addSelectionListener(new SelectionAdapter() {
-     * 
+     *
      * @Override public void widgetSelected(SelectionEvent e) {
      * setupTagSetComboValues(); } });
-     * 
+     *
      * // tags editor text field/combo Label tagsLabel = new
      * Label(wInputOptionsComp, SWT.RIGHT);
      * tagsLabel.setText(BaseMessages.getString(PKG,
@@ -620,64 +662,64 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
      * FormAttachment(0, -margin); fd.top = new FormAttachment(lastControl,
      * margin); fd.right = new FormAttachment(middle, -margin);
      * tagsLabel.setLayoutData(fd);
-     * 
+     *
      * m_tagsCombo = new CCombo(wInputOptionsComp, SWT.BORDER);
      * props.setLook(m_tagsCombo); fd = new FormData(); fd.left = new
      * FormAttachment(middle, 0); fd.top = new FormAttachment(lastControl,
      * margin); fd.right = new FormAttachment(getTagsBut, 0);
      * m_tagsCombo.setLayoutData(fd);
-     * 
+     *
      * lastControl = m_tagsCombo;
-     * 
+     *
      * m_tagsCombo.addSelectionListener(new SelectionAdapter() {
-     * 
+     *
      * @Override public void widgetSelected(SelectionEvent e) { String current =
      * m_tagsCombo.getText(); if (!Const.isEmpty(current)) { m_currentTagsState
      * = m_currentTagsState + ((m_currentTagsState.length() > 0) ?
      * ((!m_currentTagsState .endsWith(",")) ? ", " : "") : "") + current;
      * //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
      * m_tagsCombo.setText(m_currentTagsState); } }
-     * 
+     *
      * @Override public void widgetDefaultSelected(SelectionEvent e) { // listen
      * for enter being pressed in the text field and update // the current tags
      * state variable String current = m_tagsCombo.getText(); if
      * (!Const.isEmpty(current)) { m_currentTagsState = current; } else {
      * m_currentTagsState = ""; //$NON-NLS-1$ } } });
-     * 
+     *
      * m_tagsCombo.addFocusListener(new FocusListener() { public void
      * focusGained(FocusEvent e) {
-     * 
+     *
      * }
-     * 
+     *
      * public void focusLost(FocusEvent e) { m_currentTagsState =
      * m_tagsCombo.getText(); } });
-     * 
+     *
      * // edit selected button Button editSelectedBut = new
      * Button(wInputOptionsComp, SWT.PUSH | SWT.CENTER);
      * props.setLook(editSelectedBut);
      * editSelectedBut.setText(BaseMessages.getString(PKG,
      * "MongoDbInputDialog.EditSelected.Button")); //$NON-NLS-1$
-     * 
+     *
      * fd = new FormData(); fd.bottom = new FormAttachment(100, -margin * 2);
      * fd.left = new FormAttachment(0, 0); editSelectedBut.setLayoutData(fd);
-     * 
+     *
      * editSelectedBut.addSelectionListener(new SelectionAdapter() {
-     * 
+     *
      * @Override public void widgetSelected(SelectionEvent e) {
      * moveSelectedTagSetToEditor(); } });
-     * 
+     *
      * // delete selected button Button deleteSelectedBut = new
      * Button(wInputOptionsComp, SWT.PUSH | SWT.CENTER);
      * props.setLook(deleteSelectedBut);
      * deleteSelectedBut.setText(BaseMessages.getString(PKG,
      * "MongoDbInputDialog.DeleteSelected.Button")); //$NON-NLS-1$
-     * 
+     *
      * fd = new FormData(); fd.bottom = new FormAttachment(100, -margin * 2);
      * fd.left = new FormAttachment(editSelectedBut, margin);
      * deleteSelectedBut.setLayoutData(fd);
-     * 
+     *
      * deleteSelectedBut.addSelectionListener(new SelectionAdapter() {
-     * 
+     *
      * @Override public void widgetSelected(SelectionEvent e) {
      * deleteSelectedFromView(); input.setChanged(); } });
      */
@@ -686,14 +728,15 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     props.setLook( testUserTagsBut );
     testUserTagsBut.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.TestUserTags.Button" ) ); //$NON-NLS-1$
     testUserTagsBut.setToolTipText(
-        BaseMessages.getString( PKG, "MongoDbInputDialog.TestUserTags.Button.TipText" ) ); //$NON-NLS-1$
+      BaseMessages.getString( PKG, "MongoDbInputDialog.TestUserTags.Button.TipText" ) ); //$NON-NLS-1$
     fd = new FormData();
     fd.bottom = new FormAttachment( 100, -margin * 2 );
     fd.right = new FormAttachment( 100, 0 );
     testUserTagsBut.setLayoutData( fd );
 
     testUserTagsBut.addSelectionListener( new SelectionAdapter() {
-      @Override public void widgetSelected( SelectionEvent e ) {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
         testUserSpecifiedTagSetsAgainstReplicaSet();
       }
     } );
@@ -715,7 +758,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     joinTagsBut.setLayoutData( fd );
 
     joinTagsBut.addSelectionListener( new SelectionAdapter() {
-      @Override public void widgetSelected( SelectionEvent e ) {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
         concatenateTags();
       }
     } );
@@ -724,7 +768,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     props.setLook( getTagsBut );
     getTagsBut.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.GetTags.Button" ) ); //$NON-NLS-1$
     getTagsBut
-        .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.GetTags.Button.TipText" ) ); //$NON-NLS-1$
+      .setToolTipText( BaseMessages.getString( PKG, "MongoDbInputDialog.GetTags.Button.TipText" ) ); //$NON-NLS-1$
     fd = new FormData();
     // fd.top = new FormAttachment(lastControl, 0);
     fd.bottom = new FormAttachment( 100, -margin * 2 );
@@ -732,17 +776,18 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     getTagsBut.setLayoutData( fd );
 
     getTagsBut.addSelectionListener( new SelectionAdapter() {
-      @Override public void widgetSelected( SelectionEvent e ) {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
         setupTagSetComboValues();
       }
     } );
 
     m_colInf =
-        new ColumnInfo[] {
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.TagSets.TagSetColumnTitle" ), //$NON-NLS-1$
-                ColumnInfo.COLUMN_TYPE_TEXT, false ), };
+      new ColumnInfo[] {
+        new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.TagSets.TagSetColumnTitle" ), //$NON-NLS-1$
+          ColumnInfo.COLUMN_TYPE_TEXT, false ), };
 
-    m_colInf[0].setReadOnly( false );
+    m_colInf[ 0 ].setReadOnly( false );
 
     Label tagSetsTitle = new Label( wInputOptionsComp, SWT.LEFT );
     tagSetsTitle.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.TagSets.Title" ) ); //$NON-NLS-1$
@@ -755,7 +800,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     lastControl = tagSetsTitle;
 
     m_tagsView =
-        new TableView( transMeta, wInputOptionsComp, SWT.FULL_SELECTION | SWT.MULTI, m_colInf, 1, lsMod, props );
+      new TableView( transMeta, wInputOptionsComp, SWT.FULL_SELECTION | SWT.MULTI, m_colInf, 1, lsMod, props );
 
     fd = new FormData();
     fd.top = new FormAttachment( lastControl, margin * 2 );
@@ -806,7 +851,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
     Label executeForEachRLab = new Label( wQueryComp, SWT.RIGHT );
     executeForEachRLab
-        .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.ExecuteForEachRow.Label" ) ); //$NON-NLS-1$
+      .setText( BaseMessages.getString( PKG, "MongoDbInputDialog.ExecuteForEachRow.Label" ) ); //$NON-NLS-1$
     props.setLook( executeForEachRLab );
     fd = new FormData();
     fd.left = new FormAttachment( 0, -margin );
@@ -842,7 +887,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     lastControl = m_queryIsPipelineBut;
 
     m_queryIsPipelineBut.addSelectionListener( new SelectionAdapter() {
-      @Override public void widgetSelected( SelectionEvent e ) {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
         updateQueryTitleInfo();
       }
     } );
@@ -859,8 +905,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     wlJsonQuery.setLayoutData( fdlJsonQuery );
 
     wJsonQuery =
-        new StyledTextComp( transMeta, wQueryComp, SWT.MULTI | SWT.LEFT | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL,
-            "" ); //$NON-NLS-1$
+      new StyledTextComp( transMeta, wQueryComp, SWT.MULTI | SWT.LEFT | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL,
+        "" ); //$NON-NLS-1$
     props.setLook( wJsonQuery, PropsUI.WIDGET_STYLE_FIXED );
     wJsonQuery.addModifyListener( lsMod );
 
@@ -917,7 +963,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     m_outputAsJson.setLayoutData( fd );
     lastControl = m_outputAsJson;
     m_outputAsJson.addSelectionListener( new SelectionAdapter() {
-      @Override public void widgetSelected( SelectionEvent e ) {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
         input.setChanged();
         wGet.setEnabled( !m_outputAsJson.getSelection() );
         wJsonField.setEnabled( m_outputAsJson.getSelection() );
@@ -953,7 +1000,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     fd.bottom = new FormAttachment( 100, 0 );
     wGet.setLayoutData( fd );
     wGet.addSelectionListener( new SelectionAdapter() {
-      @Override public void widgetSelected( SelectionEvent e ) {
+      @Override
+      public void widgetSelected( SelectionEvent e ) {
         // populate table from schema
         MongoDbInputMeta newMeta = (MongoDbInputMeta) input.clone();
         getFields( newMeta );
@@ -962,28 +1010,28 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
     // fields stuff
     final ColumnInfo[]
-        colinf =
-        new ColumnInfo[] {
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.FIELD_NAME" ), //$NON-NLS-1$
-              ColumnInfo.COLUMN_TYPE_TEXT, false ),
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.FIELD_PATH" ), //$NON-NLS-1$
-              ColumnInfo.COLUMN_TYPE_TEXT, false ),
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.FIELD_TYPE" ), //$NON-NLS-1$
-              ColumnInfo.COLUMN_TYPE_CCOMBO, false ),
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.FIELD_INDEXED" ), //$NON-NLS-1$
-              ColumnInfo.COLUMN_TYPE_TEXT, false ),
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.SAMPLE_ARRAYINFO" ), //$NON-NLS-1$
-              ColumnInfo.COLUMN_TYPE_TEXT, false ),
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.SAMPLE_PERCENTAGE" ), //$NON-NLS-1$
-              ColumnInfo.COLUMN_TYPE_TEXT, false ),
-          new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.SAMPLE_DISPARATE_TYPES" ),
-              //$NON-NLS-1$
-              ColumnInfo.COLUMN_TYPE_TEXT, false ), };
+      colinf =
+      new ColumnInfo[] {
+        new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.FIELD_NAME" ), //$NON-NLS-1$
+          ColumnInfo.COLUMN_TYPE_TEXT, false ),
+        new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.FIELD_PATH" ), //$NON-NLS-1$
+          ColumnInfo.COLUMN_TYPE_TEXT, false ),
+        new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.FIELD_TYPE" ), //$NON-NLS-1$
+          ColumnInfo.COLUMN_TYPE_CCOMBO, false ),
+        new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.FIELD_INDEXED" ), //$NON-NLS-1$
+          ColumnInfo.COLUMN_TYPE_TEXT, false ),
+        new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.SAMPLE_ARRAYINFO" ), //$NON-NLS-1$
+          ColumnInfo.COLUMN_TYPE_TEXT, false ),
+        new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.SAMPLE_PERCENTAGE" ), //$NON-NLS-1$
+          ColumnInfo.COLUMN_TYPE_TEXT, false ),
+        new ColumnInfo( BaseMessages.getString( PKG, "MongoDbInputDialog.Fields.SAMPLE_DISPARATE_TYPES" ),
+          //$NON-NLS-1$
+          ColumnInfo.COLUMN_TYPE_TEXT, false ), };
 
-    colinf[2].setComboValues( ValueMeta.getTypes() );
-    colinf[4].setReadOnly( true );
-    colinf[5].setReadOnly( true );
-    colinf[6].setReadOnly( true );
+    colinf[ 2 ].setComboValues( ValueMeta.getTypes() );
+    colinf[ 4 ].setReadOnly( true );
+    colinf[ 5 ].setReadOnly( true );
+    colinf[ 6 ].setReadOnly( true );
 
     m_fieldsView = new TableView( transMeta, wFieldsComp, SWT.FULL_SELECTION | SWT.MULTI, colinf, 1, lsMod, props );
 
@@ -1025,17 +1073,20 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
     // Add listeners
     lsCancel = new Listener() {
-      @Override public void handleEvent( Event e ) {
+      @Override
+      public void handleEvent( Event e ) {
         cancel();
       }
     };
     lsPreview = new Listener() {
-      @Override public void handleEvent( Event e ) {
+      @Override
+      public void handleEvent( Event e ) {
         preview();
       }
     };
     lsOK = new Listener() {
-      @Override public void handleEvent( Event e ) {
+      @Override
+      public void handleEvent( Event e ) {
         ok();
       }
     };
@@ -1045,7 +1096,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     wOK.addListener( SWT.Selection, lsOK );
 
     lsDef = new SelectionAdapter() {
-      @Override public void widgetDefaultSelected( SelectionEvent e ) {
+      @Override
+      public void widgetDefaultSelected( SelectionEvent e ) {
         ok();
       }
     };
@@ -1055,7 +1107,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
     // Detect X or ALT-F4 or something that kills this window...
     shell.addShellListener( new ShellAdapter() {
-      @Override public void shellClosed( ShellEvent e ) {
+      @Override
+      public void shellClosed( ShellEvent e ) {
         cancel();
       }
     } );
@@ -1083,6 +1136,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     wHostname.setText( Const.NVL( meta.getHostnames(), "" ) ); //$NON-NLS-1$
     wPort.setText( Const.NVL( meta.getPort(), "" ) ); //$NON-NLS-1$
     m_useAllReplicaSetMembersBut.setSelection( meta.getUseAllReplicaSetMembers() );
+    m_useMongoDBAtlasBut.setSelection( meta.getMongoDBAtlas() );
     m_dbAuthMec.setText( Const.NVL( meta.getAuthenticationMechanism(), "" ) );
     wDbName.setText( Const.NVL( meta.getDbName(), "" ) ); //$NON-NLS-1$
     wFieldsName.setText( Const.NVL( meta.getFieldsName(), "" ) ); //$NON-NLS-1$
@@ -1116,8 +1170,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
   private void updateQueryTitleInfo() {
     if ( m_queryIsPipelineBut.getSelection() ) {
       wlJsonQuery.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.JsonQuery.Label2" ) //$NON-NLS-1$
-          + ": db." //$NON-NLS-1$
-          + Const.NVL( wCollection.getText(), "n/a" ) + ".aggregate(..." ); //$NON-NLS-1$ //$NON-NLS-2$
+        + ": db." //$NON-NLS-1$
+        + Const.NVL( wCollection.getText(), "n/a" ) + ".aggregate(..." ); //$NON-NLS-1$ //$NON-NLS-2$
       wFieldsName.setEnabled( false );
     } else {
       wlJsonQuery.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.JsonQuery.Label" ) ); //$NON-NLS-1$
@@ -1136,6 +1190,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     meta.setHostnames( wHostname.getText() );
     meta.setPort( wPort.getText() );
     meta.setUseAllReplicaSetMembers( m_useAllReplicaSetMembersBut.getSelection() );
+    meta.setMongoDBAtlas( m_useMongoDBAtlasBut.getSelection() );
     meta.setDbName( wDbName.getText() );
     meta.setFieldsName( wFieldsName.getText() );
     meta.setCollection( wCollection.getText() );
@@ -1267,9 +1322,9 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
       index++;
     }
 
-    int[] indicesArray = new int[indicesToRemove.size()];
+    int[] indicesArray = new int[ indicesToRemove.size() ];
     for ( int i = 0; i < indicesArray.length; i++ ) {
-      indicesArray[i] = indicesToRemove.get( i );
+      indicesArray[ i ] = indicesToRemove.get( i );
     }
 
     for ( MongoField mongoField : fieldMap.values() ) {
@@ -1321,9 +1376,9 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
     if ( notOk ) {
       ShowMessageDialog
-          smd =
-          new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK, title, BaseMessages.getString( PKG,
-              "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs" ) ); //$NON-NLS-1$
+        smd =
+        new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK, title, BaseMessages.getString( PKG,
+          "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs" ) ); //$NON-NLS-1$
       smd.open();
     }
 
@@ -1333,17 +1388,17 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
   //Used to catch exceptions from discoverFields calls that come through the callback
   public void handleNotificationException( Exception exception ) {
     new ErrorDialog( shell, stepname,
-        BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.ErrorDuringSampling" ), exception ); //$NON-NLS-1$
+      BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.ErrorDuringSampling" ), exception ); //$NON-NLS-1$
   }
 
   private void getFields( MongoDbInputMeta meta ) {
     if ( !Const.isEmpty( wHostname.getText() ) && !Const.isEmpty( wDbName.getText() ) && !Const
-        .isEmpty( wCollection.getText() ) ) {
+      .isEmpty( wCollection.getText() ) ) {
       EnterNumberDialog
-          end =
-          new EnterNumberDialog( shell, 100, BaseMessages.getString( PKG, "MongoDbInputDialog.SampleDocuments.Title" ),
-              //$NON-NLS-1$
-              BaseMessages.getString( PKG, "MongoDbInputDialog.SampleDocuments.Message" ) ); //$NON-NLS-1$
+        end =
+        new EnterNumberDialog( shell, 100, BaseMessages.getString( PKG, "MongoDbInputDialog.SampleDocuments.Title" ),
+          //$NON-NLS-1$
+          BaseMessages.getString( PKG, "MongoDbInputDialog.SampleDocuments.Message" ) ); //$NON-NLS-1$
       int samples = end.open();
       if ( samples > 0 ) {
 
@@ -1356,7 +1411,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
         meta.setExecuteForEachIncomingRow( false );
 
         if ( !checkForUnresolved( meta, BaseMessages.getString( PKG,
-            "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs.SamplingTitle" ) ) ) {
+          "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs.SamplingTitle" ) ) ) {
           //$NON-NLS-1$
           return;
         }
@@ -1366,7 +1421,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
           meta.setExecuteForEachIncomingRow( current );
         } catch ( KettleException e ) {
           new ErrorDialog( shell, stepname,
-              BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.ErrorDuringSampling" ), e ); //$NON-NLS-1$
+            BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.ErrorDuringSampling" ), e ); //$NON-NLS-1$
         }
       }
     } else {
@@ -1384,11 +1439,11 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
       }
 
       ShowMessageDialog
-          smd =
-          new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK,
-              BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title" ),
-              BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails",
-                  missingConDetails ) ); //$NON-NLS-1$
+        smd =
+        new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK,
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title" ),
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails",
+            missingConDetails ) ); //$NON-NLS-1$
       smd.open();
     }
   }
@@ -1405,25 +1460,25 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     oneMeta.setExecuteForEachIncomingRow( false );
 
     if ( !checkForUnresolved( oneMeta, BaseMessages.getString( PKG,
-        "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs.PreviewTitle" ) ) ) { //$NON-NLS-1$
+      "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs.PreviewTitle" ) ) ) { //$NON-NLS-1$
       return;
     }
 
     TransMeta
-        previewMeta =
-        TransPreviewFactory.generatePreviewTransformation( transMeta, oneMeta, wStepname.getText() );
+      previewMeta =
+      TransPreviewFactory.generatePreviewTransformation( transMeta, oneMeta, wStepname.getText() );
 
     EnterNumberDialog
-        numberDialog =
-        new EnterNumberDialog( shell, props.getDefaultPreviewSize(),
-            BaseMessages.getString( PKG, "MongoDbInputDialog.PreviewSize.DialogTitle" ), //$NON-NLS-1$
-            BaseMessages.getString( PKG, "MongoDbInputDialog.PreviewSize.DialogMessage" ) ); //$NON-NLS-1$
+      numberDialog =
+      new EnterNumberDialog( shell, props.getDefaultPreviewSize(),
+        BaseMessages.getString( PKG, "MongoDbInputDialog.PreviewSize.DialogTitle" ), //$NON-NLS-1$
+        BaseMessages.getString( PKG, "MongoDbInputDialog.PreviewSize.DialogMessage" ) ); //$NON-NLS-1$
     int previewSize = numberDialog.open();
     if ( previewSize > 0 ) {
       TransPreviewProgressDialog
-          progressDialog =
-          new TransPreviewProgressDialog( shell, previewMeta, new String[] { wStepname.getText() },
-              new int[] { previewSize } );
+        progressDialog =
+        new TransPreviewProgressDialog( shell, previewMeta, new String[] { wStepname.getText() },
+          new int[] { previewSize } );
       progressDialog.open();
 
       Trans trans = progressDialog.getTrans();
@@ -1432,21 +1487,21 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
       if ( !progressDialog.isCancelled() ) {
         if ( trans.getResult() != null && trans.getResult().getNrErrors() > 0 ) {
           EnterTextDialog
-              etd =
-              new EnterTextDialog( shell, BaseMessages.getString( PKG, "System.Dialog.PreviewError.Title" ),
-                  //$NON-NLS-1$
-                  BaseMessages.getString( PKG, "System.Dialog.PreviewError.Message" ), //$NON-NLS-1$
-                  loggingText, true );
+            etd =
+            new EnterTextDialog( shell, BaseMessages.getString( PKG, "System.Dialog.PreviewError.Title" ),
+              //$NON-NLS-1$
+              BaseMessages.getString( PKG, "System.Dialog.PreviewError.Message" ), //$NON-NLS-1$
+              loggingText, true );
           etd.setReadOnly();
           etd.open();
         }
       }
 
       PreviewRowsDialog
-          prd =
-          new PreviewRowsDialog( shell, transMeta, SWT.NONE, wStepname.getText(),
-              progressDialog.getPreviewRowsMeta( wStepname.getText() ),
-              progressDialog.getPreviewRows( wStepname.getText() ), loggingText );
+        prd =
+        new PreviewRowsDialog( shell, transMeta, SWT.NONE, wStepname.getText(),
+          progressDialog.getPreviewRowsMeta( wStepname.getText() ),
+          progressDialog.getPreviewRows( wStepname.getText() ), loggingText );
       prd.open();
     }
   }
@@ -1476,17 +1531,17 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
       } catch ( Exception e ) {
         logError( BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.UnableToConnect" ), e ); //$NON-NLS-1$
         new ErrorDialog( shell, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage." + "UnableToConnect" ),
-            //$NON-NLS-1$ //$NON-NLS-2$
-            BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.UnableToConnect" ), e ); //$NON-NLS-1$
+          //$NON-NLS-1$ //$NON-NLS-2$
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.UnableToConnect" ), e ); //$NON-NLS-1$
       }
     } else {
       // popup some feedback
       ShowMessageDialog
-          smd =
-          new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK,
-              BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title" ),
-              BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails",
-                  "host name(s)" ) ); //$NON-NLS-1$
+        smd =
+        new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK,
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title" ),
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails",
+            "host name(s)" ) ); //$NON-NLS-1$
       smd.open();
     }
 
@@ -1521,8 +1576,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
       } catch ( Exception e ) {
         logError( BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.UnableToConnect" ), e ); //$NON-NLS-1$
         new ErrorDialog( shell, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage." + "UnableToConnect" ),
-            //$NON-NLS-1$ //$NON-NLS-2$
-            BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.UnableToConnect" ), e ); //$NON-NLS-1$
+          //$NON-NLS-1$ //$NON-NLS-2$
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.UnableToConnect" ), e ); //$NON-NLS-1$
       }
     } else {
       // popup some feedback
@@ -1535,11 +1590,11 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
         missingConnDetails += " database";
       }
       ShowMessageDialog
-          smd =
-          new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK,
-              BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title" ),
-              BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails",
-                  missingConnDetails ) ); //$NON-NLS-1$
+        smd =
+        new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK,
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title" ),
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails",
+            missingConnDetails ) ); //$NON-NLS-1$
       smd.open();
     }
 
@@ -1566,11 +1621,11 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
         if ( repSetTags.size() == 0 ) {
           ShowMessageDialog
-              smd =
-              new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK,
-                  BaseMessages.getString( PKG, "MongoDbInputDialog.Info.Message.NoTagSetsDefinedOnServer" ),
-                  BaseMessages
-                      .getString( PKG, "MongoDbInputDialog.Info.Message.NoTagSetsDefinedOnServer" ) ); //$NON-NLS-1$
+            smd =
+            new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK,
+              BaseMessages.getString( PKG, "MongoDbInputDialog.Info.Message.NoTagSetsDefinedOnServer" ),
+              BaseMessages
+                .getString( PKG, "MongoDbInputDialog.Info.Message.NoTagSetsDefinedOnServer" ) ); //$NON-NLS-1$
           smd.open();
         } else {
           this.setTagsTableFields( repSetTags );
@@ -1578,17 +1633,17 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
       } catch ( Exception e ) {
         logError( BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.UnableToConnect" ), e ); //$NON-NLS-1$
         new ErrorDialog( shell, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage." + "UnableToConnect" ),
-            //$NON-NLS-1$ //$NON-NLS-2$
-            BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.UnableToConnect" ), e ); //$NON-NLS-1$
+          //$NON-NLS-1$ //$NON-NLS-2$
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.UnableToConnect" ), e ); //$NON-NLS-1$
       }
     } else {
       // popup some feedback
       ShowMessageDialog
-          smd =
-          new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK,
-              BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title" ),
-              BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails",
-                  "host name(s)" ) ); //$NON-NLS-1$
+        smd =
+        new ShowMessageDialog( shell, SWT.ICON_WARNING | SWT.OK,
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails.Title" ),
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails",
+            "host name(s)" ) ); //$NON-NLS-1$
       smd.open();
     }
   }
@@ -1622,8 +1677,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
       m_tagsView.removeEmptyRows();
       m_tagsView.setRowNums();
     }
-  } 
-  
+  }
+
   private void addTagsToTable() {
     if (!Const.isEmpty(m_tagsCombo.getText())) {
       TableItem item = new TableItem(m_tagsView.table, SWT.NONE);
@@ -1696,14 +1751,14 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
             if ( satisfy.size() == 0 ) {
               logBasic( BaseMessages
-                  .getString( PKG, "MongoDbInputDialog.Info.Message.NoReplicaSetMembersMatchTagSets" ) ); //$NON-NLS-1$
+                .getString( PKG, "MongoDbInputDialog.Info.Message.NoReplicaSetMembersMatchTagSets" ) ); //$NON-NLS-1$
               ShowMessageDialog
-                  smd =
-                  new ShowMessageDialog( shell, SWT.ICON_INFORMATION | SWT.OK, BaseMessages
-                      .getString( PKG, "MongoDbInputDialog.Info.Message.NoReplicaSetMembersMatchTagSets.Title" ),
-                      //$NON-NLS-1$
-                      BaseMessages.getString( PKG,
-                          "MongoDbInputDialog.Info.Message.NoReplicaSetMembersMatchTagSets" ) ); //$NON-NLS-1$
+                smd =
+                new ShowMessageDialog( shell, SWT.ICON_INFORMATION | SWT.OK, BaseMessages
+                  .getString( PKG, "MongoDbInputDialog.Info.Message.NoReplicaSetMembersMatchTagSets.Title" ),
+                  //$NON-NLS-1$
+                  BaseMessages.getString( PKG,
+                    "MongoDbInputDialog.Info.Message.NoReplicaSetMembersMatchTagSets" ) ); //$NON-NLS-1$
               smd.open();
             } else {
               StringBuilder builder = new StringBuilder();
@@ -1713,49 +1768,49 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
               }
 
               ShowMessageDialog
-                  smd =
-                  new ShowMessageDialog( shell, SWT.ICON_INFORMATION | SWT.OK,
-                      BaseMessages.getString( PKG, "MongoDbInputDialog.Info.Message.MatchingReplicaSetMembers.Title" ),
-                      //$NON-NLS-1$
-                      builder.toString() );
+                smd =
+                new ShowMessageDialog( shell, SWT.ICON_INFORMATION | SWT.OK,
+                  BaseMessages.getString( PKG, "MongoDbInputDialog.Info.Message.MatchingReplicaSetMembers.Title" ),
+                  //$NON-NLS-1$
+                  builder.toString() );
               smd.open();
             }
           } else {
             // popup dialog saying that no connection details are available
             ShowMessageDialog
-                smd =
-                new ShowMessageDialog( shell, SWT.ICON_ERROR | SWT.OK,
-                    BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoConnectionDetailsSupplied.Title" ),
-                    //$NON-NLS-1$
-                    BaseMessages.getString( PKG,
-                        "MongoDbInputDialog.ErrorMessage.NoConnectionDetailsSupplied" ) ); //$NON-NLS-1$
+              smd =
+              new ShowMessageDialog( shell, SWT.ICON_ERROR | SWT.OK,
+                BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoConnectionDetailsSupplied.Title" ),
+                //$NON-NLS-1$
+                BaseMessages.getString( PKG,
+                  "MongoDbInputDialog.ErrorMessage.NoConnectionDetailsSupplied" ) ); //$NON-NLS-1$
             smd.open();
           }
 
         } catch ( KettleException ex ) {
           // popup an error dialog
           logError( BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.UnableToConnect" ),
-              ex ); //$NON-NLS-1$
+            ex ); //$NON-NLS-1$
           new ErrorDialog( shell, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage." + "UnableToConnect" ),
-              //$NON-NLS-1$ //$NON-NLS-2$
-              BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.UnableToConnect" ), ex ); //$NON-NLS-1$
+            //$NON-NLS-1$ //$NON-NLS-2$
+            BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.UnableToConnect" ), ex ); //$NON-NLS-1$
         }
       } else {
         // popup a dialog stating that there were no parseable tag sets
         ShowMessageDialog
-            smd =
-            new ShowMessageDialog( shell, SWT.ICON_ERROR | SWT.OK,
-                BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoParseableTagSets.Title" ), //$NON-NLS-1$
-                BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoParseableTagSets" ) ); //$NON-NLS-1$
+          smd =
+          new ShowMessageDialog( shell, SWT.ICON_ERROR | SWT.OK,
+            BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoParseableTagSets.Title" ), //$NON-NLS-1$
+            BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoParseableTagSets" ) ); //$NON-NLS-1$
         smd.open();
       }
     } else {
       // popup a dialog saying that there are no tag sets defined
       ShowMessageDialog
-          smd =
-          new ShowMessageDialog( shell, SWT.ICON_ERROR | SWT.OK,
-              BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoTagSetsDefined.Title" ), //$NON-NLS-1$
-              BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoTagSetsDefined" ) ); //$NON-NLS-1$
+        smd =
+        new ShowMessageDialog( shell, SWT.ICON_ERROR | SWT.OK,
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoTagSetsDefined.Title" ), //$NON-NLS-1$
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoTagSetsDefined" ) ); //$NON-NLS-1$
       smd.open();
     }
   }
@@ -1768,8 +1823,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
       TableItem item = m_tagsView.table.getItem( i );
       String t = item.getText( 1 ).trim();
       concatenated =
-          concatenated + ( ( concatenated.length() > 0 ) ? ( ( !concatenated.endsWith( "," ) ) ? ", " : "" ) : "" )
-              + t; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+        concatenated + ( ( concatenated.length() > 0 ) ? ( ( !concatenated.endsWith( "," ) ) ? ", " : "" ) : "" )
+          + t; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
     }
     TableItem item = new TableItem( m_tagsView.table, SWT.NONE );
     item.setText( 1, concatenated );
@@ -1792,10 +1847,12 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
       MongoDbInputData.getMongoDbInputDiscoverFieldsHolder().getMongoDbInputDiscoverFields()
         .discoverFields( propertiesBuilder, db, collection, query, fields, meta.getQueryIsPipeline(), numDocsToSample,
           meta, new DiscoverFieldsCallback() {
-            @Override public void notifyFields( final List<MongoField> fields ) {
+            @Override
+            public void notifyFields( final List<MongoField> fields ) {
               if ( fields.size() > 0 ) {
                 Spoon.getInstance().getDisplay().asyncExec( new Runnable() {
-                  @Override public void run() {
+                  @Override
+                  public void run() {
                     if ( !mongoDialog.isTableDisposed() ) {
                       meta.setMongoFields( fields );
                       mongoDialog.updateFieldTableFields( meta.getMongoFields() );
@@ -1805,7 +1862,8 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
               }
             }
 
-            @Override public void notifyException( Exception exception ) {
+            @Override
+            public void notifyException( Exception exception ) {
               mongoDialog.handleNotificationException( exception );
             }
           } );
