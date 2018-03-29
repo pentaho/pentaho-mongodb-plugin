@@ -1,5 +1,5 @@
 /*!
-* Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+* Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 
 package org.pentaho.di.trans.steps.mongodbinput;
 
-import com.mongodb.AggregationOutput;
+import com.mongodb.Cursor;
 import com.mongodb.DBObject;
 import com.mongodb.ServerAddress;
 import com.mongodb.util.JSON;
@@ -188,8 +188,9 @@ public class MongoDbInput extends BaseStep implements StepInterface {
           remainder = new DBObject[0];
         }
 
-        AggregationOutput result = data.collection.aggregate( firstP, remainder );
-        data.m_pipelineResult = result.results().iterator();
+        // Utilize MongoDB cursor class
+        Cursor cursor = data.collection.aggregate( firstP, remainder );
+        data.m_pipelineResult = cursor;
       } else {
         if ( meta.getExecuteForEachIncomingRow() && m_currentInputRowDrivingQuery != null ) {
           // do field value substitution
