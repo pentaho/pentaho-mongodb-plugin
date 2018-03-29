@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 
 package org.pentaho.mongo.wrapper.field;
 
-import com.mongodb.AggregationOptions;
+import com.mongodb.AggregationOutput;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
-import com.mongodb.Cursor;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
@@ -448,8 +447,16 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
 
     query = query + ", {$limit : " + numDocsToSample + "}"; //$NON-NLS-1$ //$NON-NLS-2$
     List<DBObject> samplePipe = jsonPipelineToDBObjectList( query );
-    Cursor cursor = collection.aggregate( samplePipe, AggregationOptions.builder().build() );
-    return cursor;
+
+    DBObject first = samplePipe.get( 0 );
+    DBObject[] remainder = new DBObject[ samplePipe.size() - 1 ];
+    for ( int i = 1; i < samplePipe.size(); i++ ) {
+      remainder[ i - 1 ] = samplePipe.get( i );
+    }
+
+    AggregationOutput result = collection.aggregate( first, remainder );
+
+    return result.results().iterator();
   }
 
 

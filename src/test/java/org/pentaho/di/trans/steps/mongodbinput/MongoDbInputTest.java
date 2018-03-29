@@ -1,5 +1,5 @@
 /*!
-* Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
+* Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -116,14 +116,18 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     DBObject[] remainder = parts.length > 1
         ? new DBObject[] { (DBObject) JSON.parse( parts[1] ) }
         : new DBObject[0];
-    when( mongoCollectionWrapper.aggregate( dbObjQuery, remainder ) ).thenReturn( cursor );
+    when( mongoCollectionWrapper.aggregate( dbObjQuery, remainder ) ).thenReturn( results );
+    Iterable iterableResults = mock( Iterable.class );
+    Iterator resultsIterator = mock( Iterator.class );
+    when( iterableResults.iterator() ).thenReturn( resultsIterator );
+    when( results.results() ).thenReturn( iterableResults );
 
     dbInput.init( stepMetaInterface, stepDataInterface );
     dbInput.processRow( stepMetaInterface, stepDataInterface );
 
     verify( stepDataInterface ).init();
     verify( mongoCollectionWrapper ).aggregate( dbObjQuery, remainder );
-    assertEquals( cursor, stepDataInterface.m_pipelineResult );
+    assertEquals( stepDataInterface.m_pipelineResult, resultsIterator );
   }
 
   @Test public void testSimpleFind() throws KettleException, MongoDbException {
