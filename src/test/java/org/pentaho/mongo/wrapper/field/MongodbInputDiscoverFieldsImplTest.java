@@ -1,7 +1,7 @@
 /*!
  * HITACHI VANTARA PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2018 Hitachi Vantara. All rights reserved.
+ * Copyright 2002 - 2017 Hitachi Vantara. All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Hitachi Vantara and its licensors. The intellectual
@@ -22,7 +22,7 @@
 
 package org.pentaho.mongo.wrapper.field;
 
-import com.mongodb.AggregationOptions;
+import com.mongodb.AggregationOutput;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -55,6 +55,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -178,24 +179,21 @@ public class MongodbInputDiscoverFieldsImplTest {
   @Test public void testPipelineQueryIsLimited() throws KettleException, MongoDbException {
     setupPerform();
 
-    String query = "{$sort : 1}";
+    AggregationOutput aggOutput = mock( AggregationOutput.class );
+    Iterable<DBObject> results = mock( Iterable.class );
+    when( aggOutput.results() ).thenReturn( results );
+    when( results.iterator() ).thenReturn( mock( Iterator.class ) );
 
-    // Setup DBObjects collection
-    List<DBObject> dbObjects = new ArrayList<DBObject>();
+    String query = "{$sort : 1}";
     DBObject firstOp = (DBObject) JSON.parse( query );
     DBObject[] remainder = { new BasicDBObject( "$limit", NUM_DOCS_TO_SAMPLE ) };
-    dbObjects.add( firstOp );
-    Collections.addAll( dbObjects, remainder );
-    AggregationOptions options = AggregationOptions.builder().build();
-
-    //when( MongodbInputDiscoverFieldsImpl.jsonPipelineToDBObjectList( query ) ).thenReturn( dbObjects );
-    when( collection.aggregate( anyList(), any( AggregationOptions.class ) ) )
-        .thenReturn( cursor );
+    when( collection.aggregate( firstOp, remainder ) )
+        .thenReturn( aggOutput );
 
     discoverFields.discoverFields( new MongoProperties.Builder(), "mydb", "mycollection", query, "", true,
         NUM_DOCS_TO_SAMPLE, inputMeta );
 
-    verify( collection ).aggregate( anyList(), any( AggregationOptions.class ) );
+    verify( collection ).aggregate( firstOp, remainder );
   }
 
   @Test ( expected = KettleException.class )

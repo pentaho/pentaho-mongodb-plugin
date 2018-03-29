@@ -1,7 +1,7 @@
 /*!
  * HITACHI VANTARA PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2018 Hitachi Vantara. All rights reserved.
+ * Copyright 2002 - 2017 Hitachi Vantara. All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Hitachi Vantara and its licensors. The intellectual
@@ -22,7 +22,7 @@
 
 package org.pentaho.di.trans.steps.mongodbinput;
 
-import com.mongodb.Cursor;
+import com.mongodb.AggregationOutput;
 import com.mongodb.DBObject;
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
@@ -62,7 +62,7 @@ public class BaseMongoDbStepTest {
   @Mock protected MongoClientWrapper mongoClientWrapper;
   @Mock protected MongoCollectionWrapper mongoCollectionWrapper;
   @Mock protected LogChannelInterfaceFactory logChannelFactory;
-  @Mock protected Cursor cursor;
+  @Mock protected AggregationOutput results;
   @Captor protected ArgumentCaptor<String> stringCaptor;
   @Captor protected ArgumentCaptor<DBObject> dbObjectCaptor;
   @Captor protected ArgumentCaptor<Throwable> throwableCaptor;
