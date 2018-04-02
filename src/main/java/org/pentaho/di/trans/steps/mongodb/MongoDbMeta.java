@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,9 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
    */
   @Injection( name = "TAG_SET" )
   private List<String> m_readPrefTagSets;
+
+  @Injection( name = "USE_SSL_SOCKET_FACTORY" )
+  private boolean m_useSSLSocketFactory;
 
   /**
    * default = 1 (standalone or primary acknowledges writes; -1 no
@@ -363,4 +366,13 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   public void setAuthenticationMechanism( String authenticationMechanism ) {
     this.authenticationMechanism = authenticationMechanism;
   }
+
+  public boolean isUseSSLSocketFactory() {
+    return m_useSSLSocketFactory;
+  }
+
+  public void setUseSSLSocketFactory( boolean value ) {
+    this.m_useSSLSocketFactory = value;
+  }
+
 }
