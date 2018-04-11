@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 
@@ -183,6 +184,11 @@ public class MongoField implements Comparable<MongoField> {
       case ValueMetaInterface.TYPE_BINARY:
         if ( fieldValue instanceof Binary ) {
           fieldValue = ( (Binary) fieldValue ).getData();
+        } else if ( fieldValue instanceof byte[] ) {
+          byte[] castValue = (byte[]) fieldValue;
+          byte[] copyValue = new byte[ castValue.length ];
+          System.arraycopy( castValue, 0, copyValue, 0, copyValue.length );
+          fieldValue = copyValue;
         } else {
           fieldValue = fieldValue.toString().getBytes();
         }
