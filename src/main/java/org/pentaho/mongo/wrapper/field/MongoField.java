@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,6 +183,14 @@ public class MongoField implements Comparable<MongoField> {
       case ValueMetaInterface.TYPE_BINARY:
         if ( fieldValue instanceof Binary ) {
           fieldValue = ( (Binary) fieldValue ).getData();
+        } else if ( fieldValue instanceof byte[] ) {
+          //Leave fieldValue alone if it is a byte[], or defensively copy uncommenting
+          /*
+          byte[] castValue = (byte[]) fieldValue;
+          byte[] copyValue = new byte[ castValue.length ];
+          System.arraycopy( castValue, 0, copyValue, 0, copyValue.length );
+          fieldValue = copyValue;
+          */
         } else {
           fieldValue = fieldValue.toString().getBytes();
         }

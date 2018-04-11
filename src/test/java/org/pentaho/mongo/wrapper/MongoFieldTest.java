@@ -1,7 +1,7 @@
 /*!
  * HITACHI VANTARA PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2017 Hitachi Vantara. All rights reserved.
+ * Copyright 2002 - 2018 Hitachi Vantara. All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Hitachi Vantara and its licensors. The intellectual
@@ -108,8 +108,9 @@ public class MongoFieldTest {
     initField( "Binary" );
     byte[] data = new byte[] { 'a', 'b', 'c' };
     assertThat( field.getKettleValue( new Binary( data ) ), equalTo( (Object) data ) );
+    assertThat( (byte[]) field.getKettleValue( data ), equalTo( data ) );
     assertThat( field.getKettleValue( "abc" ), equalTo( (Object) data ) );
-
+    
     initField( "Date" );
     assertThat( field.getKettleValue( date ), equalTo( (Object) date ) );
     assertThat( field.getKettleValue( date.getTime() ), equalTo( (Object) date ) );
