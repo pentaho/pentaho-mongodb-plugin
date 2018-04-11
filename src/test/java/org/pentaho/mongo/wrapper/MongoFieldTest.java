@@ -108,8 +108,9 @@ public class MongoFieldTest {
     initField( "Binary" );
     byte[] data = new byte[] { 'a', 'b', 'c' };
     assertThat( field.getKettleValue( new Binary( data ) ), equalTo( (Object) data ) );
+    assertThat( (byte[]) field.getKettleValue( data ), equalTo( data ) );
     assertThat( field.getKettleValue( "abc" ), equalTo( (Object) data ) );
-
+    
     initField( "Date" );
     assertThat( field.getKettleValue( date ), equalTo( (Object) date ) );
     assertThat( field.getKettleValue( date.getTime() ), equalTo( (Object) date ) );
