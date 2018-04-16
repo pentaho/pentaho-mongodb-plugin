@@ -633,7 +633,6 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     updateLab.setLayoutData( fd );
 
     m_updateBut = new Button( wOutputComp, SWT.CHECK );
-    m_updateBut = new Button( wOutputComp, SWT.CHECK );
     props.setLook( m_updateBut );
     m_updateBut.setToolTipText( getString( "MongoDbOutputDialog.Update.TipText" ) ); //$NON-NLS-1$
     fd = new FormData();
