@@ -56,7 +56,9 @@ import java.util.List;
  * @since 4.2.0-M1
  */
 @Step( id = "MongoDbInput", image = "mongodb-input.svg", name = "MongoDB Input",
-    description = "Reads from a Mongo DB collection", documentationUrl = "http://wiki.pentaho.com/display/EAI/MongoDB+Input", categoryDescription = "Big Data" )
+  description = "Reads from a Mongo DB collection",
+  documentationUrl = "Products/Data_Integration/Transformation_Step_Reference/MongoDB_Input",
+  categoryDescription = "Big Data" )
 @InjectionSupported( localizationPrefix = "MongoDbInput.Injection.", groups = ( "FIELDS" ) )
 public class MongoDbInputMeta extends MongoDbMeta {
   protected static Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes
