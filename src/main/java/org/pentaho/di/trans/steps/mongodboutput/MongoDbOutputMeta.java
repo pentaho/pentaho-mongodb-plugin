@@ -55,7 +55,9 @@ import java.util.List;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  */
 @Step( id = "MongoDbOutput", image = "MongoDB.svg", name = "MongoDB Output",
-    description = "Writes to a Mongo DB collection", documentationUrl = "http://wiki.pentaho.com/display/EAI/MongoDB+Output", categoryDescription = "Big Data" )
+  description = "Writes to a Mongo DB collection",
+  documentationUrl = "Products/Data_Integration/Transformation_Step_Reference/MongoDB_Output",
+  categoryDescription = "Big Data" )
 @InjectionSupported( localizationPrefix = "MongoDbOutput.Injection.", groups = { "FIELDS", "INDEXES" } )
 public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface {
 
