@@ -55,7 +55,7 @@ import java.util.List;
  * @author matt
  * @since 4.2.0-M1
  */
-@Step( id = "MongoDbInput", image = "mongodb-input.svg", name = "MongoDB Input",
+@Step( id = "MongoDbInput", image = "mongodb-input.svg", name = "MongoDB input",
   description = "Reads from a Mongo DB collection",
   documentationUrl = "Products/Data_Integration/Transformation_Step_Reference/MongoDB_Input",
   categoryDescription = "Big Data" )

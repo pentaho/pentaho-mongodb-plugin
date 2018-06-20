@@ -26,7 +26,7 @@
     <bean id="inputMeta" class="org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta" scope="prototype"/>
     <bean id="inputPlugin" class="org.pentaho.di.osgi.OSGIPlugin" scope="prototype">
         <property name="mainType" value="org.pentaho.di.trans.step.StepMetaInterface"/>
-        <property name="name" value="MongoDB Input"/>
+        <property name="name" value="MongoDB input"/>
         <property name="ID" value="MongoDbInput"/>
         <property name="imageFile" value="mongodb-input.svg"/>
         <property name="description" value="Reads from a Mongo DB collection"/>
@@ -49,7 +49,7 @@
     <bean id="outputMeta" class="org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputMeta" scope="prototype"/>
     <bean id="outputPlugin" class="org.pentaho.di.osgi.OSGIPlugin" scope="prototype">
         <property name="mainType" value="org.pentaho.di.trans.step.StepMetaInterface"/>
-        <property name="name" value="MongoDB Output"/>
+        <property name="name" value="MongoDB output"/>
         <property name="ID" value="MongoDbOutput"/>
         <property name="imageFile" value="MongoDB.svg"/>
         <property name="description" value="Writes to a Mongo DB collection"/>
