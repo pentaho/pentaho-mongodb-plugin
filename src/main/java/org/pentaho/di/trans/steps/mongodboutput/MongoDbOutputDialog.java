@@ -382,6 +382,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     } );
     m_dbAuthMec.add( "SCRAM-SHA-1" );
     m_dbAuthMec.add( "MONGODB-CR" );
+    m_dbAuthMec.add( "PLAIN" );
     fd = new FormData();
     fd.left = new FormAttachment( middle, 0 );
     fd.top = new FormAttachment( lastControl, margin );
