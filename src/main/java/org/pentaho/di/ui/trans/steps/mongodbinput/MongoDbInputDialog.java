@@ -112,6 +112,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
   private StyledTextComp wJsonQuery;
   private Label wlJsonQuery;
   private Button m_queryIsPipelineBut;
+  private Button m_aggAllowDiskBut;
 
   private TextVar wAuthDbName;
   private TextVar wAuthUser;
@@ -865,6 +866,15 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
         updateQueryTitleInfo();
       }
     } );
+    
+    m_aggAllowDiskBut = new Button(wQueryComp, SWT.CHECK);
+    props.setLook(m_aggAllowDiskBut);
+    fd = new FormData();
+    fd.bottom = new FormAttachment(lastControl, -margin);
+    fd.right = new FormAttachment(middle, 0);
+    fd.left = new FormAttachment(100, 0);
+    m_aggAllowDiskBut.setLayoutData(fd);
+    lastControl = m_aggAllowDiskBut;
 
     // JSON Query input ...
     //
@@ -1119,6 +1129,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     m_useSSLSocketFactory.setSelection( meta.isUseSSLSocketFactory() );
     m_readPreference.setText( Const.NVL( meta.getReadPreference(), "" ) ); //$NON-NLS-1$
     m_queryIsPipelineBut.setSelection( meta.getQueryIsPipeline() );
+    m_aggAllowDiskBut.setSelection( meta.getAggregationAllowDisk() );
     m_outputAsJson.setSelection( meta.getOutputJson() );
     m_executeForEachRowBut.setSelection( meta.getExecuteForEachIncomingRow() );
 
@@ -1139,9 +1150,11 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
           + ": db." //$NON-NLS-1$
           + Const.NVL( wCollection.getText(), "n/a" ) + ".aggregate(..." ); //$NON-NLS-1$ //$NON-NLS-2$
       wFieldsName.setEnabled( false );
+      m_aggAllowDiskBut.setEnabled(true);
     } else {
       wlJsonQuery.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.JsonQuery.Label" ) ); //$NON-NLS-1$
       wFieldsName.setEnabled( true );
+      m_aggAllowDiskBut.setEnabled(false);
     }
   }
 
@@ -1173,6 +1186,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     meta.setReadPreference( m_readPreference.getText() );
     meta.setOutputJson( m_outputAsJson.getSelection() );
     meta.setQueryIsPipeline( m_queryIsPipelineBut.getSelection() );
+    meta.setAggegationAllowDisk( m_aggAllowDiskBut.getSelection() );
     meta.setExecuteForEachIncomingRow( m_executeForEachRowBut.getSelection() );
 
     int numNonEmpty = m_fieldsView.nrNonEmpty();

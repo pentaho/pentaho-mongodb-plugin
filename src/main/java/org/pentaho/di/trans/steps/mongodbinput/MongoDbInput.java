@@ -189,7 +189,13 @@ public class MongoDbInput extends BaseStep implements StepInterface {
         }
 
         // Utilize MongoDB cursor class
-        Cursor cursor = data.collection.aggregate( firstP, remainder );
+        Cursor cursor;
+        if (meta.getAggregationAllowDisk()) {
+        	cursor = data.collection.aggregate( firstP, remainder, meta.getAggregationAllowDisk() );
+        } else {
+        	cursor = data.collection.aggregate( firstP, remainder );
+        }
+        
         data.m_pipelineResult = cursor;
       } else {
         if ( meta.getExecuteForEachIncomingRow() && m_currentInputRowDrivingQuery != null ) {
