@@ -867,6 +867,15 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
       }
     } );
     
+    Label aggAllowDiskL = new Label(wQueryComp, SWT.RIGHT);
+    aggAllowDiskL.setText( BaseMessages.getString(PKG, "MongoDbInputDialog.AllowDiskUsage.Label"));
+    props.setLook( aggAllowDiskL );
+    fd = new FormData();
+    fd.bottom = new FormAttachment(lastControl, -margin);
+    fd.left = new FormAttachment(0, -margin);
+    fd.right = new FormAttachment(middle, -margin);
+    aggAllowDiskL.setLayoutData(aggAllowDiskL);
+    
     m_aggAllowDiskBut = new Button(wQueryComp, SWT.CHECK);
     props.setLook(m_aggAllowDiskBut);
     fd = new FormData();
