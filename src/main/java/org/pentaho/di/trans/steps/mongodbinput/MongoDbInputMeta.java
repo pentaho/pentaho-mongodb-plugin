@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,13 +51,13 @@ import java.util.List;
 
 /**
  * Created on 8-apr-2011
- * 
+ *
  * @author matt
  * @since 4.2.0-M1
  */
 @Step( id = "MongoDbInput", image = "mongodb-input.svg", name = "MongoDB input",
   description = "Reads from a Mongo DB collection",
-  documentationUrl = "Products/Data_Integration/Transformation_Step_Reference/MongoDB_Input",
+  documentationUrl = "Products/MongoDB_Input",
   categoryDescription = "Big Data" )
 @InjectionSupported( localizationPrefix = "MongoDbInput.Injection.", groups = ( "FIELDS" ) )
 public class MongoDbInputMeta extends MongoDbMeta {
@@ -112,8 +112,8 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
   private void readData( Node stepnode ) throws KettleXMLException {
     try {
-      setHostnames( XMLHandler.getTagValue( stepnode, "hostname" ) ); //$NON-NLS-1$ 
-      setPort( XMLHandler.getTagValue( stepnode, "port" ) ); //$NON-NLS-1$ 
+      setHostnames( XMLHandler.getTagValue( stepnode, "hostname" ) ); //$NON-NLS-1$
+      setPort( XMLHandler.getTagValue( stepnode, "port" ) ); //$NON-NLS-1$
       setDbName( XMLHandler.getTagValue( stepnode, "db_name" ) ); //$NON-NLS-1$
       fields = XMLHandler.getTagValue( stepnode, "fields_name" ); //$NON-NLS-1$
       setCollection( XMLHandler.getTagValue( stepnode, "collection" ) ); //$NON-NLS-1$
@@ -503,7 +503,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
   /**
    * Set whether to output just a single field as JSON
-   * 
+   *
    * @param outputJson
    *          true if a single field containing JSON is to be output
    */
@@ -513,7 +513,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
   /**
    * Get whether to output just a single field as JSON
-   * 
+   *
    * @return true if a single field containing JSON is to be output
    */
   public boolean getOutputJson() {
@@ -522,7 +522,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
   /**
    * Set whether the supplied query is actually a pipeline specification
-   * 
+   *
    * @param q
    *          true if the supplied query is a pipeline specification
    */
@@ -532,7 +532,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
   /**
    * Get whether the supplied query is actually a pipeline specification
-   * 
+   *
    * @true true if the supplied query is a pipeline specification
    */
   public boolean getQueryIsPipeline() {
