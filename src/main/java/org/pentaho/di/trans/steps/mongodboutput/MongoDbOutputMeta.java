@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,12 +51,12 @@ import java.util.List;
  * Class providing an output step for writing data to a MongoDB collection. Supports insert, truncate, upsert,
  * multi-update (update all matching docs) and modifier update (update only certain fields) operations. Can also create
  * and drop indexes based on one or more fields.
- * 
+ *
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  */
 @Step( id = "MongoDbOutput", image = "MongoDB.svg", name = "MongoDB output",
   description = "Writes to a Mongo DB collection",
-  documentationUrl = "Products/Data_Integration/Transformation_Step_Reference/MongoDB_Output",
+  documentationUrl = "Products/MongoDB_Output",
   categoryDescription = "Big Data" )
 @InjectionSupported( localizationPrefix = "MongoDbOutput.Injection.", groups = { "FIELDS", "INDEXES" } )
 public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface {
@@ -65,7 +65,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Class encapsulating paths to document fields
-   * 
+   *
    * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
    */
   public static class MongoField {
@@ -97,9 +97,9 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     /**
      * Ignored if not doing a modifier update since all mongo paths are involved in a standard upsert. If null/empty
      * then this field is not being updated in the modifier update case.
-     * 
+     *
      * $set $inc $push - append value to array (or set to [value] if field doesn't exist)
-     * 
+     *
      * (support any others?)
      */
     @Injection( name = "MODIFIER_OPERATION", group = "FIELDS" )
@@ -175,7 +175,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Class encapsulating index definitions
-   * 
+   *
    * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
    */
   public static class MongoIndex {
@@ -183,7 +183,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     /**
      * Dot notation for accessing a fields - e.g. person.address.street. Can also specify entire embedded documents as
      * an index (rather than a primitive key) - e.g. person.address.
-     * 
+     *
      * Multiple fields are comma-separated followed by an optional "direction" indicator for the index (1 or -1). If
      * omitted, direction is assumed to be 1.
      */
@@ -233,7 +233,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
    * Modifier update involves updating only some fields and is efficient because of low network overhead. Is also
    * particularly efficient for $incr operations since the queried object does not have to be returned in order to
    * increment the field and then saved again.
-   * 
+   *
    * If modifier update is false, then the standard update/insert operation is performed which involves replacing the
    * matched object with a new object involving all the user-defined mongo paths
    */
@@ -278,7 +278,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Set the list of document paths
-   * 
+   *
    * @param mongoFields
    *          the list of document paths
    */
@@ -288,7 +288,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Get the list of document paths
-   * 
+   *
    * @return the list of document paths
    */
   public List<MongoField> getMongoFields() {
@@ -297,7 +297,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Set the list of document indexes for creation/dropping
-   * 
+   *
    * @param mongoIndexes
    *          the list of indexes
    */
@@ -307,7 +307,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Get the list of document indexes for creation/dropping
-   * 
+   *
    * @return the list of indexes
    */
   public List<MongoIndex> getMongoIndexes() {
@@ -315,7 +315,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
   }
 
   /**
-   * 
+   *
    * @param r
    *          the number of retry attempts to make
    */
@@ -325,7 +325,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Get the number of retry attempts to make if a particular write operation fails
-   * 
+   *
    * @return the number of retry attempts to make
    */
   public String getWriteRetries() {
@@ -334,7 +334,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Set the delay (in seconds) between write retry attempts
-   * 
+   *
    * @param d
    *          the delay in seconds between retry attempts
    */
@@ -344,7 +344,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Get the delay (in seconds) between write retry attempts
-   * 
+   *
    * @return the delay in seconds between retry attempts
    */
   public String getWriteRetryDelay() {
@@ -353,7 +353,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Set whether updates (rather than inserts) are to be performed
-   * 
+   *
    * @param update
    */
   public void setUpdate( boolean update ) {
@@ -362,7 +362,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Get whether updates (rather than inserts) are to be performed
-   * 
+   *
    * @return true if updates are to be performed
    */
   public boolean getUpdate() {
@@ -371,7 +371,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Set whether to upsert rather than update
-   * 
+   *
    * @param upsert
    *          true if we'll upsert rather than update
    */
@@ -381,7 +381,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Get whether to upsert rather than update
-   * 
+   *
    * @return true if we'll upsert rather than update
    */
   public boolean getUpsert() {
@@ -390,7 +390,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Set whether the upsert should update all matching records rather than just the first.
-   * 
+   *
    * @param multi
    *          true if all matching records get updated when each row is upserted
    */
@@ -400,7 +400,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Get whether the upsert should update all matching records rather than just the first.
-   * 
+   *
    * @return true if all matching records get updated when each row is upserted
    */
   public boolean getMulti() {
@@ -410,7 +410,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
   /**
    * Set whether the upsert operation is a modifier update - i.e where only specified fields in each document get
    * modified rather than a whole document replace.
-   * 
+   *
    * @param u
    *          true if the upsert operation is to be a modifier update
    */
@@ -421,7 +421,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
   /**
    * Get whether the upsert operation is a modifier update - i.e where only specified fields in each document get
    * modified rather than a whole document replace.
-   * 
+   *
    * @return true if the upsert operation is to be a modifier update
    */
   public boolean getModifierUpdate() {
@@ -430,7 +430,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Set whether to truncate the collection before inserting
-   * 
+   *
    * @param truncate
    *          true if the all records in the collection are to be deleted
    */
@@ -440,7 +440,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Get whether to truncate the collection before inserting
-   * 
+   *
    * @return true if the all records in the collection are to be deleted
    */
   public boolean getTruncate() {
@@ -449,7 +449,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Get the batch insert size
-   * 
+   *
    * @return the batch insert size
    */
   public String getBatchInsertSize() {
@@ -458,7 +458,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /**
    * Set the batch insert size
-   * 
+   *
    * @param size
    *          the batch insert size
    */
@@ -686,7 +686,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     // for backwards compatibility with older ktrs
     String update = XMLHandler.getTagValue( stepnode, "update" );
     if ( !Const.isEmpty( update ) ) {
-      m_update = update.equalsIgnoreCase( "Y" ); //$NON-NLS-1$ 
+      m_update = update.equalsIgnoreCase( "Y" ); //$NON-NLS-1$
     }
 
     m_upsert = XMLHandler.getTagValue( stepnode, "upsert" ).equalsIgnoreCase( "Y" ); //$NON-NLS-1$ //$NON-NLS-2$
@@ -961,7 +961,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see org.pentaho.di.trans.step.BaseStepMeta#getDialogClassName()
    */
   @Override
@@ -971,7 +971,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see org.pentaho.di.trans.step.BaseStepMeta#supportsErrorHandling()
    */
   @Override
