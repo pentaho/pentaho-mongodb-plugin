@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 import com.mongodb.WriteResult;
 import junit.framework.Assert;
+import com.mongodb.util.JSON;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
@@ -176,7 +177,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
-    assertEquals( result.toString(), "{ \"field1\" : \"value1\" , \"field2\" : 12}" );
+    assertEquals( JSON.serialize( result ), "{ \"field1\" : \"value1\" , \"field2\" : 12}" );
   }
 
   /**
@@ -220,7 +221,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
     // here we expect that field1 does *not* occur twice in the update object
-    assertEquals( result.toString(), "{ \"field1\" : \"value1\" , \"field2\" : 12}" );
+    assertEquals( JSON.serialize( result ), "{ \"field1\" : \"value1\" , \"field2\" : 12}" );
   }
 
   @Test public void testTopLevelObjectStructureNoNestedDocs() throws Exception {
@@ -241,8 +242,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
-    assertEquals( result.toString(), "{ \"field1\" : \"value1\" , \"field2\" : 12}" );
-
+    assertEquals( JSON.serialize( result ), "{ \"field1\" : \"value1\" , \"field2\" : 12}" );
   }
 
   @Test public void testTopLevelArrayStructureWithPrimitives() throws Exception {
@@ -263,7 +263,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.ARRAY, false );
 
-    assertEquals( result.toString(), "[ \"value1\" , 12]" );
+    assertEquals( JSON.serialize( result ), "[ \"value1\" , 12]" );
   }
 
   @Test public void testTopLevelArrayStructureWithObjects() throws Exception {
@@ -284,7 +284,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.ARRAY, false );
 
-    assertEquals( result.toString(), "[ { \"field1\" : \"value1\"} , { \"field2\" : 12}]" );
+    assertEquals( JSON.serialize( result ), "[ { \"field1\" : \"value1\"} , { \"field2\" : 12}]" );
   }
 
   @Test public void testTopLevelArrayStructureContainingOneObjectMutipleFields() throws Exception {
@@ -305,7 +305,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.ARRAY, false );
 
-    assertEquals( result.toString(), "[ { \"field1\" : \"value1\" , \"field2\" : 12}]" );
+    assertEquals( JSON.serialize( result ), "[ { \"field1\" : \"value1\" , \"field2\" : 12}]" );
   }
 
   @Test public void testTopLevelArrayStructureContainingObjectWithArray() throws Exception {
@@ -338,7 +338,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.ARRAY, false );
 
-    assertEquals( result.toString(), "[ { \"inner\" : [ { \"field1\" : \"value1\"} , { \"field2\" : 12}]}]" );
+    assertEquals( JSON.serialize( result ), "[ { \"inner\" : [ { \"field1\" : \"value1\"} , { \"field2\" : 12}]}]" );
   }
 
   @Test public void testTopLevelObjectStructureOneLevelNestedDoc() throws Exception {
@@ -359,7 +359,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
-    assertEquals( result.toString(), "{ \"field1\" : \"value1\" , \"nestedDoc\" : { \"field2\" : 12}}" );
+    assertEquals( JSON.serialize( result ), "{ \"field1\" : \"value1\" , \"nestedDoc\" : { \"field2\" : 12}}" );
   }
 
   @Test public void testTopLevelObjectStructureTwoLevelNested() throws Exception {
@@ -392,7 +392,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
-    assertEquals( result.toString(),
+    assertEquals( JSON.serialize( result ),
       "{ \"nestedDoc\" : { \"secondNested\" : { \"field1\" : \"value1\"} , \"field2\" : 12}}" );
   }
 
@@ -467,7 +467,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     assertEquals( setOpp.keySet().size(), 1 );
 
     // check the resulting update structure
-    assertEquals( modifierUpdate.toString(),
+    assertEquals( JSON.serialize( modifierUpdate ),
       "{ \"$set\" : { \"bob.fred\" : [ { \"george\" : { \"field1\" : \"value1\" , \"field2\" : \"value2\"}}]}}" );
   }
 
@@ -507,7 +507,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     // to the end of the array
     assertEquals( setOpp.keySet().size(), 1 );
 
-    assertEquals( modifierUpdate.toString(),
+    assertEquals( JSON.serialize( modifierUpdate ),
       "{ \"$push\" : { \"bob.fred\" : { \"george\" : { \"field1\" : \"value1\" , \"field2\" : \"value2\"}}}}" );
   }
 
@@ -554,7 +554,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     // to the end of the array
     assertEquals( setOpp.keySet().size(), 1 );
 
-    assertEquals( modifierUpdate.toString(),
+    assertEquals( JSON.serialize( modifierUpdate ),
       "{ \"$push\" : { \"bob.fred\" : { \"george\" : { \"field1\" : \"value1\" , \"field2\" : \"value2\" , "
         + "\"jsonField\" : "
         + "{ \"jsonDocField1\" : \"aval\" , \"jsonDocField2\" : 42}}}}}" );
@@ -590,7 +590,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     DBObject result = kettleRowToMongo( paths, rm, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
-    assertEquals( result.toString(),
+    assertEquals( JSON.serialize( result ),
       "{ \"field1\" : \"value1\" , \"field2\" : 12 , \"jsonField\" : { \"jsonDocField1\" : \"aval\" , "
         + "\"jsonDocField2\" : 42}}" );
 
@@ -667,7 +667,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
-    assertEquals( result.toString(),
+    assertEquals( JSON.serialize( result ),
       "{ \"field1\" : \"value1\" , \"nestedDoc\" : { \"field2\" : 12 , \"jsonField\" : { \"jsonDocField1\" : \"aval\""
         + " , \"jsonDocField2\" : 42}}}" );
   }
@@ -702,7 +702,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.ARRAY, false );
 
-    assertEquals( result.toString(),
+    assertEquals( JSON.serialize( result ),
       "[ { \"field1\" : \"value1\"} , { \"field2\" : 12} , { \"jsonDocField1\" : \"aval\" , \"jsonDocField2\" : 42}]" );
 
   }
@@ -740,7 +740,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     DBObject query = MongoDbOutputData.getQueryObject( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD );
 
-    assertEquals( query.toString(),
+    assertEquals( JSON.serialize( query ),
       "{ \"field1\" : \"value1\" , \"field2\" : 12 , \"jsonField\" : { \"jsonDocField1\" : \"aval\" , "
         + "\"jsonDocField2\" : 42}}" );
   }
