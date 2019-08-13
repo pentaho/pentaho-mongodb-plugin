@@ -1,5 +1,5 @@
 /*!
-* Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
+* Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -29,8 +29,6 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.wrapper.cursor.MongoCursorWrapper;
-
-import java.util.Iterator;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
@@ -171,7 +169,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     verify( mockLog ).logBasic( stringCaptor.capture() );
     assertThat( stringCaptor.getValue(), containsString( "serveraddress" ) );
     assertThat( stepDataInterface.cursor, equalTo( mockCursor ) );
-    assertThat( putRow[0], CoreMatchers.<Object>equalTo( nextDoc.toString() ) );
+    assertThat( putRow[0], CoreMatchers.<Object>equalTo( JSON.serialize( nextDoc ) ) );
   }
 
   @Test public void testFindWithQuery() throws KettleException, MongoDbException {
