@@ -175,7 +175,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
       f.init( vs );
     }
 
-    DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
+    DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
     assertEquals( JSON.serialize( result ), "{ \"field1\" : \"value1\" , \"field2\" : 12}" );
   }
@@ -218,7 +218,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
       f.init( vs );
     }
 
-    DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
+    DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
     // here we expect that field1 does *not* occur twice in the update object
     assertEquals( JSON.serialize( result ), "{ \"field1\" : \"value1\" , \"field2\" : 12}" );
@@ -240,7 +240,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
       f.init( vs );
     }
 
-    DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
+    DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
     assertEquals( JSON.serialize( result ), "{ \"field1\" : \"value1\" , \"field2\" : 12}" );
   }
@@ -261,7 +261,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
       f.init( vs );
     }
 
-    DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.ARRAY, false );
+    DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.ARRAY, false );
 
     assertEquals( JSON.serialize( result ), "[ \"value1\" , 12]" );
   }
@@ -282,7 +282,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
       f.init( vs );
     }
 
-    DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.ARRAY, false );
+    DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.ARRAY, false );
 
     assertEquals( JSON.serialize( result ), "[ { \"field1\" : \"value1\"} , { \"field2\" : 12}]" );
   }
@@ -303,7 +303,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
       f.init( vs );
     }
 
-    DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.ARRAY, false );
+    DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.ARRAY, false );
 
     assertEquals( JSON.serialize( result ), "[ { \"field1\" : \"value1\" , \"field2\" : 12}]" );
   }
@@ -336,7 +336,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
       f.init( vs );
     }
 
-    DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.ARRAY, false );
+    DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.ARRAY, false );
 
     assertEquals( JSON.serialize( result ), "[ { \"inner\" : [ { \"field1\" : \"value1\"} , { \"field2\" : 12}]}]" );
   }
@@ -357,7 +357,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
       f.init( vs );
     }
 
-    DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
+    DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
     assertEquals( JSON.serialize( result ), "{ \"field1\" : \"value1\" , \"nestedDoc\" : { \"field2\" : 12}}" );
   }
@@ -390,7 +390,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
       f.init( vs );
     }
 
-    DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
+    DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
     assertEquals( JSON.serialize( result ),
       "{ \"nestedDoc\" : { \"secondNested\" : { \"field1\" : \"value1\"} , \"field2\" : 12}}" );
@@ -400,21 +400,23 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>( 2 );
     MongoDbOutputData data = new MongoDbOutputData();
 
+    VariableSpace vars = new Variables();
     MongoDbOutputMeta.MongoField mf = mf( "field1", true, "" );
     mf.m_modifierUpdateOperation = "$set";
     mf.m_modifierOperationApplyPolicy = "Insert&Update";
+    mf.init( vars );
     paths.add( mf );
 
     mf = mf( "field2", true, "nestedDoc" );
     mf.m_modifierUpdateOperation = "$set";
     mf.m_modifierOperationApplyPolicy = "Insert&Update";
+    mf.init( vars );
     paths.add( mf );
 
     RowMetaInterface rm = new RowMeta();
     rm.addValueMeta( new ValueMetaString( "field1" ) );
     rm.addValueMeta( new ValueMetaString( "field2" ) );
 
-    VariableSpace vars = new Variables();
     Object[] dummyRow = new Object[] { "value1", "value2" };
 
     // test to see that having more than one path specify the $set operation
@@ -434,21 +436,24 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>( 2 );
     MongoDbOutputData data = new MongoDbOutputData();
 
+    VariableSpace vars = new Variables();
     MongoDbOutputMeta.MongoField mf = mf( "field1", true, "bob.fred[0].george" );
     mf.m_modifierUpdateOperation = "$set";
     mf.m_modifierOperationApplyPolicy = "Insert&Update";
+    mf.init( vars );
     paths.add( mf );
 
     mf = mf( "field2", true, "bob.fred[0].george" );
     mf.m_modifierUpdateOperation = "$set";
     mf.m_modifierOperationApplyPolicy = "Insert&Update";
+    mf.init( vars );
     paths.add( mf );
 
     RowMetaInterface rm = new RowMeta();
     rm.addValueMeta( new ValueMetaString( "field1" ) );
     rm.addValueMeta( new ValueMetaString( "field2" ) );
 
-    VariableSpace vars = new Variables();
+
     Object[] dummyRow = new Object[] { "value1", "value2" };
 
     DBObject
@@ -475,21 +480,25 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>( 2 );
     MongoDbOutputData data = new MongoDbOutputData();
 
+    VariableSpace vars = new Variables();
+
     MongoDbOutputMeta.MongoField mf = mf( "field1", true, "bob.fred[].george" );
     mf.m_modifierUpdateOperation = "$push";
     mf.m_modifierOperationApplyPolicy = "Insert&Update";
+    mf.init( vars );
     paths.add( mf );
 
     mf = mf( "field2", true, "bob.fred[].george" );
     mf.m_modifierUpdateOperation = "$push";
     mf.m_modifierOperationApplyPolicy = "Insert&Update";
+    mf.init( vars );
     paths.add( mf );
 
     RowMetaInterface rm = new RowMeta();
     rm.addValueMeta( new ValueMetaString( "field1" ) );
     rm.addValueMeta( new ValueMetaString( "field2" ) );
 
-    VariableSpace vars = new Variables();
+
     Object[] dummyRow = new Object[] { "value1", "value2" };
 
     DBObject
@@ -515,20 +524,25 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>( 3 );
     MongoDbOutputData data = new MongoDbOutputData();
 
+    VariableSpace vars = new Variables();
+
     MongoDbOutputMeta.MongoField mf = mf( "field1", true, "bob.fred[].george" );
     mf.m_modifierUpdateOperation = "$push";
     mf.m_modifierOperationApplyPolicy = "Insert&Update";
+    mf.init( vars );
     paths.add( mf );
 
     mf = mf( "field2", true, "bob.fred[].george" );
     mf.m_modifierUpdateOperation = "$push";
     mf.m_modifierOperationApplyPolicy = "Insert&Update";
+    mf.init( vars );
     paths.add( mf );
 
     mf = mf( "jsonField", true, "bob.fred[].george" );
     mf.m_modifierUpdateOperation = "$push";
     mf.m_modifierOperationApplyPolicy = "Insert&Update";
     mf.m_JSON = true;
+    mf.init( vars );
     paths.add( mf );
 
     RowMetaInterface rm = new RowMeta();
@@ -536,7 +550,6 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     rm.addValueMeta( new ValueMetaString( "field2" ) );
     rm.addValueMeta( new ValueMetaString( "jsonField" ) );
 
-    VariableSpace vars = new Variables();
     Object[] dummyRow = new Object[] { "value1", "value2", "{\"jsonDocField1\" : \"aval\", \"jsonDocField2\" : 42}" };
 
     DBObject
@@ -588,7 +601,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
       f.init( vs );
     }
 
-    DBObject result = kettleRowToMongo( paths, rm, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
+    DBObject result = kettleRowToMongo( paths, rm, row, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
     assertEquals( JSON.serialize( result ),
       "{ \"field1\" : \"value1\" , \"field2\" : 12 , \"jsonField\" : { \"jsonDocField1\" : \"aval\" , "
@@ -665,7 +678,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
       f.init( vs );
     }
 
-    DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.RECORD, false );
+    DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.RECORD, false );
 
     assertEquals( JSON.serialize( result ),
       "{ \"field1\" : \"value1\" , \"nestedDoc\" : { \"field2\" : 12 , \"jsonField\" : { \"jsonDocField1\" : \"aval\""
@@ -700,7 +713,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
       f.init( vs );
     }
 
-    DBObject result = kettleRowToMongo( paths, rmi, row, vs, MongoDbOutputData.MongoTopLevel.ARRAY, false );
+    DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.ARRAY, false );
 
     assertEquals( JSON.serialize( result ),
       "[ { \"field1\" : \"value1\"} , { \"field2\" : 12} , { \"jsonDocField1\" : \"aval\" , \"jsonDocField2\" : 42}]" );
@@ -1082,6 +1095,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     for ( String name : names ) {
       MongoDbOutputMeta.MongoField field = new MongoDbOutputMeta.MongoField();
       field.m_incomingFieldName = name;
+      field.environUpdatedFieldName = name;
       ret.add( field );
     }
     return ret;
@@ -1090,19 +1104,26 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
   @Test
   public void getModifierUpdateObject_PicksUpNull_WhenPermitted() throws Exception {
+
+    VariableSpace vs = new Variables();
+
     MongoDbOutputMeta.MongoField permittedNull = mf( "permittedNull", true, "" );
     permittedNull.m_modifierUpdateOperation = "$set";
     permittedNull.m_modifierOperationApplyPolicy = "Insert&Update";
     permittedNull.insertNull = true;
+    permittedNull.init( vs );
 
     MongoDbOutputMeta.MongoField prohibitedNull = mf( "prohibitedNull", true, "" );
     prohibitedNull.m_modifierUpdateOperation = "$set";
     prohibitedNull.m_modifierOperationApplyPolicy = "Insert&Update";
     prohibitedNull.insertNull = false;
+    prohibitedNull.init( vs );
 
     MongoDbOutputMeta.MongoField anotherField = mf( "anotherField", true, "" );
     anotherField.m_modifierUpdateOperation = "$set";
     anotherField.m_modifierOperationApplyPolicy = "Insert&Update";
+    anotherField.init( vs );
+
     List<MongoDbOutputMeta.MongoField> paths = asList( permittedNull, prohibitedNull, anotherField );
 
     RowMetaInterface rm = new RowMeta();
@@ -1113,7 +1134,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     Object[] row = new Object[] { null, null, "qwerty" };
 
     DBObject updateObject = new MongoDbOutputData()
-      .getModifierUpdateObject( paths, rm, row, new Variables(), MongoDbOutputData.MongoTopLevel.RECORD );
+      .getModifierUpdateObject( paths, rm, row, vs, MongoDbOutputData.MongoTopLevel.RECORD );
 
     assertNotNull( updateObject );
 
@@ -1123,5 +1144,83 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     assertEquals( "'permittedNull' and 'anotherField' are expected", setOpp.keySet().size(), 2 );
     assertNull( setOpp.get( "permittedNull" ) );
     assertEquals( "qwerty", setOpp.get( "anotherField" ) );
+  }
+
+  /**
+   * Testing the use of Environment Substitution during initialization of fields.
+   * @throws Exception
+   */
+  @Test public void testTopLevelArrayWithEnvironmentSubstitution() throws Exception {
+    List<MongoDbOutputMeta.MongoField> paths = asList( mf( "${ENV_FIELD}", true, "[0]" ),
+            mf( "field2", true, "${ENV_DOC_PATH}" ) );
+
+    RowMetaInterface rmi = new RowMeta();
+    rmi.addValueMeta( new ValueMetaString( "field1" ) );
+    rmi.addValueMeta( new ValueMetaInteger( "field2" ) );
+
+    Object[] row = new Object[ 2 ];
+    row[ 0 ] = "value1";
+    row[ 1 ] = 12L;
+    VariableSpace vs = new Variables();
+    vs.setVariable( "ENV_FIELD", "field1" );
+    vs.setVariable( "ENV_DOC_PATH", "[1]" );
+
+    for ( MongoDbOutputMeta.MongoField f : paths ) {
+      f.init( vs );
+    }
+
+    DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.ARRAY, false );
+    assertEquals( JSON.serialize( result ), "[ { \"field1\" : \"value1\"} , { \"field2\" : 12}]" );
+  }
+
+  /**
+   * Testing the use of Environment Substitution during initialization of fields.
+   * @throws Exception
+   */
+  @Test public void testModifierPushObjectWithEnvironmentSubstitution() throws Exception {
+    List<MongoDbOutputMeta.MongoField> paths = new ArrayList<MongoDbOutputMeta.MongoField>( 2 );
+    MongoDbOutputData data = new MongoDbOutputData();
+
+    VariableSpace vars = new Variables();
+    vars.setVariable( "ENV_FIELD", "field1" );
+    vars.setVariable( "ENV_DOC_PATH", "bob.fred[].george" );
+    vars.setVariable( "ENV_UPDATE_OP", "$push" );
+
+    MongoDbOutputMeta.MongoField mf = mf( "${ENV_FIELD}", true, "${ENV_DOC_PATH}" );
+    mf.m_modifierUpdateOperation = "${ENV_UPDATE_OP}";
+    mf.m_modifierOperationApplyPolicy = "Insert&Update";
+    mf.init( vars );
+    paths.add( mf );
+
+    mf = mf( "field2", true, "bob.fred[].george" );
+    mf.m_modifierUpdateOperation = "${ENV_UPDATE_OP}";
+    mf.m_modifierOperationApplyPolicy = "Insert&Update";
+    mf.init( vars );
+    paths.add( mf );
+
+    RowMetaInterface rm = new RowMeta();
+    rm.addValueMeta( new ValueMetaString( "field1" ) );
+    rm.addValueMeta( new ValueMetaString( "field2" ) );
+
+
+    Object[] dummyRow = new Object[] { "value1", "value2" };
+
+    DBObject
+            modifierUpdate =
+            data.getModifierUpdateObject( paths, rm, dummyRow, vars, MongoDbOutputData.MongoTopLevel.RECORD );
+
+    assertTrue( modifierUpdate != null );
+    assertTrue( modifierUpdate.get( "$push" ) != null );
+    DBObject setOpp = (DBObject) modifierUpdate.get( "$push" );
+
+    // in this case, we have the same path up to the array (bob.fred). The
+    // remaining
+    // terminal fields should be grouped into one record "george" for $push to
+    // append
+    // to the end of the array
+    assertEquals( setOpp.keySet().size(), 1 );
+
+    assertEquals( JSON.serialize( modifierUpdate ),
+            "{ \"$push\" : { \"bob.fred\" : { \"george\" : { \"field1\" : \"value1\" , \"field2\" : \"value2\"}}}}" );
   }
 }

@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.variables.VariableSpace;
-import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
@@ -380,7 +379,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
         continue;
       }
 
-      String modifierUpdateOpp = vars.environmentSubstitute( field.m_modifierUpdateOperation );
+      String modifierUpdateOpp = field.environUpdateModifierOperation;
 
       if ( !Const.isEmpty( modifierUpdateOpp ) && !modifierUpdateOpp.equals( "N/A" ) ) { //$NON-NLS-1$
         if ( checkForMatch ) {
@@ -395,7 +394,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
         haveUpdateFields = true;
 
-        String incomingFieldName = vars.environmentSubstitute( field.m_incomingFieldName );
+        String incomingFieldName = field.environUpdatedFieldName;
         int index = inputMeta.indexOfValue( incomingFieldName );
         ValueMetaInterface vm = inputMeta.getValueMeta( index );
 
@@ -404,8 +403,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
           // modifier update objects have fields using "dot" notation to reach
           // into embedded documents
-          String mongoPath = ( field.m_mongoDocPath != null ) ? field.m_mongoDocPath : ""; //$NON-NLS-1$
-          String path = vars.environmentSubstitute( mongoPath );
+          String path = ( field.environUpdateMongoDocPath != null ) ? field.environUpdateMongoDocPath : ""; //$NON-NLS-1$
 
           if ( path.endsWith( "]" ) && modifierUpdateOpp.equals( "$push" ) //$NON-NLS-1$ //$NON-NLS-2$
             && !field.m_useIncomingFieldNameAsMongoFieldName ) {
@@ -425,11 +423,13 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
             String arraySpec = path.substring( path.indexOf( '[' ), path.length() );
             MongoDbOutputMeta.MongoField a = new MongoDbOutputMeta.MongoField();
             a.m_incomingFieldName = field.m_incomingFieldName;
+            a.environUpdatedFieldName = field.environUpdatedFieldName;
             a.m_mongoDocPath = arraySpec;
+            a.environUpdateMongoDocPath = arraySpec;
             // incoming field name has already been appended (if necessary)
             a.m_useIncomingFieldNameAsMongoFieldName = false;
             a.m_JSON = field.m_JSON;
-            a.init( vars );
+            a.init( vars, false );
             List<MongoDbOutputMeta.MongoField> fds = m_setComplexArrays.get( arrayPath );
             if ( fds == null ) {
               fds = new ArrayList<MongoDbOutputMeta.MongoField>();
@@ -451,11 +451,13 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
             MongoDbOutputMeta.MongoField a = new MongoDbOutputMeta.MongoField();
             a.m_incomingFieldName = field.m_incomingFieldName;
+            a.environUpdatedFieldName = field.environUpdatedFieldName;
             a.m_mongoDocPath = structureToPush;
+            a.environUpdateMongoDocPath = structureToPush;
             // incoming field name has already been appended (if necessary)
             a.m_useIncomingFieldNameAsMongoFieldName = false;
             a.m_JSON = field.m_JSON;
-            a.init( vars );
+            a.init( vars, false );
             List<MongoDbOutputMeta.MongoField> fds = m_pushComplexStructures.get( arrayPath );
             if ( fds == null ) {
               fds = new ArrayList<MongoDbOutputMeta.MongoField>();
@@ -477,7 +479,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
     // do the array $sets
     for ( String path : m_setComplexArrays.keySet() ) {
       List<MongoDbOutputMeta.MongoField> fds = m_setComplexArrays.get( path );
-      DBObject valueToSet = kettleRowToMongo( fds, inputMeta, row, vars, MongoTopLevel.ARRAY, false );
+      DBObject valueToSet = kettleRowToMongo( fds, inputMeta, row, MongoTopLevel.ARRAY, false );
 
       DBObject fieldsToUpdateWithValues;
 
@@ -505,7 +507,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
         topLevel = MongoTopLevel.RECORD;
       }
 
-      DBObject valueToSet = kettleRowToMongo( fds, inputMeta, row, vars, topLevel, false );
+      DBObject valueToSet = kettleRowToMongo( fds, inputMeta, row, topLevel, false );
 
       DBObject fieldsToUpdateWithValues = null;
 
@@ -582,7 +584,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
     for ( MongoDbOutputMeta.MongoField field : fieldDefs ) {
       if ( field.m_updateMatchField ) {
         haveMatchFields = true;
-        String incomingFieldName = vars.environmentSubstitute( field.m_incomingFieldName );
+        String incomingFieldName = field.environUpdatedFieldName;
         int index = inputMeta.indexOfValue( incomingFieldName );
         ValueMetaInterface vm = inputMeta.getValueMeta( index );
 
@@ -609,8 +611,8 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
         // query objects have fields using "dot" notation to reach into embedded
         // documents
-        String mongoPath = ( field.m_mongoDocPath != null ) ? field.m_mongoDocPath : ""; //$NON-NLS-1$
-        String path = vars.environmentSubstitute( mongoPath );
+        String path = ( field.environUpdateMongoDocPath != null ) ? field.environUpdateMongoDocPath : ""; //$NON-NLS-1$
+
         boolean hasPath = !Const.isEmpty( path );
         path += ( ( field.m_useIncomingFieldNameAsMongoFieldName ) ? ( hasPath ? "." //$NON-NLS-1$
           + incomingFieldName : incomingFieldName ) : "" ); //$NON-NLS-1$
@@ -645,7 +647,6 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    * @param fieldDefs                the document field definitions
    * @param inputMeta                the incoming row format
    * @param row                      the current incoming row
-   * @param vars                     environment variables
    * @param topLevelStructure        the top level structure of the Mongo document
    * @param hasTopLevelJSONDocInsert true if the user-specified paths include a single incoming Kettle field value that
    *                                 contains a JSON document that is to be inserted as is
@@ -653,7 +654,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
    * @throws KettleException if a problem occurs
    */
   protected static DBObject kettleRowToMongo( List<MongoDbOutputMeta.MongoField> fieldDefs, RowMetaInterface inputMeta,
-                                              Object[] row, VariableSpace vars, MongoTopLevel topLevelStructure,
+                                              Object[] row, MongoTopLevel topLevelStructure,
                                               boolean hasTopLevelJSONDocInsert )
     throws KettleException {
 
@@ -661,7 +662,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
     if ( hasTopLevelJSONDocInsert ) {
       for ( MongoDbOutputMeta.MongoField f : fieldDefs ) {
         if ( f.m_JSON && Const.isEmpty( f.m_mongoDocPath ) && !f.m_useIncomingFieldNameAsMongoFieldName ) {
-          String incomingFieldName = vars.environmentSubstitute( f.m_incomingFieldName );
+          String incomingFieldName = f.environUpdatedFieldName;
           int index = inputMeta.indexOfValue( incomingFieldName );
           ValueMetaInterface vm = inputMeta.getValueMeta( index );
           if ( !vm.isNull( row[ index ] ) ) {
@@ -682,17 +683,13 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
       root = new BasicDBList();
     }
 
-    if ( vars == null ) {
-      vars = new Variables();
-    }
-
     boolean haveNonNullFields = false;
     for ( MongoDbOutputMeta.MongoField field : fieldDefs ) {
       DBObject current = root;
 
       field.reset();
       List<String> pathParts = field.m_tempPathList;
-      String incomingFieldName = vars.environmentSubstitute( field.m_incomingFieldName );
+      String incomingFieldName =  field.environUpdatedFieldName;
       int index = inputMeta.indexOfValue( incomingFieldName );
       ValueMetaInterface vm = inputMeta.getValueMeta( index );
 
