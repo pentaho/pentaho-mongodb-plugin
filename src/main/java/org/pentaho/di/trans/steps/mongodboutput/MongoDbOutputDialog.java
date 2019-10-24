@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1604,21 +1604,25 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     Object[] dummyRow = new Object[ mongoFields.size() ];
     int i = 0;
     try {
+      // Initialize Variable space to allow for environment substitution during doc preview.
+      VariableSpace vs = new Variables();
+      vs.initializeVariablesFrom( transMeta );
       boolean hasTopLevelJSONDocInsert = MongoDbOutputData.scanForInsertTopLevelJSONDoc( mongoFields );
 
       for ( MongoDbOutputMeta.MongoField field : mongoFields ) {
+        field.init( vs );
         // set up dummy row meta
         ValueMetaInterface vm = ValueMetaFactory.createValueMeta( ValueMetaInterface.TYPE_STRING );
-        vm.setName( field.m_incomingFieldName );
+        vm.setName( field.environUpdatedFieldName );
         r.addValueMeta( vm );
 
         String val = ""; //$NON-NLS-1$
-        if ( gotGenuineRowMeta && actualR.indexOfValue( field.m_incomingFieldName ) >= 0 ) {
-          int index = actualR.indexOfValue( field.m_incomingFieldName );
+        if ( gotGenuineRowMeta && actualR.indexOfValue( field.environUpdatedFieldName ) >= 0 ) {
+          int index = actualR.indexOfValue( field.environUpdatedFieldName );
           switch ( actualR.getValueMeta( index ).getType() ) {
             case ValueMetaInterface.TYPE_STRING:
               if ( field.m_JSON ) {
-                if ( !field.m_useIncomingFieldNameAsMongoFieldName && Const.isEmpty( field.m_mongoDocPath ) ) {
+                if ( !field.m_useIncomingFieldNameAsMongoFieldName && Const.isEmpty( field.environUpdateMongoDocPath ) ) {
                   // we will actually have to parse some kind of JSON doc
                   // here in the case where the matching doc/doc to be inserted is
                   // a full top-level incoming JSON doc
@@ -1659,21 +1663,20 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
         dummyRow[ i++ ] = val;
       }
 
-      VariableSpace vs = new Variables();
+
       MongoDbOutputData.MongoTopLevel topLevelStruct = MongoDbOutputData.checkTopLevelConsistency( mongoFields, vs );
       for ( MongoDbOutputMeta.MongoField m : mongoFields ) {
         m.m_modifierOperationApplyPolicy = "Insert&Update"; //$NON-NLS-1$
-        m.init( vs );
       }
 
       String toDisplay = ""; //$NON-NLS-1$
       String windowTitle = getString( "MongoDbOutputDialog.PreviewDocStructure.Title" ); //$NON-NLS-1$
-      // if (!m_currentMeta.getModifierUpdate()) {
+
       if ( !m_modifierUpdateBut.getSelection() ) {
         DBObject
           result =
           MongoDbOutputData
-            .kettleRowToMongo( mongoFields, r, dummyRow, vs, topLevelStruct, hasTopLevelJSONDocInsert );
+            .kettleRowToMongo( mongoFields, r, dummyRow, topLevelStruct, hasTopLevelJSONDocInsert );
         toDisplay = prettyPrintDocStructure( result.toString() );
       } else {
         DBObject query = MongoDbOutputData.getQueryObject( mongoFields, r, dummyRow, vs, topLevelStruct );

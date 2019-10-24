@@ -74,11 +74,17 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     @Injection( name = "INCOMING_FIELD_NAME", group = "FIELDS" )
     public String m_incomingFieldName = ""; //$NON-NLS-1$
 
+    /** Contains the environment substituted field name updated once at init **/
+    String environUpdatedFieldName = "";
+
     /**
      * Dot separated path to the corresponding mongo field
      */
     @Injection( name = "MONGO_DOCUMENT_PATH", group = "FIELDS" )
     public String m_mongoDocPath = ""; //$NON-NLS-1$
+
+    /** Contains the environment substituted mongo doc path updated once at init **/
+    String environUpdateMongoDocPath = "";
 
     protected List<String> m_pathList;
     protected List<String> m_tempPathList;
@@ -104,6 +110,9 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
      */
     @Injection( name = "MODIFIER_OPERATION", group = "FIELDS" )
     public String m_modifierUpdateOperation = "N/A"; //$NON-NLS-1$
+
+    /** Contains the environment substituted modifier operation updated once at init **/
+    String environUpdateModifierOperation = "";
 
     /**
      * If a modifier opp, whether to apply on insert, update or both. Insert or update require knowing whether matching
@@ -139,10 +148,13 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     public MongoField copy() {
       MongoField newF = new MongoField();
       newF.m_incomingFieldName = m_incomingFieldName;
+      newF.environUpdatedFieldName = environUpdatedFieldName;
       newF.m_mongoDocPath = m_mongoDocPath;
+      newF.environUpdateMongoDocPath = environUpdateMongoDocPath;
       newF.m_useIncomingFieldNameAsMongoFieldName = m_useIncomingFieldNameAsMongoFieldName;
       newF.m_updateMatchField = m_updateMatchField;
       newF.m_modifierUpdateOperation = m_modifierUpdateOperation;
+      newF.environUpdateModifierOperation = environUpdateModifierOperation;
       newF.m_modifierOperationApplyPolicy = m_modifierOperationApplyPolicy;
       newF.m_JSON = m_JSON;
       newF.insertNull = insertNull;
@@ -151,11 +163,19 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     }
 
     public void init( VariableSpace vars ) {
-      String path = vars.environmentSubstitute( m_mongoDocPath );
+      this.init( vars, true );
+    }
+
+    public void init( VariableSpace vars, boolean updateFromEnv ) {
+      if ( updateFromEnv ) {
+        environUpdatedFieldName = vars.environmentSubstitute( m_incomingFieldName );
+        environUpdateMongoDocPath = vars.environmentSubstitute( m_mongoDocPath );
+        environUpdateModifierOperation = vars.environmentSubstitute( m_modifierUpdateOperation );
+      }
       m_pathList = new ArrayList<String>();
 
-      if ( !Const.isEmpty( path ) ) {
-        String[] parts = path.split( "\\." ); //$NON-NLS-1$
+      if ( !Const.isEmpty( environUpdateMongoDocPath ) ) {
+        String[] parts = environUpdateMongoDocPath.split( "\\." ); //$NON-NLS-1$
         for ( String p : parts ) {
           m_pathList.add( p );
         }
