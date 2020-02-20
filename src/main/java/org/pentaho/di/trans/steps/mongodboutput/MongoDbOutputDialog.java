@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2020 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -382,6 +382,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     } );
     m_dbAuthMec.add( "SCRAM-SHA-1" );
     m_dbAuthMec.add( "MONGODB-CR" );
+    m_dbAuthMec.add( "PLAIN" );
     fd = new FormData();
     fd.left = new FormAttachment( middle, 0 );
     fd.top = new FormAttachment( lastControl, margin );
