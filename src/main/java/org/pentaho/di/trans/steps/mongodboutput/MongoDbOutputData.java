@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2020 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -344,6 +344,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
 
     boolean haveUpdateFields = false;
     boolean hasNonNullUpdateValues = false;
+    String mongoOperatorUpdateAllArray = "$[]";
 
     // main update object, keyed by $ operator
     BasicDBObject updateObject = new BasicDBObject();
@@ -418,7 +419,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
             + incomingFieldName : incomingFieldName ) : "" ); //$NON-NLS-1$
 
           // check for array creation
-          if ( modifierUpdateOpp.equals( "$set" ) && path.indexOf( '[' ) > 0 ) { //$NON-NLS-1$
+          if ( modifierUpdateOpp.equals( "$set" ) && path.indexOf( '[' ) > 0 && path.indexOf( mongoOperatorUpdateAllArray ) < 0 ) { //$NON-NLS-1$
             String arrayPath = path.substring( 0, path.indexOf( '[' ) );
             String arraySpec = path.substring( path.indexOf( '[' ), path.length() );
             MongoDbOutputMeta.MongoField a = new MongoDbOutputMeta.MongoField();
@@ -436,7 +437,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
               m_setComplexArrays.put( arrayPath, fds );
             }
             fds.add( a );
-          } else if ( modifierUpdateOpp.equals( "$push" ) && path.indexOf( '[' ) > 0 ) { //$NON-NLS-1$
+          } else if ( modifierUpdateOpp.equals( "$push" ) && path.indexOf( '[' ) > 0 && path.indexOf( mongoOperatorUpdateAllArray ) < 0 ) { //$NON-NLS-1$
             // we ignore any index that might have been specified as $push
             // always appends to the end of the array.
             String arrayPath = path.substring( 0, path.indexOf( '[' ) );

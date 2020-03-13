@@ -1689,7 +1689,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
           + prettyPrintDocStructure( query.toString() )
           + getString( "MongoDbOutputDialog.PreviewModifierUpdate.Heading2" ) //$NON-NLS-1$
           + ":\n\n" //$NON-NLS-1$
-          + prettyPrintDocStructure( modifier.toString() );
+          + prettyPrintDocStructure( modifier.toString().replace( "\\u0000", "" ) );
         windowTitle = getString( "MongoDbOutputDialog.PreviewModifierUpdate.Title" ); //$NON-NLS-1$
       }
 
