@@ -940,7 +940,7 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
     int numArrays = 0;
 
     for ( MongoDbOutputMeta.MongoField field : fieldDefs ) {
-      String mongoPath = vars.environmentSubstitute( field.m_mongoDocPath );
+      String mongoPath = vars.environmentSubstitute( field.m_mongoDocPath, true );
 
       if ( Const.isEmpty( mongoPath ) ) {
         numRecords++;
