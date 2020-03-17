@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2020 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,7 +169,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     public void init( VariableSpace vars, boolean updateFromEnv ) {
       if ( updateFromEnv ) {
         environUpdatedFieldName = vars.environmentSubstitute( m_incomingFieldName );
-        environUpdateMongoDocPath = vars.environmentSubstitute( m_mongoDocPath );
+        environUpdateMongoDocPath = vars.environmentSubstitute( m_mongoDocPath, true );
         environUpdateModifierOperation = vars.environmentSubstitute( m_modifierUpdateOperation );
       }
       m_pathList = new ArrayList<String>();
