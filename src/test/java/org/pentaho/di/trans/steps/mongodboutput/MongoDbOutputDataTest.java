@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2020 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,12 @@ public class MongoDbOutputDataTest {
             return (String) invocationOnMock.getArguments()[0];
           }
         } );
+    when( space.environmentSubstitute( any( String.class ), anyBoolean() ) )
+      .thenAnswer( new Answer<String>() {
+        @Override public String answer( InvocationOnMock invocationOnMock ) throws Throwable {
+          return (String) invocationOnMock.getArguments()[0];
+        }
+      } );
   }
 
   @BeforeClass
