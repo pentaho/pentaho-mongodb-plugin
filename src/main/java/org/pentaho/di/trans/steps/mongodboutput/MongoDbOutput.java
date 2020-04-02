@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -185,7 +185,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
             // complete record replace or insert
 
             insertUpdate =
-                MongoDbOutputData.kettleRowToMongo( m_data.getMongoFields(), getInputRowMeta(), row, MongoDbOutput.this,
+                MongoDbOutputData.kettleRowToMongo( m_data.getMongoFields(), getInputRowMeta(), row,
                     m_mongoTopLevelStructure, m_data.m_hasTopLevelJSONDocInsert );
             if ( log.isDebug() ) {
               logDebug( BaseMessages.getString( PKG, "MongoDbOutput.Messages.Debug.InsertUpsertObject", //$NON-NLS-1$
@@ -217,7 +217,7 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
 
         DBObject
             mongoInsert =
-            MongoDbOutputData.kettleRowToMongo( m_data.getMongoFields(), getInputRowMeta(), row, MongoDbOutput.this,
+            MongoDbOutputData.kettleRowToMongo( m_data.getMongoFields(), getInputRowMeta(), row,
                 m_mongoTopLevelStructure, m_data.m_hasTopLevelJSONDocInsert );
 
         if ( mongoInsert != null ) {
