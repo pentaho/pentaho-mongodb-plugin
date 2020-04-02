@@ -1171,7 +1171,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     }
 
     DBObject result = kettleRowToMongo( paths, rmi, row, MongoDbOutputData.MongoTopLevel.ARRAY, false );
-    assertEquals( JSON.serialize( result ), "[ { \"field1\" : \"value1\"} , { \"field2\" : 12}]" );
+    assertEquals( result.toString(), "[ { \"field1\" : \"value1\"} , { \"field2\" : 12}]" );
   }
 
   /**
@@ -1221,7 +1221,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     // to the end of the array
     assertEquals( setOpp.keySet().size(), 1 );
 
-    assertEquals( JSON.serialize( modifierUpdate ),
+    assertEquals( modifierUpdate.toString(),
             "{ \"$push\" : { \"bob.fred\" : { \"george\" : { \"field1\" : \"value1\" , \"field2\" : \"value2\"}}}}" );
   }
 }
