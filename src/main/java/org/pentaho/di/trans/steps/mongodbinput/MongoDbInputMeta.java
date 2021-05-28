@@ -73,6 +73,9 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
   @Injection( name = "AGG_PIPELINE" )
   private boolean m_aggPipeline = false;
+  
+  @Injection( name = "AGG_ALLOW_DISK" )
+  private boolean m_agg_allow_disk = false;
 
   @Injection( name = "OUTPUT_JSON" )
   private boolean m_outputJson = true;
@@ -153,6 +156,11 @@ public class MongoDbInputMeta extends MongoDbMeta {
       String queryIsPipe = XMLHandler.getTagValue( stepnode, "query_is_pipeline" ); //$NON-NLS-1$
       if ( !Const.isEmpty( queryIsPipe ) ) {
         m_aggPipeline = queryIsPipe.equalsIgnoreCase( "Y" ); //$NON-NLS-1$
+      }
+      
+      String aggAllowDisk = XMLHandler.getTagValue( stepnode, "agg_allow_disk" ); //$NON-NLS-1$
+      if ( !Const.isEmpty( aggAllowDisk ) ) {
+        m_agg_allow_disk = aggAllowDisk.equalsIgnoreCase( "Y" ); //$NON-NLS-1$
       }
 
       String executeForEachR = XMLHandler.getTagValue( stepnode, "execute_for_each_row" );
@@ -285,6 +293,8 @@ public class MongoDbInputMeta extends MongoDbMeta {
         XMLHandler.addTagValue( "output_json", m_outputJson ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
         XMLHandler.addTagValue( "query_is_pipeline", m_aggPipeline ) ); //$NON-NLS-1$
+    retval.append( "    " ).append(
+    		XMLHandler.addTagValue("agg_allow_disk", m_agg_allow_disk));
     retval.append( "    " ).append( //$NON-NLS-1$
         XMLHandler.addTagValue( "execute_for_each_row", m_executeForEachIncomingRow ) ); //$NON-NLS-1$
 
@@ -344,6 +354,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
       m_outputJson = rep.getStepAttributeBoolean( id_step, 0, "output_json" ); //$NON-NLS-1$
       m_aggPipeline = rep.getStepAttributeBoolean( id_step, "query_is_pipeline" ); //$NON-NLS-1$
+      m_agg_allow_disk = rep.getStepAttributeBoolean(id_step, "agg_allow_disk");
       m_executeForEachIncomingRow = rep.getStepAttributeBoolean( id_step, "execute_for_each_row" ); //$NON-NLS-1$
 
       int nrfields = rep.countNrStepAttributes( id_step, "field_name" ); //$NON-NLS-1$
@@ -409,6 +420,8 @@ public class MongoDbInputMeta extends MongoDbMeta {
           m_outputJson );
       rep.saveStepAttribute( id_transformation, id_step, 0, "query_is_pipeline", //$NON-NLS-1$
           m_aggPipeline );
+      rep.saveStepAttribute( id_transformation, id_step, "agg_allow_disk", 
+    	  m_agg_allow_disk );
       rep.saveStepAttribute( id_transformation, id_step, 0, "execute_for_each_row", //$NON-NLS-1$
           m_executeForEachIncomingRow );
 
@@ -537,5 +550,13 @@ public class MongoDbInputMeta extends MongoDbMeta {
    */
   public boolean getQueryIsPipeline() {
     return m_aggPipeline;
+  }
+  
+  public void setAggegationAllowDisk(boolean q) {
+    m_agg_allow_disk = q;
+  }
+  
+  public boolean getAggregationAllowDisk() {
+	return m_agg_allow_disk;
   }
 }

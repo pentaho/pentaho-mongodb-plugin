@@ -141,6 +141,11 @@ public class MongoDbInputMetaInjectionTest extends BaseMetadataInjectionTest<Mon
         return meta.getQueryIsPipeline();
       }
     } );
+    check( "AGG_ALLOW_DISK" , new BooleanGetter() {
+    	public boolean get() {
+    		return meta.getAggregationAllowDisk();
+    	}
+    });
     check( "OUTPUT_JSON", new BooleanGetter() {
       public boolean get() {
         return meta.getOutputJson();
