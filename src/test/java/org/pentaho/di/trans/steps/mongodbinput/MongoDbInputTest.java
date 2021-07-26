@@ -1,19 +1,19 @@
 /*!
-* Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*
-*/
+ * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 
 package org.pentaho.di.trans.steps.mongodbinput;
 
@@ -26,6 +26,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMeta;
+import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.wrapper.cursor.MongoCursorWrapper;
@@ -110,10 +112,10 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     when( stepMetaInterface.getJsonQuery() ).thenReturn( query );
     when( stepMetaInterface.getQueryIsPipeline() ).thenReturn( true );
     String[] parts = query.split( "," );
-    DBObject dbObjQuery = (DBObject) JSON.parse( parts[0] );
+    DBObject dbObjQuery = (DBObject) JSON.parse( parts[ 0 ] );
     DBObject[] remainder = parts.length > 1
-        ? new DBObject[] { (DBObject) JSON.parse( parts[1] ) }
-        : new DBObject[0];
+      ? new DBObject[] { (DBObject) JSON.parse( parts[ 1 ] ) }
+      : new DBObject[ 0 ];
     when( mongoCollectionWrapper.aggregate( dbObjQuery, remainder ) ).thenReturn( cursor );
 
     dbInput.init( stepMetaInterface, stepDataInterface );
@@ -129,7 +131,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     setupReturns();
     dbInput.init( stepMetaInterface, stepDataInterface );
     assertFalse( "should return false as there are no more results",
-        dbInput.processRow( stepMetaInterface, stepDataInterface ) );
+      dbInput.processRow( stepMetaInterface, stepDataInterface ) );
     verify( mongoCollectionWrapper ).find();
     assertThat( stepDataInterface.cursor, equalTo( mockCursor ) );
   }
@@ -169,7 +171,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     verify( mockLog ).logBasic( stringCaptor.capture() );
     assertThat( stringCaptor.getValue(), containsString( "serveraddress" ) );
     assertThat( stepDataInterface.cursor, equalTo( mockCursor ) );
-    assertThat( putRow[0], CoreMatchers.<Object>equalTo( JSON.serialize( nextDoc ) ) );
+    assertThat( putRow[ 0 ], CoreMatchers.<Object>equalTo( JSON.serialize( nextDoc ) ) );
   }
 
   @Test public void testFindWithQuery() throws KettleException, MongoDbException {
@@ -179,7 +181,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     when( stepMetaInterface.getJsonQuery() ).thenReturn( query );
     dbInput.init( stepMetaInterface, stepDataInterface );
     assertFalse( "should return false as there are no more results",
-        dbInput.processRow( stepMetaInterface, stepDataInterface ) );
+      dbInput.processRow( stepMetaInterface, stepDataInterface ) );
     verify( mongoCollectionWrapper ).find( dbObjectCaptor.capture(), any( DBObject.class ) );
     assertThat( stepDataInterface.cursor, equalTo( mockCursor ) );
     assertThat( dbObjectCaptor.getValue(), equalTo( (DBObject) JSON.parse( query ) ) );
@@ -188,7 +190,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
   @Test public void testAuthUserLogged() throws MongoDbException {
     setupReturns();
     when( stepMetaInterface.getAuthenticationUser() )
-        .thenReturn( "joe_user" );
+      .thenReturn( "joe_user" );
 
     dbInput.init( stepMetaInterface, stepDataInterface );
     verify( mockLog ).logBasic( stringCaptor.capture() );
@@ -198,7 +200,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
   @Test public void testExecuteForEachIncomingRow() throws MongoDbException, KettleException {
     setupReturns();
     when( stepMetaInterface.getExecuteForEachIncomingRow() )
-        .thenReturn( true );
+      .thenReturn( true );
     when( stepMetaInterface.getJsonQuery() ).thenReturn( "{ foo : ?{param}} " );
     rowData = new Object[] { "'bar'" };
     rowMeta.addValueMeta( new ValueMetaString( "param" ) );
@@ -206,7 +208,86 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     assertTrue( dbInput.processRow( stepMetaInterface, stepDataInterface ) );
     verify( mongoCollectionWrapper ).find( dbObjectCaptor.capture(), any( DBObject.class ) );
     assertThat( dbObjectCaptor.getValue(),
-        equalTo( (DBObject) JSON.parse( "{foo : 'bar'}" ) ) );
+      equalTo( (DBObject) JSON.parse( "{foo : 'bar'}" ) ) );
   }
 
+  @Test public void testOutputRowsForExecuteForEachIncomingRowTrue() throws MongoDbException, KettleException {
+    setupReturns();
+    when( stepMetaInterface.getExecuteForEachIncomingRow() )
+      .thenReturn( true );
+    when( stepMetaInterface.getOutputJson() )
+      .thenReturn( true );
+    when( stepMetaInterface.getJsonQuery() ).thenReturn( "{ Company : ?{input}}" );
+    Object[] row = { "'HC'", "jeevan",
+      "{ '_id' : 'ObjectId(60e433324a1cb8ec4ccd9758)','Company' : 'Portugal','Name': 'steve' ,'gender' : 'Male' }" };
+
+    rowData = new Object[] { "'HC'", "jeevan" };
+    when( stepMetaInterface.getOutputJson() ).thenReturn( true );
+    when( stepMetaInterface.getJsonFieldName() ).thenReturn( "json" );
+    ValueMetaInterface rowValueMeta1 = new ValueMetaString( "input" );
+    ValueMetaInterface rowValueMeta2 = new ValueMeta( "input company", ValueMetaInterface.TYPE_STRING );
+
+    rowMeta.addValueMeta( rowValueMeta1 );
+    rowMeta.addValueMeta( rowValueMeta2 );
+
+    when( mockCursor.hasNext() ).thenReturn( true );
+    ServerAddress serverAddress = mock( ServerAddress.class );
+    when( serverAddress.toString() ).thenReturn( "serveraddress" );
+    when( mockCursor.getServerAddress() ).thenReturn( serverAddress );
+    DBObject nextDoc = (DBObject) JSON.parse( "{ '_id' : 'ObjectId(60e433324a1cb8ec4ccd9758)',"
+      + "'Company' : 'Portugal','Name': 'steve' ,'gender' : 'Male' }" );
+    when( mockCursor.next() ).thenReturn( nextDoc );
+    dbInput.setStopped( false );
+    dbInput.init( stepMetaInterface, stepDataInterface );
+
+    assertTrue( dbInput.processRow( stepMetaInterface, stepDataInterface ) );
+
+    verify( mongoCollectionWrapper ).find( dbObjectCaptor.capture(), any( DBObject.class ) );
+    verify( mockCursor ).next();
+    assertThat( stepDataInterface.cursor, equalTo( mockCursor ) );
+
+
+    assertThat( dbObjectCaptor.getValue(),
+      equalTo( (DBObject) JSON.parse( "{Company : 'HC'}" ) ) );
+    assertThat( putRow[ 0 ], equalTo( row[ 0 ] ) );
+    assertThat( putRow[ 1 ], equalTo( row[ 1 ] ) );
+    assertThat( putRow[ 2 ], CoreMatchers.<Object>equalTo( JSON.serialize( nextDoc ) ) );
+  }
+
+  @Test public void testOutputRowsForExecuteForEachIncomingRowFalse() throws MongoDbException, KettleException {
+    setupReturns();
+    when( stepMetaInterface.getExecuteForEachIncomingRow() )
+      .thenReturn( false );
+    when( stepMetaInterface.getOutputJson() )
+      .thenReturn( true );
+    Object[] row = { "HC", "jeevan",
+      "{ '_id' : 'ObjectId(60e433324a1cb8ec4ccd9758)','Company' : 'Portugal','Name': 'steve' ,'gender' : 'Male' }" };
+
+    rowData = new Object[] { "HC", "jeevan" };
+    when( stepMetaInterface.getOutputJson() ).thenReturn( true );
+    when( stepMetaInterface.getJsonFieldName() ).thenReturn( "json" );
+    ValueMetaInterface rowValueMeta1 = new ValueMetaString( "input" );
+    ValueMetaInterface rowValueMeta2 = new ValueMeta( "input company", ValueMetaInterface.TYPE_STRING );
+
+    rowMeta.addValueMeta( rowValueMeta1 );
+    rowMeta.addValueMeta( rowValueMeta2 );
+
+    when( mockCursor.hasNext() ).thenReturn( true );
+    ServerAddress serverAddress = mock( ServerAddress.class );
+    when( serverAddress.toString() ).thenReturn( "serveraddress" );
+    when( mockCursor.getServerAddress() ).thenReturn( serverAddress );
+    DBObject nextDoc = (DBObject) JSON.parse(
+      "{ '_id' : 'ObjectId(60e433324a1cb8ec4ccd9758)','Company' : 'Portugal','Name': 'steve' ,'gender' : 'Male' }" );
+    when( mockCursor.next() ).thenReturn( nextDoc );
+    dbInput.setStopped( false );
+    dbInput.init( stepMetaInterface, stepDataInterface );
+
+    assertTrue( dbInput.processRow( stepMetaInterface, stepDataInterface ) );
+
+    verify( mongoCollectionWrapper ).find();
+    verify( mockCursor ).next();
+    assertThat( stepDataInterface.cursor, equalTo( mockCursor ) );
+
+    assertThat( putRow[ 0 ], CoreMatchers.<Object>equalTo( JSON.serialize( nextDoc ) ) );
+  }
 }
