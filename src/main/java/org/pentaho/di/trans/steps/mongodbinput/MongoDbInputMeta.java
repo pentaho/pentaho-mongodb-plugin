@@ -209,6 +209,11 @@ public class MongoDbInputMeta extends MongoDbMeta {
   public void getFields( RowMetaInterface rowMeta, String origin, RowMetaInterface[] info, StepMeta nextStep,
       VariableSpace space ) throws KettleStepException {
 
+    if ( !m_executeForEachIncomingRow ) {
+      // if the "execute for each row" is not checked then we are not allowing rows to pass through this step
+      rowMeta.clear();
+    }
+
     if ( m_outputJson || m_fields == null || m_fields.size() == 0 ) {
       ValueMetaInterface jsonValueMeta = new ValueMeta( jsonFieldName, ValueMetaInterface.TYPE_STRING );
       jsonValueMeta.setOrigin( origin );
