@@ -24,6 +24,8 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
@@ -31,6 +33,10 @@ import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.wrapper.cursor.MongoCursorWrapper;
+import org.pentaho.mongo.wrapper.field.MongoField;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
@@ -289,5 +295,71 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     assertThat( stepDataInterface.cursor, equalTo( mockCursor ) );
 
     assertThat( putRow[ 0 ], CoreMatchers.<Object>equalTo( JSON.serialize( nextDoc ) ) );
+  }
+
+  @Test public void testOutputRowsForExecuteForEachIncomingRowFields() throws MongoDbException, KettleException  {
+    setupReturns();
+    String fieldName1 = "input";
+    String fieldName2 = "input company";
+    List<MongoField> lsm = new ArrayList<MongoField>();
+    MongoField mongoField1 = new MongoField();
+    mongoField1.m_fieldName = fieldName1;
+    mongoField1.m_fieldPath = "$.name";
+    mongoField1.m_kettleType = "String";
+    MongoField mongoField2 = new MongoField();
+    mongoField2.m_fieldName = fieldName2;
+    mongoField2.m_fieldPath = "$.company";
+    mongoField2.m_kettleType = "String";
+    lsm.add( mongoField1 );
+    lsm.add( mongoField2 );
+
+    ValueMetaInterface rowValueMeta1 = new ValueMetaString( fieldName1 );
+    ValueMetaInterface rowValueMeta2 = new ValueMeta( fieldName2, ValueMetaInterface.TYPE_STRING );
+
+    rowMeta.addValueMeta( rowValueMeta1 );
+    rowMeta.addValueMeta( rowValueMeta2 );
+
+    when( stepMetaInterface.getExecuteForEachIncomingRow() ).thenReturn( true );
+    when( stepMetaInterface.getOutputJson() ).thenReturn( false );
+    when( stepMetaInterface.getMongoFields() ).thenReturn( lsm );
+
+    when( mockCursor.hasNext() ).thenReturn( true );
+    ServerAddress serverAddress = mock( ServerAddress.class );
+    when( serverAddress.toString() ).thenReturn( "serveraddress" );
+    when( mockCursor.getServerAddress() ).thenReturn( serverAddress );
+
+    DBObject nextDoc = (DBObject) JSON.parse( "{ '_id' : 'ObjectId(60e433324a1cb8ec4ccd9758)', 'Company' : 'Portugal','Name': 'steve' ,'gender' : 'Male' }" );
+    Object[][] output = new Object[][]{ { null, null, "HC", 1000 } };
+
+    when( stepDataInterface.mongoDocumentToKettle( nextDoc, dbInput ) ).thenReturn( output );
+    when( mockCursor.next() ).thenReturn( nextDoc );
+
+    Answer<Void> mongoFieldsAnswer = new Answer<Void>() {
+      @Override public Void answer( InvocationOnMock invocationOnMock ) throws Throwable {
+        ValueMetaInterface mongoField1 = new ValueMetaString( "Company" );
+        ValueMetaInterface mongoField2 = new ValueMeta( "sal", ValueMetaInterface.TYPE_NUMBER );
+        RowMetaInterface rowMeta = (RowMetaInterface) invocationOnMock.getArguments()[0];
+        rowMeta.addValueMeta( mongoField1 );
+        rowMeta.addValueMeta( mongoField2 );
+        return null;
+      }
+    };
+
+    doAnswer( mongoFieldsAnswer ).when( stepMetaInterface ).getFields( rowMeta, "MongoDB Input", null, stepMeta, dbInput );
+    rowData = new Object[] { "HC", "john" };
+
+    dbInput.setStopped( false );
+    dbInput.init( stepMetaInterface, stepDataInterface );
+
+    assertTrue( dbInput.processRow( stepMetaInterface, stepDataInterface ) );
+
+    verify( mongoCollectionWrapper ).find();
+    verify( mockCursor ).next();
+    assertThat( stepDataInterface.cursor, equalTo( mockCursor ) );
+    Object[] row = {"HC", "john", "HC", 1000};
+    assertThat( putRow[0], equalTo( row[0] ) );
+    assertThat( putRow[1], equalTo( row[1] ) );
+    assertThat( putRow[2], equalTo( row[2] ) );
+    assertThat( putRow[3], equalTo( row[3] ) );
   }
 }
