@@ -1,5 +1,5 @@
 /*!
-* Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
+* Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMeta;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -69,11 +70,16 @@ public class MongoDbInput extends BaseStep implements StepInterface {
 
         if ( !first ) {
           initQuery();
+        } else if ( data.outputRowMeta == null ) {
+          data.outputRowMeta = getInputRowMeta().clone();
         }
       }
 
       if ( first ) {
-        data.outputRowMeta = new RowMeta();
+        if ( data.outputRowMeta == null ) {
+          data.outputRowMeta = new RowMeta();
+        }
+
         meta.getFields( data.outputRowMeta, getStepname(), null, null, MongoDbInput.this );
 
         initQuery();
@@ -103,20 +109,32 @@ public class MongoDbInput extends BaseStep implements StepInterface {
           }
         }
 
-        if ( meta.getOutputJson() || meta.getMongoFields() == null || meta.getMongoFields().size() == 0 ) {
+        if ( meta.getOutputJson() || meta.getMongoFields() == null || meta.getMongoFields().isEmpty() ) {
           String json = JSON.serialize( nextDoc );
           row = RowDataUtil.allocateRowData( data.outputRowMeta.size() );
-          int index = 0;
 
-          row[index++] = json;
+          if ( meta.getExecuteForEachIncomingRow() && m_currentInputRowDrivingQuery != null ) {
+            // Add the incoming columns at start and at the end of the incoming columns add json output.
+            RowMetaInterface inputRowMeta = getInputRowMeta();
+            appendTheIncomingRowsAtStart( row, inputRowMeta );
+            row[ inputRowMeta.size() ] = json;
+          } else {
+            // If there are no incoming columns then adding only json output to output row
+            row[ 0 ] = json;
+          }
           putRow( data.outputRowMeta, row );
         } else {
           Object[][] outputRows = data.mongoDocumentToKettle( nextDoc, MongoDbInput.this );
 
           // there may be more than one row if the paths contain an array
           // unwind
-          for ( int i = 0; i < outputRows.length; i++ ) {
-            putRow( data.outputRowMeta, outputRows[i] );
+          for ( Object[] outputRow : outputRows ) {
+            // Add all the incoming column values if they are not null
+            if ( meta.getExecuteForEachIncomingRow() && m_currentInputRowDrivingQuery != null ) {
+              appendTheIncomingRowsAtStart( outputRow, getInputRowMeta() );
+            }
+
+            putRow( data.outputRowMeta, outputRow );
           }
         }
       } else {
@@ -135,6 +153,14 @@ public class MongoDbInput extends BaseStep implements StepInterface {
         throw (KettleException) e;
       } else {
         throw new KettleException( e ); //$NON-NLS-1$
+      }
+    }
+  }
+
+  private void appendTheIncomingRowsAtStart( Object[] row, RowMetaInterface inputRowMeta ) {
+    for ( int columnIndex = 0; columnIndex < inputRowMeta.size(); columnIndex++ ) {
+      if ( m_currentInputRowDrivingQuery[ columnIndex ] != null ) {
+        row[ columnIndex ] = m_currentInputRowDrivingQuery[ columnIndex ];
       }
     }
   }
