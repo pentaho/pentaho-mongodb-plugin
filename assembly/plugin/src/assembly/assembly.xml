@@ -1,0 +1,36 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+  <id>pentaho-mongo-plugin-assembly</id>
+  <formats>
+    <format>zip</format>
+  </formats>
+  <baseDirectory>mongodb-plugins</baseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>src/main/resources</directory>
+      <outputDirectory>.</outputDirectory>
+      <filtered>true</filtered>
+    </fileSet>
+  </fileSets>
+  <dependencySets>
+    <dependencySet>
+      <scope>runtime</scope>
+      <outputDirectory>.</outputDirectory>
+      <useTransitiveDependencies>false</useTransitiveDependencies>
+      <useProjectArtifact>false</useProjectArtifact>
+      <includes>
+        <include>pentaho:pentaho-mongodb-plugin:jar</include>
+      </includes>
+    </dependencySet>
+    <dependencySet>
+      <scope>runtime</scope>
+      <useProjectArtifact>false</useProjectArtifact>
+      <useTransitiveDependencies>true</useTransitiveDependencies>
+      <outputDirectory>lib</outputDirectory>
+      <excludes>
+        <exclude>pentaho:pentaho-mongodb-plugin:*</exclude>
+      </excludes>
+    </dependencySet>
+  </dependencySets>
+</assembly>
