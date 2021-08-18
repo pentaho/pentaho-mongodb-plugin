@@ -24,16 +24,7 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
-  
-  <developers>
-    <developer>
-      <name>Bryan Rosander</name>
-      <email>brosander@pentaho.com</email>
-      <roles>
-        <role>developer</role>
-      </roles>
-    </developer>
-  </developers>
+
   
   <scm>
     <url>scm:git:git@github.com:pentaho/pentaho-mongodb-plugin.git</url>
@@ -125,68 +116,6 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-
-  <build>
-    <finalName>${project.artifactId}</finalName>
-    <plugins>
-    
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.0</version>
-        <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
-        </configuration>
-      </plugin>
-      
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <version>2.3.7</version>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-            <Import-Package>javax.crypto.spec*;resolution:=optional,org.eclipse.swt*;resolution:=optional,org.pentaho.di.ui.xul*;resolution:=optional,org.pentaho.ui.xul*;resolution:=optional,*</Import-Package>
-          </instructions>
-        </configuration>
-      </plugin>
-      
-    </plugins>
-    
-  </build>
-
-
-  <repositories>
-    <repository>
-      <id>pentaho-public</id>
-      <name>Pentaho Public</name>
-      <url>https://repo.orl.eng.hitachivantara.com/artifactory/pnt-mvn/</url>
-      <releases>
-        <enabled>true</enabled>
-        <updatePolicy>daily</updatePolicy>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>interval:15</updatePolicy>
-      </snapshots>
-    </repository>
-  </repositories>
-
-  <pluginRepositories>
-    <pluginRepository>
-      <id>pentaho-public-plugins</id>
-      <name>Pentaho Public Plugins</name>
-      <url>https://repo.orl.eng.hitachivantara.com/artifactory/pnt-mvn/</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <releases>
-        <updatePolicy>never</updatePolicy>
-      </releases>
-    </pluginRepository>
-  </pluginRepositories>
 
 
 </project>
