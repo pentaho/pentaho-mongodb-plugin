@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ import java.util.Set;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  */
 public class MongoDbOutput extends BaseStep implements StepInterface {
-  private static Class<?> PKG = MongoDbOutputMeta.class;
+  private static final Class<?> PKG = MongoDbOutputMeta.class;
 
   protected MongoDbOutputMeta m_meta;
   protected MongoDbOutputData m_data;

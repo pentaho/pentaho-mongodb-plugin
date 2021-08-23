@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,25 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
 
   @Injection( name = "USE_SSL_SOCKET_FACTORY" )
   private boolean m_useSSLSocketFactory;
+
+  /**
+   * parameter to differentiate between ConnectionString URI connections and normal connections
+   */
+  @Injection( name = "USE_CONNECTION_STRING" )
+  private boolean m_useConnectionString;
+
+  /**
+   * parameter to differentiate between ConnectionString URI connections and normal connections
+   */
+  @Injection( name = "USE_LEGACY_OPTIONS" )
+  private boolean m_useLegacyOptions;
+
+  /**
+   * ConnectionString URI parameter for ConnectionString URI connections
+   */
+  @Injection( name = "CONNECTION_STRING" )
+  private String connectionString;
+
 
   /**
    * default = 1 (standalone or primary acknowledges writes; -1 no
@@ -308,7 +327,7 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
   /**
    * Get the write concern to use
    *
-   * @param co the write concern to use
+   * @return  the write concern to use
    */
   public String getWriteConcern() {
     return m_writeConcern;
@@ -375,4 +394,60 @@ public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterf
     this.m_useSSLSocketFactory = value;
   }
 
+  /**
+   * Get whether Connection String URI mechanism is used
+   *
+   * @return true for connection String URI mechanism
+   */
+  public boolean isUseConnectionString() {
+    return m_useConnectionString;
+  }
+
+  /**
+   * Set whether to use true for connection String URI mechanism
+   *
+   * @param m_useConnectionString true for connection String URI mechanism
+   */
+  public void setUseConnectionString( boolean m_useConnectionString ) {
+    this.m_useConnectionString = m_useConnectionString;
+  }
+
+  /**
+   * Get whether Legacy Options (specifying hosts, port information individually) mechanism is used
+   *
+   * @return true for Legacy options mechanism
+   */
+  public boolean isUseLegacyOptions() {
+    return m_useLegacyOptions;
+  }
+
+  /**
+   * Set whether to use Legacy Options (specifying hosts, port information individually) mechanism is used
+   *
+   * @param m_useLegacyOptions true for Legacy options mechanism
+   */
+
+  public void setUseLegacyOptions( boolean m_useLegacyOptions ) {
+    this.m_useLegacyOptions = m_useLegacyOptions;
+  }
+
+  /**
+   * Get connection string
+   *
+   * @return connection sting
+   */
+
+  public String getConnectionString() {
+    return connectionString;
+  }
+
+  /**
+   * Set connection string
+   *
+   * @param connectionString string used to connect
+   */
+
+  public void setConnectionString( String connectionString ) {
+    this.connectionString = connectionString;
+  }
 }

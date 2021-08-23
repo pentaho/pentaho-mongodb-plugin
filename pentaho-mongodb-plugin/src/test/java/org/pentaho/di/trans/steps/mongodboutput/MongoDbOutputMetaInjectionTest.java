@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,6 +156,24 @@ public class MongoDbOutputMetaInjectionTest extends BaseMetadataInjectionTest<Mo
     check( "USE_SSL_SOCKET_FACTORY", new BooleanGetter() {
       public boolean get() {
         return meta.isUseSSLSocketFactory();
+      }
+    } );
+    check( "USE_CONNECTION_STRING", new BooleanGetter() {
+      @Override
+      public boolean get() {
+        return meta.isUseConnectionString();
+      }
+    } );
+    check( "USE_LEGACY_OPTIONS", new BooleanGetter() {
+      @Override
+      public boolean get() {
+        return meta.isUseLegacyOptions();
+      }
+    } );
+    check( "CONNECTION_STRING", new StringGetter() {
+      @Override
+      public String get() {
+        return meta.getConnectionString();
       }
     } );
     check( "READ_PREFERENCE", new StringGetter() {

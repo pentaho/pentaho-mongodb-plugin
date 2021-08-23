@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,10 @@ public class MongoWrapperUtil {
       throws MongoDbException {
       return MongoClientWrapperFactory.createMongoClientWrapper( props, log );
     }
+    @Override public MongoClientWrapper createConnectionStringMongoClientWrapper( String connectionString, MongoUtilLogger log )
+            throws MongoDbException {
+      return MongoClientWrapperFactory.createConnectionStringMongoClientWrapper( connectionString, log );
+    }
   };
 
   public static void setMongoWrapperClientFactory( MongoWrapperClientFactory mongoWrapperClientFactory ) {
@@ -47,10 +51,15 @@ public class MongoWrapperUtil {
 
   public static MongoClientWrapper createMongoClientWrapper( MongoDbMeta mongoDbMeta, VariableSpace vars,
                                                              LogChannelInterface log ) throws MongoDbException {
-    MongoProperties.Builder propertiesBuilder = createPropertiesBuilder( mongoDbMeta, vars );
+    if ( mongoDbMeta.isUseConnectionString() ) {
+      return mongoWrapperClientFactory.createConnectionStringMongoClientWrapper(
+              Encr.decryptPasswordOptionallyEncrypted( vars.environmentSubstitute( mongoDbMeta.getConnectionString() ) ), new KettleMongoUtilLogger( log ) );
+    } else {
+      MongoProperties.Builder propertiesBuilder = createPropertiesBuilder( mongoDbMeta, vars );
 
-    return mongoWrapperClientFactory
-      .createMongoClientWrapper( propertiesBuilder.build(), new KettleMongoUtilLogger( log ) );
+      return mongoWrapperClientFactory
+              .createMongoClientWrapper( propertiesBuilder.build(), new KettleMongoUtilLogger( log ) );
+    }
   }
 
   public static MongoProperties.Builder createPropertiesBuilder( MongoDbMeta mongoDbMeta, VariableSpace vars ) {
