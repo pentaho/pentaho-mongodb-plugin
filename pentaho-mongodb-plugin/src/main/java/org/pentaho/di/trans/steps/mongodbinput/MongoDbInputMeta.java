@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2019 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,9 +56,9 @@ import java.util.List;
  * @since 4.2.0-M1
  */
 @Step( id = "MongoDbInput", image = "mongodb-input.svg", name = "MongoDB input",
-  description = "Reads from a Mongo DB collection",
-  documentationUrl = "Products/MongoDB_Input",
-  categoryDescription = "Big Data" )
+        description = "Reads from a Mongo DB collection",
+        documentationUrl = "Products/MongoDB_Input",
+        categoryDescription = "Big Data" )
 @InjectionSupported( localizationPrefix = "MongoDbInput.Injection.", groups = ( "FIELDS" ) )
 public class MongoDbInputMeta extends MongoDbMeta {
   protected static Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes
@@ -112,6 +112,17 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
   private void readData( Node stepnode ) throws KettleXMLException {
     try {
+      String useConnectionString =  XMLHandler.getTagValue( stepnode, "use_connection_string" );
+      String useLegacyOptions =  XMLHandler.getTagValue( stepnode, "use_legacy_options" );
+      if ( !Utils.isEmpty( useConnectionString ) && useConnectionString.equalsIgnoreCase( "Y" ) ) {
+        setUseConnectionString( true );
+      } else if ( !Utils.isEmpty( useLegacyOptions ) && useLegacyOptions.equalsIgnoreCase( "Y" ) ) {
+        setUseLegacyOptions( true );
+      } else {
+        setUseLegacyOptions( true );
+      }
+      setConnectionString( Encr.decryptPasswordOptionallyEncrypted(
+              XMLHandler.getTagValue( stepnode, "connection_string" ) ) );
       setHostnames( XMLHandler.getTagValue( stepnode, "hostname" ) ); //$NON-NLS-1$
       setPort( XMLHandler.getTagValue( stepnode, "port" ) ); //$NON-NLS-1$
       setDbName( XMLHandler.getTagValue( stepnode, "db_name" ) ); //$NON-NLS-1$
@@ -122,7 +133,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
       setAuthenticationDatabaseName( XMLHandler.getTagValue( stepnode, "auth_database" ) ); //$NON-NLS-1$
       setAuthenticationUser( XMLHandler.getTagValue( stepnode, "auth_user" ) ); //$NON-NLS-1$
       setAuthenticationPassword( Encr.decryptPasswordOptionallyEncrypted( XMLHandler.getTagValue( stepnode,
-          "auth_password" ) ) ); //$NON-NLS-1$
+        "auth_password" ) ) ); //$NON-NLS-1$
 
       setAuthenticationMechanism( XMLHandler.getTagValue( stepnode, "auth_mech" ) );
       boolean kerberos = false;
@@ -131,15 +142,12 @@ public class MongoDbInputMeta extends MongoDbMeta {
         kerberos = useKerberos.equalsIgnoreCase( "Y" );
       }
       setUseKerberosAuthentication( kerberos );
-
       setConnectTimeout( XMLHandler.getTagValue( stepnode, "connect_timeout" ) ); //$NON-NLS-1$
       setSocketTimeout( XMLHandler.getTagValue( stepnode, "socket_timeout" ) ); //$NON-NLS-1$
-
       String useSSLSocketFactory =  XMLHandler.getTagValue( stepnode, "use_ssl_socket_factory" );
       if ( !Utils.isEmpty( useSSLSocketFactory ) ) {
         setUseSSLSocketFactory( useSSLSocketFactory.equalsIgnoreCase( "Y" ) );
       }
-
       setReadPreference( XMLHandler.getTagValue( stepnode, "read_preference" ) ); //$NON-NLS-1$
 
       m_outputJson = true; // default to true for backwards compatibility
@@ -201,13 +209,14 @@ public class MongoDbInputMeta extends MongoDbMeta {
     setPort( "27017" ); //$NON-NLS-1$
     setDbName( "db" ); //$NON-NLS-1$
     setCollection( "collection" ); //$NON-NLS-1$
+    setUseConnectionString( true ); //$NON-NLS-1$
     jsonFieldName = "json"; //$NON-NLS-1$
   }
 
   @SuppressWarnings( "deprecation" )
   @Override
   public void getFields( RowMetaInterface rowMeta, String origin, RowMetaInterface[] info, StepMeta nextStep,
-      VariableSpace space ) throws KettleStepException {
+                         VariableSpace space ) throws KettleStepException {
 
     if ( !m_executeForEachIncomingRow ) {
       // if the "execute for each row" is not checked then we are not allowing rows to pass through this step
@@ -259,6 +268,9 @@ public class MongoDbInputMeta extends MongoDbMeta {
   public String getXML() {
     StringBuffer retval = new StringBuffer( 300 );
 
+    retval.append( "    " ).append( XMLHandler.addTagValue( "use_connection_string", isUseConnectionString() ) );
+    retval.append( "    " ).append( XMLHandler.addTagValue( "use_legacy_options", isUseLegacyOptions() ) );
+    retval.append( "    " ).append( XMLHandler.addTagValue( "connection_string", getConnectionString() ) );
     retval.append( "    " ).append( XMLHandler.addTagValue( "hostname", getHostnames() ) ); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append( "    " ).append( XMLHandler.addTagValue( "port", getPort() ) ); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append( "    " ).append( XMLHandler.addTagValue( "use_all_replica_members", getUseAllReplicaSetMembers() ) ); //$NON-NLS-1$ //$NON-NLS-2$
@@ -270,28 +282,28 @@ public class MongoDbInputMeta extends MongoDbMeta {
     retval.append( "    " ).append( //$NON-NLS-1$
             XMLHandler.addTagValue( "auth_database", getAuthenticationDatabaseName() ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
-        XMLHandler.addTagValue( "auth_user", getAuthenticationUser() ) ); //$NON-NLS-1$
+            XMLHandler.addTagValue( "auth_user", getAuthenticationUser() ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
-        XMLHandler.addTagValue( "auth_password", //$NON-NLS-1$
-            Encr.encryptPasswordIfNotUsingVariables( getAuthenticationPassword() ) ) );
+            XMLHandler.addTagValue( "auth_password", //$NON-NLS-1$
+                    Encr.encryptPasswordIfNotUsingVariables( getAuthenticationPassword() ) ) );
     retval.append( "    " ).append( //$NON-NLS-1$
-        XMLHandler.addTagValue( "auth_mech", getAuthenticationMechanism() ) );
+            XMLHandler.addTagValue( "auth_mech", getAuthenticationMechanism() ) );
     retval.append( "    " ).append( //$NON-NLS-1$
-        XMLHandler.addTagValue( "auth_kerberos", getUseKerberosAuthentication() ) ); //$NON-NLS-1$
+            XMLHandler.addTagValue( "auth_kerberos", getUseKerberosAuthentication() ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
-        XMLHandler.addTagValue( "connect_timeout", getConnectTimeout() ) ); //$NON-NLS-1$
+            XMLHandler.addTagValue( "connect_timeout", getConnectTimeout() ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
-        XMLHandler.addTagValue( "socket_timeout", getSocketTimeout() ) ); //$NON-NLS-1$
+            XMLHandler.addTagValue( "socket_timeout", getSocketTimeout() ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
-        XMLHandler.addTagValue( "use_ssl_socket_factory", isUseSSLSocketFactory() ) ); //$NON-NLS-1$
+            XMLHandler.addTagValue( "use_ssl_socket_factory", isUseSSLSocketFactory() ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
-        XMLHandler.addTagValue( "read_preference", getReadPreference() ) ); //$NON-NLS-1$
+            XMLHandler.addTagValue( "read_preference", getReadPreference() ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
-        XMLHandler.addTagValue( "output_json", m_outputJson ) ); //$NON-NLS-1$
+            XMLHandler.addTagValue( "output_json", m_outputJson ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
-        XMLHandler.addTagValue( "query_is_pipeline", m_aggPipeline ) ); //$NON-NLS-1$
+            XMLHandler.addTagValue( "query_is_pipeline", m_aggPipeline ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
-        XMLHandler.addTagValue( "execute_for_each_row", m_executeForEachIncomingRow ) ); //$NON-NLS-1$
+            XMLHandler.addTagValue( "execute_for_each_row", m_executeForEachIncomingRow ) ); //$NON-NLS-1$
 
     if ( m_fields != null && m_fields.size() > 0 ) {
       retval.append( "\n    " ).append( XMLHandler.openTag( "mongo_fields" ) ); //$NON-NLS-1$ //$NON-NLS-2$
@@ -300,15 +312,15 @@ public class MongoDbInputMeta extends MongoDbMeta {
         retval.append( "\n      " ).append( XMLHandler.openTag( "mongo_field" ) ); //$NON-NLS-1$ //$NON-NLS-2$
 
         retval.append( "\n        " ).append( //$NON-NLS-1$
-            XMLHandler.addTagValue( "field_name", f.m_fieldName ) ); //$NON-NLS-1$
+                XMLHandler.addTagValue( "field_name", f.m_fieldName ) ); //$NON-NLS-1$
         retval.append( "\n        " ).append( //$NON-NLS-1$
-            XMLHandler.addTagValue( "field_path", f.m_fieldPath ) ); //$NON-NLS-1$
+                XMLHandler.addTagValue( "field_path", f.m_fieldPath ) ); //$NON-NLS-1$
         retval.append( "\n        " ).append( //$NON-NLS-1$
-            XMLHandler.addTagValue( "field_type", f.m_kettleType ) ); //$NON-NLS-1$
+                XMLHandler.addTagValue( "field_type", f.m_kettleType ) ); //$NON-NLS-1$
         if ( f.m_indexedVals != null && f.m_indexedVals.size() > 0 ) {
           retval.append( "\n        " ).append( //$NON-NLS-1$
-              XMLHandler.addTagValue( "indexed_vals", //$NON-NLS-1$
-                  MongoDbInputData.indexedValsList( f.m_indexedVals ) ) );
+                  XMLHandler.addTagValue( "indexed_vals", //$NON-NLS-1$
+                          MongoDbInputData.indexedValsList( f.m_indexedVals ) ) );
         }
         retval.append( "\n      " ).append( XMLHandler.closeTag( "mongo_field" ) ); //$NON-NLS-1$ //$NON-NLS-2$
       }
@@ -325,8 +337,12 @@ public class MongoDbInputMeta extends MongoDbMeta {
   }
 
   @Override public void readRep( Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases )
-    throws KettleException {
+          throws KettleException {
     try {
+      setUseConnectionString( rep.getStepAttributeBoolean( id_step, 0, "use_connection_string" ) );
+      setUseLegacyOptions( rep.getStepAttributeBoolean( id_step, 0, "use_legacy_options" ) );
+      setConnectionString( Encr.decryptPasswordOptionallyEncrypted(
+              rep.getStepAttributeString( id_step, "connection_string" ) ) );
       setHostnames( rep.getStepAttributeString( id_step, "hostname" ) ); //$NON-NLS-1$
       setPort( rep.getStepAttributeString( id_step, "port" ) ); //$NON-NLS-1$
       setUseAllReplicaSetMembers( rep.getStepAttributeBoolean( id_step, 0, "use_all_replica_members" ) ); //$NON-NLS-1$
@@ -340,7 +356,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
       setAuthenticationMechanism( rep.getStepAttributeString( id_step, "auth_mech" ) );
       setAuthenticationUser( rep.getStepAttributeString( id_step, "auth_user" ) ); //$NON-NLS-1$
       setAuthenticationPassword( Encr.decryptPasswordOptionallyEncrypted( rep.getStepAttributeString( id_step,
-          "auth_password" ) ) ); //$NON-NLS-1$
+              "auth_password" ) ) ); //$NON-NLS-1$
       setUseKerberosAuthentication( rep.getStepAttributeBoolean( id_step, "auth_kerberos" ) ); //$NON-NLS-1$
       setConnectTimeout( rep.getStepAttributeString( id_step, "connect_timeout" ) ); //$NON-NLS-1$
       setSocketTimeout( rep.getStepAttributeString( id_step, "socket_timeout" ) ); //$NON-NLS-1$
@@ -381,14 +397,17 @@ public class MongoDbInputMeta extends MongoDbMeta {
       }
     } catch ( Exception e ) {
       throw new KettleException( BaseMessages.getString( PKG,
-          "MongoDbInputMeta.Exception.UnexpectedErrorWhileReadingStepInfo" ), e ); //$NON-NLS-1$
+              "MongoDbInputMeta.Exception.UnexpectedErrorWhileReadingStepInfo" ), e ); //$NON-NLS-1$
     }
   }
 
   @Override
   public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step )
-    throws KettleException {
+          throws KettleException {
     try {
+      rep.saveStepAttribute( id_transformation, id_step, "use_connection_string", isUseConnectionString() );
+      rep.saveStepAttribute( id_transformation, id_step, "use_legacy_options", isUseLegacyOptions() );
+      rep.saveStepAttribute( id_transformation, id_step, "connection_string", getConnectionString() );
       rep.saveStepAttribute( id_transformation, id_step, "hostname", getHostnames() ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, "port", getPort() ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, "use_all_replica_members", getUseAllReplicaSetMembers() ); //$NON-NLS-1$
@@ -401,9 +420,9 @@ public class MongoDbInputMeta extends MongoDbMeta {
       rep.saveStepAttribute( id_transformation, id_step, "auth_database", //$NON-NLS-1$
               getAuthenticationDatabaseName() );
       rep.saveStepAttribute( id_transformation, id_step, "auth_user", //$NON-NLS-1$
-          getAuthenticationUser() );
+              getAuthenticationUser() );
       rep.saveStepAttribute( id_transformation, id_step, "auth_password", //$NON-NLS-1$
-          Encr.encryptPasswordIfNotUsingVariables( getAuthenticationPassword() ) );
+              Encr.encryptPasswordIfNotUsingVariables( getAuthenticationPassword() ) );
       rep.saveStepAttribute( id_transformation, id_step, "auth_mech", getAuthenticationMechanism() );
       rep.saveStepAttribute( id_transformation, id_step, "auth_kerberos", getUseKerberosAuthentication() );
       rep.saveStepAttribute( id_transformation, id_step, "connect_timeout", getConnectTimeout() ); //$NON-NLS-1$
@@ -411,22 +430,22 @@ public class MongoDbInputMeta extends MongoDbMeta {
       rep.saveStepAttribute( id_transformation, id_step, "use_ssl_socket_factory", isUseSSLSocketFactory() );
       rep.saveStepAttribute( id_transformation, id_step, "read_preference", getReadPreference() ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, 0, "output_json", //$NON-NLS-1$
-          m_outputJson );
+              m_outputJson );
       rep.saveStepAttribute( id_transformation, id_step, 0, "query_is_pipeline", //$NON-NLS-1$
-          m_aggPipeline );
+              m_aggPipeline );
       rep.saveStepAttribute( id_transformation, id_step, 0, "execute_for_each_row", //$NON-NLS-1$
-          m_executeForEachIncomingRow );
+              m_executeForEachIncomingRow );
 
       if ( m_fields != null && m_fields.size() > 0 ) {
         for ( int i = 0; i < m_fields.size(); i++ ) {
           MongoField f = m_fields.get( i );
 
           rep.saveStepAttribute( id_transformation, id_step, i, "field_name", //$NON-NLS-1$
-              f.m_fieldName );
+                  f.m_fieldName );
           rep.saveStepAttribute( id_transformation, id_step, i, "field_path", //$NON-NLS-1$
-              f.m_fieldPath );
+                  f.m_fieldPath );
           rep.saveStepAttribute( id_transformation, id_step, i, "field_type", //$NON-NLS-1$
-              f.m_kettleType );
+                  f.m_kettleType );
           if ( f.m_indexedVals != null && f.m_indexedVals.size() > 0 ) {
             String indexedVals = MongoDbInputData.indexedValsList( f.m_indexedVals );
 
@@ -441,13 +460,13 @@ public class MongoDbInputMeta extends MongoDbMeta {
       }
     } catch ( KettleException e ) {
       throw new KettleException(
-          BaseMessages.getString( PKG, "MongoDbInputMeta.Exception.UnableToSaveStepInfo" ) + id_step, e ); //$NON-NLS-1$
+              BaseMessages.getString( PKG, "MongoDbInputMeta.Exception.UnableToSaveStepInfo" ) + id_step, e ); //$NON-NLS-1$
     }
   }
 
   @Override
   public StepInterface getStep( StepMeta stepMeta, StepDataInterface stepDataInterface, int cnr, TransMeta tr,
-      Trans trans ) {
+                                Trans trans ) {
     return new MongoDbInput( stepMeta, stepDataInterface, cnr, tr, trans );
   }
 
@@ -458,7 +477,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
   @Override
   public void check( List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta, RowMetaInterface prev,
-      String[] input, String[] output, RowMetaInterface info ) {
+                     String[] input, String[] output, RowMetaInterface info ) {
     // TODO add checks
   }
 

@@ -1,7 +1,7 @@
 /*!
  * HITACHI VANTARA PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2018 Hitachi Vantara. All rights reserved.
+ * Copyright 2002 - 2021 Hitachi Vantara. All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Hitachi Vantara and its licensors. The intellectual
@@ -42,6 +42,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.row.value.ValueMetaPluginType;
+import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.MongoProperties;
@@ -64,7 +65,10 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.anyList;
 
 public class MongodbInputDiscoverFieldsImplTest {
 
@@ -78,7 +82,7 @@ public class MongodbInputDiscoverFieldsImplTest {
   @Captor private ArgumentCaptor<DBObject> dbObjectCaptor;
   @Captor private ArgumentCaptor<DBObject[]> dbObjectArrayCaptor;
 
-  private MongodbInputDiscoverFieldsImpl discoverFields = new MongodbInputDiscoverFieldsImpl();
+  private final MongodbInputDiscoverFieldsImpl discoverFields = new MongodbInputDiscoverFieldsImpl();
   private final int NUM_DOCS_TO_SAMPLE = 2;
 
   @Before public void before() throws MongoDbException, KettlePluginException {
@@ -99,10 +103,11 @@ public class MongodbInputDiscoverFieldsImplTest {
     doc.put( "foo", "bar" );
     doc.put( "baz", 123 );
     when( cursor.next() ).thenReturn( doc );
+    VariableSpace vars = mock( VariableSpace.class );
     List<MongoField> fields =
         discoverFields
             .discoverFields( new MongoProperties.Builder(), "mydb", "mycollection", "", "", false, NUM_DOCS_TO_SAMPLE,
-                inputMeta );
+                inputMeta, vars );
     validateFields( fields, "baz", "baz", 123l, // f1 name, path, value
         "foo", "foo", "bar" ); // f2 name, path, value
   }
@@ -113,10 +118,11 @@ public class MongodbInputDiscoverFieldsImplTest {
     doc.put( "foo", "bar" );
     doc.put( "baz", new BasicDBObject( "foo", "bop" ) );
     when( cursor.next() ).thenReturn( doc );
+    VariableSpace vars = mock( VariableSpace.class );
     List<MongoField> fields =
         discoverFields
             .discoverFields( new MongoProperties.Builder(), "mydb", "mycollection", "", "", false, NUM_DOCS_TO_SAMPLE,
-                inputMeta );
+                inputMeta, vars );
     validateFields( fields,
         "foo", "baz.foo", "stringVal",
         "foo_1", "foo", "stringVal" );
@@ -133,10 +139,11 @@ public class MongodbInputDiscoverFieldsImplTest {
     doc.put( "foo", list );
     doc.put( "baz", new BasicDBObject( "bop", new BasicDBObject( "fop", false ) ) );
     when( cursor.next() ).thenReturn( doc );
+    VariableSpace vars = mock( VariableSpace.class );
     List<MongoField> fields =
         discoverFields
             .discoverFields( new MongoProperties.Builder(), "mydb", "mycollection", "", "", false, NUM_DOCS_TO_SAMPLE,
-                inputMeta );
+                inputMeta, vars );
     validateFields( fields,
         "bar", "foo.0.bar", 123.123,           // field 0
         "fap", "foo.1.fap", date,              // field 1
@@ -150,10 +157,11 @@ public class MongodbInputDiscoverFieldsImplTest {
     doc.put( "foo", new BasicDBObject( "bar", BigDecimal.valueOf( 123.123 ) ) );
     doc.put( "baz", new BasicDBObject( "bop", new BasicDBObject( "fop", false ) ) );
     when( cursor.next() ).thenReturn( doc );
+    VariableSpace vars = mock( VariableSpace.class );
     List<MongoField> fields =
         discoverFields
             .discoverFields( new MongoProperties.Builder(), "mydb", "mycollection", "", "", false, NUM_DOCS_TO_SAMPLE,
-                inputMeta );
+                inputMeta, vars );
     validateFields( fields,
         "bar", "foo.bar", 123.123,
         "fop", "baz.bop.fop", "stringValue" );
@@ -161,7 +169,7 @@ public class MongodbInputDiscoverFieldsImplTest {
 
   @Test public void testArraysInArrays() throws MongoDbException, KettleException {
     setupPerform();
-
+    VariableSpace vars = mock( VariableSpace.class );
     DBObject doc = (DBObject) JSON.parse(
         "{ top : [ { parentField1 :  "
             + "[ 'nested1', 'nested2']   },"
@@ -170,7 +178,7 @@ public class MongodbInputDiscoverFieldsImplTest {
     List<MongoField> fields =
         discoverFields
             .discoverFields( new MongoProperties.Builder(), "mydb", "mycollection", "", "", false, NUM_DOCS_TO_SAMPLE,
-                inputMeta );
+                inputMeta, vars );
     validateFields( fields, "parentField1[0]", "top[0:0].parentField1.0", "stringVal", "parentField1[1]",
         "top[0:0].parentField1.1", "stringVal", "parentField2[0]", "top[1:1].parentField2.0", "stringVal" );
   }
@@ -191,9 +199,9 @@ public class MongodbInputDiscoverFieldsImplTest {
     //when( MongodbInputDiscoverFieldsImpl.jsonPipelineToDBObjectList( query ) ).thenReturn( dbObjects );
     when( collection.aggregate( anyList(), any( AggregationOptions.class ) ) )
         .thenReturn( cursor );
-
+    VariableSpace vars = mock( VariableSpace.class );
     discoverFields.discoverFields( new MongoProperties.Builder(), "mydb", "mycollection", query, "", true,
-        NUM_DOCS_TO_SAMPLE, inputMeta );
+        NUM_DOCS_TO_SAMPLE, inputMeta, vars );
 
     verify( collection ).aggregate( anyList(), any( AggregationOptions.class ) );
   }
@@ -203,9 +211,10 @@ public class MongodbInputDiscoverFieldsImplTest {
     when( clientFactory.createMongoClientWrapper( any( MongoProperties.class ), any( MongoUtilLogger.class ) ) )
         .thenThrow( mock( MongoDbException.class ) );
     setupPerform();
+    VariableSpace vars = mock( VariableSpace.class );
     discoverFields
         .discoverFields( new MongoProperties.Builder(), "mydb", "mycollection", "", "", false, NUM_DOCS_TO_SAMPLE,
-            inputMeta );
+            inputMeta, vars );
   }
 
   @Test ( expected = KettleException.class )
@@ -213,10 +222,11 @@ public class MongodbInputDiscoverFieldsImplTest {
     when( mockDb.getCollection( any( String.class ) ) )
         .thenThrow( mock( RuntimeException.class ) );
     setupPerform();
+    VariableSpace vars = mock( VariableSpace.class );
     discoverFields
         .discoverFields( new MongoProperties.Builder(),
             "mydb", "mycollection", "", "", false, NUM_DOCS_TO_SAMPLE,
-            inputMeta );
+            inputMeta, vars );
   }
 
   private void setupPerform() throws MongoDbException {

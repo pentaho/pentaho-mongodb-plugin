@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  *
  */
-
 package org.pentaho.mongo.wrapper.field;
 
 import com.mongodb.AggregationOptions;
@@ -37,6 +36,7 @@ import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.steps.mongodbinput.DiscoverFieldsCallback;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputDiscoverFields;
@@ -62,12 +62,12 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
   private static final Class<?> PKG = MongodbInputDiscoverFieldsImpl.class;
 
   public List<MongoField> discoverFields( final MongoProperties.Builder properties, final String db, final String collection,
-                                          final String query, final String fields,
-                                          final boolean isPipeline, final int docsToSample, MongoDbInputMeta step )
+                                         final String query, final String fields,
+                                         final boolean isPipeline, final int docsToSample, MongoDbInputMeta step, VariableSpace vars )
     throws KettleException {
     MongoClientWrapper clientWrapper = null;
     try {
-      clientWrapper = MongoWrapperUtil.createMongoClientWrapper( properties, null );
+      clientWrapper = MongoWrapperUtil.createMongoClientWrapper( step, vars, null );
     } catch ( MongoDbException e ) {
       throw new KettleException( e );
     }
@@ -141,15 +141,15 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
 
   @Override
   public void discoverFields( final MongoProperties.Builder properties, final String db, final String collection,
-                              final String query, final String fields,
-                              final boolean isPipeline, final int docsToSample, final MongoDbInputMeta step,
-                              final DiscoverFieldsCallback discoverFieldsCallback ) throws KettleException {
+                             final String query, final String fields,
+                             final boolean isPipeline, final int docsToSample, final MongoDbInputMeta step,
+                             final VariableSpace vars, final DiscoverFieldsCallback discoverFieldsCallback ) throws KettleException {
     new Thread( new Runnable() {
       @Override
       public void run() {
         try {
           discoverFieldsCallback.notifyFields(
-              discoverFields( properties, db, collection, query, fields, isPipeline, docsToSample, step ) );
+              discoverFields( properties, db, collection, query, fields, isPipeline, docsToSample, step, vars ) );
         } catch ( KettleException e ) {
           discoverFieldsCallback.notifyException( e );
         }
@@ -173,7 +173,7 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
         m.m_arrayIndexInfo = m.m_fieldName;
       }
       if ( m.m_fieldName.indexOf( '.' ) >= 0 ) {
-        m.m_fieldName = m.m_fieldName.substring( m.m_fieldName.lastIndexOf( '.' ) + 1, m.m_fieldName.length() );
+        m.m_fieldName = m.m_fieldName.substring( m.m_fieldName.lastIndexOf( '.' ) + 1 );
       }
 
       if ( m.m_disparateTypes ) {
@@ -227,8 +227,8 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
         String innerComp = tempComp.substring( tempComp.indexOf( '[' ) + 1, tempComp.indexOf( ']' ) );
 
         if ( temp.indexOf( ']' ) < temp.length() - 1 ) {
-          temp = temp.substring( temp.indexOf( ']' ) + 1, temp.length() );
-          tempComp = tempComp.substring( tempComp.indexOf( ']' ) + 1, tempComp.length() );
+          temp = temp.substring( temp.indexOf( ']' ) + 1 );
+          tempComp = tempComp.substring( tempComp.indexOf( ']' ) + 1 );
         } else {
           temp = ""; //$NON-NLS-1$
         }
@@ -388,8 +388,8 @@ public class MongodbInputDiscoverFieldsImpl implements MongoDbInputDiscoverField
         String innerComp = tempComp.substring( tempComp.indexOf( '[' ) + 1, tempComp.indexOf( ']' ) );
 
         if ( temp.indexOf( ']' ) < temp.length() - 1 ) {
-          temp = temp.substring( temp.indexOf( ']' ) + 1, temp.length() );
-          tempComp = tempComp.substring( tempComp.indexOf( ']' ) + 1, tempComp.length() );
+          temp = temp.substring( temp.indexOf( ']' ) + 1 );
+          tempComp = tempComp.substring( tempComp.indexOf( ']' ) + 1 );
         } else {
           temp = ""; //$NON-NLS-1$
         }

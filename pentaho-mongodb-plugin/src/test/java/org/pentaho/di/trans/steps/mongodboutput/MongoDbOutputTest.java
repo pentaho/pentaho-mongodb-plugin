@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2020 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.plugins.PluginRegistry;
@@ -65,12 +64,21 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.doThrow;
 import static org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputData.kettleRowToMongo;
 
 /**
@@ -1026,7 +1034,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     Node stepNode = step.item( 0 );
 
     MongoDbOutputMeta newMeta = new MongoDbOutputMeta();
-    newMeta.loadXML( stepNode, (List<DatabaseMeta>) null, (IMetaStore) null );
+    newMeta.loadXML( stepNode, null, (IMetaStore) null );
 
     assertTrue( newMeta.getUpdate() );
     assertFalse( newMeta.getUpsert() );
@@ -1047,7 +1055,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     Node stepNode = step.item( 0 );
 
     MongoDbOutputMeta newMeta = new MongoDbOutputMeta();
-    newMeta.loadXML( stepNode, (List<DatabaseMeta>) null, (IMetaStore) null );
+    newMeta.loadXML( stepNode, null, (IMetaStore) null );
 
     assertTrue( newMeta.getUpsert() );
     assertTrue( newMeta.getUpdate() );
@@ -1073,7 +1081,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     EasyMock.expect( rmi.getValueMeta( EasyMock.anyInt() ) ).andAnswer( new IAnswer<ValueMetaInterface>() {
       @Override public ValueMetaInterface answer() throws Throwable {
         Object[] args = EasyMock.getCurrentArguments();
-        int i = Integer.class.cast( args[ 0 ] );
+        int i = (Integer) args[0];
         ValueMetaInterface ret = new ValueMetaString( metaNames[ i ] );
         return ret;
       }

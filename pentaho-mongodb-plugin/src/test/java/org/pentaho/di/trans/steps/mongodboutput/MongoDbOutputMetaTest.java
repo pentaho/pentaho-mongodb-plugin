@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,13 +89,13 @@ public class MongoDbOutputMetaTest {
 
     validatorFactory.registerValidator( validatorFactory.getName( List.class, MongoField.class ),
       new ListLoadSaveValidator<MongoField>( new ObjectValidator<MongoField>( validatorFactory, MongoField.class,
-        Arrays.<String>asList( "m_incomingFieldName", "m_mongoDocPath", "m_useIncomingFieldNameAsMongoFieldName",
+        Arrays.asList( "m_incomingFieldName", "m_mongoDocPath", "m_useIncomingFieldNameAsMongoFieldName",
           "m_updateMatchField", "m_modifierUpdateOperation", "m_modifierOperationApplyPolicy", "m_JSON",
           "insertNull" ) ) ) );
 
     validatorFactory.registerValidator( validatorFactory.getName( List.class, MongoIndex.class ),
       new ListLoadSaveValidator<MongoIndex>( new ObjectValidator<MongoIndex>( validatorFactory, MongoIndex.class,
-        Arrays.<String>asList( "m_pathToFields", "m_drop", "m_unique", "m_sparse" ) ) ) );
+        Arrays.asList( "m_pathToFields", "m_drop", "m_unique", "m_sparse" ) ) ) );
 
     tester.testXmlRoundTrip();
     tester.testRepoRoundTrip();

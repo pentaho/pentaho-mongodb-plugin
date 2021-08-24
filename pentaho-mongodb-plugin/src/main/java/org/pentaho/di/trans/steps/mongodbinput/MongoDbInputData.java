@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,11 +45,8 @@ import java.util.List;
 public class MongoDbInputData extends BaseStepData implements StepDataInterface {
 
   public static final int MONGO_DEFAULT_PORT = 27017;
-
   public RowMetaInterface outputRowMeta;
-
   public MongoClientWrapper clientWrapper;
-  // public DB db;
   public MongoCollectionWrapper collection;
 
   /**
@@ -71,7 +68,7 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
     return mongoDbInputDiscoverFieldsHolder;
   }
 
-  protected void setMongoDbInputDiscoverFieldsHolder( MongoDbInputDiscoverFieldsHolder holder ) {
+  protected static void setMongoDbInputDiscoverFieldsHolder( MongoDbInputDiscoverFieldsHolder holder ) {
     mongoDbInputDiscoverFieldsHolder = holder;
   }
 
@@ -286,7 +283,6 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   public void setMongoFields( List<MongoField> fields ) {
     // copy this list
     m_userFields = new ArrayList<MongoField>();
-
     for ( MongoField f : fields ) {
       m_userFields.add( f.copy() );
     }

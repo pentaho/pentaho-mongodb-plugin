@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Matchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.exception.KettleException;
@@ -41,8 +42,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
 
 public class MongoDbInputDataTest {
   private MongoDbInputData mongoDbInputData;
@@ -98,12 +111,12 @@ public class MongoDbInputDataTest {
 
     doAnswer( new Answer() {
         @Override public Object answer( InvocationOnMock invocationOnMock ) {
-          ( (DiscoverFieldsCallback) invocationOnMock.getArguments()[8] ).notifyFields( mongoFields );
+          ( (DiscoverFieldsCallback) invocationOnMock.getArguments()[9] ).notifyFields( mongoFields );
           return null;
         }
       } ).when( mongoDbInputDiscoverFields )
         .discoverFields( any( MongoProperties.Builder.class ), anyString(), anyString(), anyString(), anyString(),
-            anyBoolean(), anyInt(), any( MongoDbInputMeta.class ), any( DiscoverFieldsCallback.class ) );
+            anyBoolean(), anyInt(), any( MongoDbInputMeta.class ), Matchers.<VariableSpace>any(), any( DiscoverFieldsCallback.class ) );
 
     when( holder.getMongoDbInputDiscoverFields() ).thenReturn( mongoDbInputDiscoverFields );
     mongoDbInputData.setMongoDbInputDiscoverFieldsHolder( holder );
@@ -144,12 +157,12 @@ public class MongoDbInputDataTest {
 
     doAnswer( new Answer() {
       @Override public Object answer( InvocationOnMock invocationOnMock ) {
-        ( (DiscoverFieldsCallback) invocationOnMock.getArguments()[8] ).notifyException( new KettleException() );
+        ( (DiscoverFieldsCallback) invocationOnMock.getArguments()[9] ).notifyException( new KettleException() );
         return null;
       }
     } ).when( mongoDbInputDiscoverFields )
         .discoverFields( any( MongoProperties.Builder.class ), anyString(), anyString(), anyString(), anyString(),
-            anyBoolean(), anyInt(), any( MongoDbInputMeta.class ), any( DiscoverFieldsCallback.class ) );
+            anyBoolean(), anyInt(), any( MongoDbInputMeta.class ), Matchers.<VariableSpace>any(), any( DiscoverFieldsCallback.class ) );
 
     when( holder.getMongoDbInputDiscoverFields() ).thenReturn( mongoDbInputDiscoverFields );
     mongoDbInputData.setMongoDbInputDiscoverFieldsHolder( holder );
@@ -186,7 +199,7 @@ public class MongoDbInputDataTest {
 
     doThrow( new KettleException() ).when( mongoDbInputDiscoverFields )
         .discoverFields( any( MongoProperties.Builder.class ), anyString(), anyString(), anyString(), anyString(),
-            anyBoolean(), anyInt(), any( MongoDbInputMeta.class ), any( DiscoverFieldsCallback.class ) );
+            anyBoolean(), anyInt(), any( MongoDbInputMeta.class ), Matchers.<VariableSpace>any(), any( DiscoverFieldsCallback.class ) );
 
     when( holder.getMongoDbInputDiscoverFields() ).thenReturn( mongoDbInputDiscoverFields );
     mongoDbInputData.setMongoDbInputDiscoverFieldsHolder( holder );
@@ -225,7 +238,7 @@ public class MongoDbInputDataTest {
     mongoFields.add( new MongoField() );
     when( mongoDbInputDiscoverFields
         .discoverFields( any( MongoProperties.Builder.class ), anyString(), anyString(), anyString(), anyString(),
-            anyBoolean(), anyInt(), any( MongoDbInputMeta.class ) ) ).thenReturn( mongoFields );
+            anyBoolean(), anyInt(), any( MongoDbInputMeta.class ), Matchers.<VariableSpace>any() ) ).thenReturn( mongoFields );
     when( holder.getMongoDbInputDiscoverFields() ).thenReturn( mongoDbInputDiscoverFields );
     mongoDbInputData.setMongoDbInputDiscoverFieldsHolder( holder );
 
@@ -267,7 +280,7 @@ public class MongoDbInputDataTest {
     MongoDbInputDiscoverFields mongoDbInputDiscoverFields = mock( MongoDbInputDiscoverFields.class );
     when( mongoDbInputDiscoverFields
         .discoverFields( any( MongoProperties.Builder.class ), anyString(), anyString(), anyString(), anyString(),
-            anyBoolean(), anyInt(), any( MongoDbInputMeta.class ) ) )
+            anyBoolean(), anyInt(), any( MongoDbInputMeta.class ), Matchers.<VariableSpace>any() ) )
         .thenThrow( new KettleException( "testException" ) );
     when( holder.getMongoDbInputDiscoverFields() ).thenReturn( mongoDbInputDiscoverFields );
     mongoDbInputData.setMongoDbInputDiscoverFieldsHolder( holder );
@@ -304,7 +317,7 @@ public class MongoDbInputDataTest {
     MongoDbInputDiscoverFields mongoDbInputDiscoverFields = mock( MongoDbInputDiscoverFields.class );
     when( mongoDbInputDiscoverFields
         .discoverFields( any( MongoProperties.Builder.class ), anyString(), anyString(), anyString(), anyString(),
-            anyBoolean(), anyInt(), any( MongoDbInputMeta.class ) ) ).thenThrow( new NullPointerException() );
+            anyBoolean(), anyInt(), any( MongoDbInputMeta.class ), Matchers.<VariableSpace>any() ) ).thenThrow( new NullPointerException() );
     when( holder.getMongoDbInputDiscoverFields() ).thenReturn( mongoDbInputDiscoverFields );
     mongoDbInputData.setMongoDbInputDiscoverFieldsHolder( holder );
 

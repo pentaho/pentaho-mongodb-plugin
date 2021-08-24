@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2020 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -287,6 +287,7 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     setCollection( "" ); //$NON-NLS-1$
     setDbName( "" ); //$NON-NLS-1$
     setAuthenticationMechanism( "" );
+    setUseConnectionString( true ); //$NON-NLS-1$
     m_upsert = false;
     m_modifierUpdate = false;
     m_truncate = false;
@@ -536,7 +537,9 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
   @Override
   public String getXML() {
     StringBuffer retval = new StringBuffer();
-
+    retval.append( "    " ).append( XMLHandler.addTagValue( "use_connection_string", isUseConnectionString() ) );
+    retval.append( "    " ).append( XMLHandler.addTagValue( "use_legacy_options", isUseLegacyOptions() ) );
+    retval.append( "    " ).append( XMLHandler.addTagValue( "connection_string", getConnectionString() ) );
     if ( !Const.isEmpty( getHostnames() ) ) {
       retval.append( "\n    " ).append( //$NON-NLS-1$
           XMLHandler.addTagValue( "mongo_host", getHostnames() ) ); //$NON-NLS-1$
@@ -668,6 +671,17 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
 
   @Override
   public void loadXML( Node stepnode, List<DatabaseMeta> databases, IMetaStore metaStore ) throws KettleXMLException {
+    String useConnectionString =  XMLHandler.getTagValue( stepnode, "use_connection_string" );
+    String useLegacyOptions =  XMLHandler.getTagValue( stepnode, "use_legacy_options" );
+    if ( !Utils.isEmpty( useConnectionString ) && useConnectionString.equalsIgnoreCase( "Y" ) ) {
+      setUseConnectionString( true );
+    } else if ( !Utils.isEmpty( useLegacyOptions ) && useLegacyOptions.equalsIgnoreCase( "Y" ) ) {
+      setUseLegacyOptions( true );
+    } else {
+      setUseLegacyOptions( true );
+    }
+    setConnectionString( Encr.decryptPasswordOptionallyEncrypted(
+            XMLHandler.getTagValue( stepnode, "connection_string" ) ) );
     setHostnames( XMLHandler.getTagValue( stepnode, "mongo_host" ) ); //$NON-NLS-1$
     setPort( XMLHandler.getTagValue( stepnode, "mongo_port" ) ); //$NON-NLS-1$
     setAuthenticationDatabaseName( XMLHandler.getTagValue( stepnode, "mongo_auth_database" ) ); //$NON-NLS-1$
@@ -790,6 +804,10 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
   @Override
   public void readRep( Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases )
     throws KettleException {
+    setUseConnectionString( rep.getStepAttributeBoolean( id_step,  0, "use_connection_string" ) );
+    setUseLegacyOptions( rep.getStepAttributeBoolean( id_step, 0, "use_legacy_options" ) );
+    setConnectionString( Encr.decryptPasswordOptionallyEncrypted(
+            rep.getStepAttributeString( id_step, "connection_string" ) ) );
     setHostnames( rep.getStepAttributeString( id_step, 0, "mongo_host" ) ); //$NON-NLS-1$
     setPort( rep.getStepAttributeString( id_step, 0, "mongo_port" ) ); //$NON-NLS-1$
     setUseAllReplicaSetMembers( rep.getStepAttributeBoolean( id_step, 0, "use_all_replica_members" ) ); //$NON-NLS-1$
@@ -876,6 +894,9 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
   }
 
   @Override public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step ) throws KettleException {
+    rep.saveStepAttribute( id_transformation, id_step, "use_connection_string", isUseConnectionString() );
+    rep.saveStepAttribute( id_transformation, id_step, "use_legacy_options", isUseLegacyOptions() );
+    rep.saveStepAttribute( id_transformation, id_step, "connection_string", getConnectionString() );
     if ( !Const.isEmpty( getHostnames() ) ) {
       rep.saveStepAttribute( id_transformation, id_step, 0, "mongo_host", //$NON-NLS-1$
           getHostnames() );

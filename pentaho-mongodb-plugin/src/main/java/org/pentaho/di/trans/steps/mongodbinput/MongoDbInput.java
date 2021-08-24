@@ -41,7 +41,7 @@ import org.pentaho.mongo.wrapper.field.MongodbInputDiscoverFieldsImpl;
 import java.util.List;
 
 public class MongoDbInput extends BaseStep implements StepInterface {
-  private static Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes,
+  private static final Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes,
   // needed by
   // Translator2!!
   // $NON-NLS-1$

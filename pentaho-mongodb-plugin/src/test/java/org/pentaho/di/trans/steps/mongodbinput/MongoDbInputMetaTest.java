@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class MongoDbInputMetaTest {
 
           @Override
           public String getTestObject() {
-            return "{" + UUID.randomUUID().toString() + "}";
+            return "{" + UUID.randomUUID() + "}";
           }
 
           @Override
@@ -89,7 +89,7 @@ public class MongoDbInputMetaTest {
 
     LoadSaveTester
         tester =
-        new LoadSaveTester( MongoDbInputMeta.class, Arrays.<String>asList( "hostname", "port", "db_name",
+        new LoadSaveTester( MongoDbInputMeta.class, Arrays.asList( "hostname", "port", "db_name",
             "fields_name", "collection", "json_field_name", "json_query", "auth_user", "auth_password",
             "auth_kerberos", "connect_timeout", "socket_timeout", "read_preference", "output_json",
             "use_all_replica_members", "query_is_pipeline", "execute_for_each_row", "mongo_fields", "tag_sets" ),
@@ -99,7 +99,7 @@ public class MongoDbInputMetaTest {
 
     validatorFactory.registerValidator( validatorFactory.getName( List.class, MongoField.class ),
         new ListLoadSaveValidator<MongoField>( new ObjectValidator<MongoField>( validatorFactory, MongoField.class,
-            Arrays.<String>asList( "m_fieldName", "m_fieldPath", "m_kettleType", "m_indexedVals" ) ) ) );
+            Arrays.asList( "m_fieldName", "m_fieldPath", "m_kettleType", "m_indexedVals" ) ) ) );
 
     tester.testXmlRoundTrip();
     tester.testRepoRoundTrip();
