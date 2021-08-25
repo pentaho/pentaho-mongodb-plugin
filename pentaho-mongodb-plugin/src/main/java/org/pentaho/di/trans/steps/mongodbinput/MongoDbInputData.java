@@ -283,8 +283,10 @@ public class MongoDbInputData extends BaseStepData implements StepDataInterface 
   public void setMongoFields( List<MongoField> fields ) {
     // copy this list
     m_userFields = new ArrayList<MongoField>();
-    for ( MongoField f : fields ) {
-      m_userFields.add( f.copy() );
+    if ( fields != null ) {
+      for ( MongoField f : fields ) {
+        m_userFields.add( f.copy() );
+      }
     }
   }
 
