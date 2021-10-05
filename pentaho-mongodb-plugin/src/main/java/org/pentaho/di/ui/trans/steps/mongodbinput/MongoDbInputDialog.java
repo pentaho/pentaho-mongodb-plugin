@@ -19,6 +19,7 @@ package org.pentaho.di.ui.trans.steps.mongodbinput;
 
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.CTabFolder;
@@ -1357,8 +1358,10 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
   }
 
   private void getFields( MongoDbInputMeta meta ) {
-    if ( !Const.isEmpty( wHostname.getText() ) && !Const.isEmpty( wDbName.getText() ) && !Const
-            .isEmpty( wCollection.getText() ) ) {
+    String connectionString = Encr.decryptPasswordOptionallyEncrypted( transMeta.environmentSubstitute( wConnString.getText() ) );
+    if ( ( wbIndividualFieldsComposite.getVisible() && StringUtils.isNotEmpty( wHostname.getText() ) )
+            || ( wbConnectionStringComposite.getVisible( ) && StringUtils.isNotEmpty( connectionString ) ) && StringUtils.isNotEmpty( wDbName.getText() ) &&
+            StringUtils.isNotEmpty( wCollection.getText() ) ) {
       EnterNumberDialog
               end =
               new EnterNumberDialog( shell, 100, BaseMessages.getString( PKG, "MongoDbInputDialog.SampleDocuments.Title" ),
@@ -1393,8 +1396,10 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
       // pop up an error dialog
 
       String missingConDetails = "";
-      if ( Const.isEmpty( wHostname.getText() ) ) {
+      if ( wbIndividualFieldsComposite.getVisible() && Const.isEmpty( wHostname.getText() ) ) {
         missingConDetails += " host name(s)";
+      } else if ( wbConnectionStringComposite.getVisible() && Const.isEmpty( connectionString ) ) {
+        missingConDetails += " Connection string";
       }
       if ( Const.isEmpty( wDbName.getText() ) ) {
         missingConDetails += " database";
