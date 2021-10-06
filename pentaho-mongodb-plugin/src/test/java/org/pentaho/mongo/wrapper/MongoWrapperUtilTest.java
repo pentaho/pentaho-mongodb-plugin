@@ -38,6 +38,7 @@ import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.MongoProp;
 import org.pentaho.mongo.MongoProperties;
 import org.pentaho.mongo.MongoUtilLogger;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -56,6 +57,7 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
  * Created by bryan on 8/22/14.
  */
 @RunWith( PowerMockRunner.class )
+@PowerMockIgnore( "jdk.internal.reflect.*" )
 @PrepareForTest( { Encr.class, MongoClientWrapperFactory.class } )
 public class MongoWrapperUtilTest {
   private static final String SOCKET_TIMEOUT = "mongoDbSocketTimeout";
