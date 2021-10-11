@@ -32,7 +32,7 @@
   
   <properties>
     <mockito.version>1.10.19</mockito.version>
-    <junit.version>4.11</junit.version>
+    <junit.version>4.13.1</junit.version>
     <mongo-driver.version>3.12.10</mongo-driver.version>
     <powermock-module-junit4.version>1.7.3</powermock-module-junit4.version>
     <powermock-api-mockito.version>1.7.3</powermock-api-mockito.version>
