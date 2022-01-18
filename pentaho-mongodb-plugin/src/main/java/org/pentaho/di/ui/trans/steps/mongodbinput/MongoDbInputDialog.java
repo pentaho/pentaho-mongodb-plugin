@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2022 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,6 +115,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
   private StyledTextComp wJsonQuery;
   private Label wlJsonQuery;
   private Button m_queryIsPipelineBut;
+  private Button allowDiskUseBut;
 
   private TextVar wAuthDbName;
   private TextVar wAuthUser;
@@ -828,6 +829,25 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     m_executeForEachRowBut.setLayoutData( fd );
     lastControl = m_executeForEachRowBut;
 
+    //allowDiskUse checkbox
+    Label allowDiskUse = new Label( wQueryComp, SWT.RIGHT );
+    allowDiskUse.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.AllowDiskUse.Label" ) ); //$NON-NLS-1$
+    props.setLook( allowDiskUse );
+    fd = new FormData();
+    fd.bottom = new FormAttachment( lastControl, -margin );
+    fd.left = new FormAttachment( 0, -margin );
+    fd.right = new FormAttachment( middle, -margin );
+    allowDiskUse.setLayoutData( fd );
+
+    allowDiskUseBut = new Button( wQueryComp, SWT.CHECK );
+    props.setLook( allowDiskUseBut );
+    fd = new FormData();
+    fd.bottom = new FormAttachment( lastControl, -margin );
+    fd.left = new FormAttachment( middle, 0 );
+    fd.right = new FormAttachment( 100, 0 );
+    allowDiskUseBut.setLayoutData( fd );
+    lastControl = allowDiskUseBut;
+
     Label queryIsPipelineL = new Label( wQueryComp, SWT.RIGHT );
     queryIsPipelineL.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.Pipeline.Label" ) ); //$NON-NLS-1$
     props.setLook( queryIsPipelineL );
@@ -851,6 +871,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
         updateQueryTitleInfo();
       }
     } );
+
 
     // JSON Query input ...
     //
@@ -1118,6 +1139,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     m_useSSLSocketFactory.setSelection( meta.isUseSSLSocketFactory() );
     m_readPreference.setText( Const.NVL( meta.getReadPreference(), "" ) ); //$NON-NLS-1$
     m_queryIsPipelineBut.setSelection( meta.getQueryIsPipeline() );
+    allowDiskUseBut.setSelection( meta.isAllowDiskUse() );
     m_outputAsJson.setSelection( meta.getOutputJson() );
     m_executeForEachRowBut.setSelection( meta.getExecuteForEachIncomingRow() );
 
@@ -1138,9 +1160,12 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
               + ": db." //$NON-NLS-1$
               + Const.NVL( wCollection.getText(), "n/a" ) + ".aggregate(..." ); //$NON-NLS-1$ //$NON-NLS-2$
       wFieldsName.setEnabled( false );
+      allowDiskUseBut.setEnabled( true );
     } else {
       wlJsonQuery.setText( BaseMessages.getString( PKG, "MongoDbInputDialog.JsonQuery.Label" ) ); //$NON-NLS-1$
       wFieldsName.setEnabled( true );
+      allowDiskUseBut.setSelection( false );
+      allowDiskUseBut.setEnabled( false );
     }
   }
 
@@ -1174,6 +1199,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
     meta.setReadPreference( m_readPreference.getText() );
     meta.setOutputJson( m_outputAsJson.getSelection() );
     meta.setQueryIsPipeline( m_queryIsPipelineBut.getSelection() );
+    meta.setAllowDiskUse( allowDiskUseBut.getSelection() );
     meta.setExecuteForEachIncomingRow( m_executeForEachRowBut.getSelection() );
 
     int numNonEmpty = m_fieldsView.nrNonEmpty();

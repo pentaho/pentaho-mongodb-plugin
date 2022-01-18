@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2022 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,9 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
   @Injection( name = "AGG_PIPELINE" )
   private boolean m_aggPipeline = false;
+
+  @Injection( name = "ALLOWDISKUSE" )
+  private boolean allowDiskUse = false;
 
   @Injection( name = "OUTPUT_JSON" )
   private boolean m_outputJson = true;
@@ -161,6 +164,11 @@ public class MongoDbInputMeta extends MongoDbMeta {
       String queryIsPipe = XMLHandler.getTagValue( stepnode, "query_is_pipeline" ); //$NON-NLS-1$
       if ( !Const.isEmpty( queryIsPipe ) ) {
         m_aggPipeline = queryIsPipe.equalsIgnoreCase( "Y" ); //$NON-NLS-1$
+      }
+
+      String allowDiskUsage = XMLHandler.getTagValue( stepnode, "allow_disk_use" ); //$NON-NLS-1$
+      if ( !Const.isEmpty( allowDiskUsage ) ) {
+        allowDiskUse = allowDiskUsage.equalsIgnoreCase( "Y" ); //$NON-NLS-1$
       }
 
       String executeForEachR = XMLHandler.getTagValue( stepnode, "execute_for_each_row" );
@@ -303,6 +311,8 @@ public class MongoDbInputMeta extends MongoDbMeta {
     retval.append( "    " ).append( //$NON-NLS-1$
             XMLHandler.addTagValue( "query_is_pipeline", m_aggPipeline ) ); //$NON-NLS-1$
     retval.append( "    " ).append( //$NON-NLS-1$
+      XMLHandler.addTagValue( "allow_disk_use", allowDiskUse ) ); //$NON-NLS-1$
+    retval.append( "    " ).append( //$NON-NLS-1$
             XMLHandler.addTagValue( "execute_for_each_row", m_executeForEachIncomingRow ) ); //$NON-NLS-1$
 
     if ( m_fields != null && m_fields.size() > 0 ) {
@@ -365,6 +375,7 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
       m_outputJson = rep.getStepAttributeBoolean( id_step, 0, "output_json" ); //$NON-NLS-1$
       m_aggPipeline = rep.getStepAttributeBoolean( id_step, "query_is_pipeline" ); //$NON-NLS-1$
+      allowDiskUse = rep.getStepAttributeBoolean( id_step, "allow_disk_use" ); //$NON-NLS-1$
       m_executeForEachIncomingRow = rep.getStepAttributeBoolean( id_step, "execute_for_each_row" ); //$NON-NLS-1$
 
       int nrfields = rep.countNrStepAttributes( id_step, "field_name" ); //$NON-NLS-1$
@@ -433,6 +444,8 @@ public class MongoDbInputMeta extends MongoDbMeta {
               m_outputJson );
       rep.saveStepAttribute( id_transformation, id_step, 0, "query_is_pipeline", //$NON-NLS-1$
               m_aggPipeline );
+      rep.saveStepAttribute( id_transformation, id_step, 0, "allow_disk_use", //$NON-NLS-1$
+        allowDiskUse );
       rep.saveStepAttribute( id_transformation, id_step, 0, "execute_for_each_row", //$NON-NLS-1$
               m_executeForEachIncomingRow );
 
@@ -561,5 +574,21 @@ public class MongoDbInputMeta extends MongoDbMeta {
    */
   public boolean getQueryIsPipeline() {
     return m_aggPipeline;
+  }
+
+  /**
+   * Get whether the supplied query is actually a pipeline specification
+   * <p>
+   * true if the supplied query is a pipeline specification and allowdiskuse is enabled
+   */
+  public boolean isAllowDiskUse() {
+    return allowDiskUse;
+  }
+
+  /**
+   * @param allowDiskUse - true if the supplied query is a pipeline specification and allowdiskuse is enabled
+   */
+  public void setAllowDiskUse( boolean allowDiskUse ) {
+    this.allowDiskUse = allowDiskUse;
   }
 }
