@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2022 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,18 +117,43 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     setupReturns();
     when( stepMetaInterface.getJsonQuery() ).thenReturn( query );
     when( stepMetaInterface.getQueryIsPipeline() ).thenReturn( true );
+    when( stepMetaInterface.isAllowDiskUse() ).thenReturn( false );
     String[] parts = query.split( "," );
     DBObject dbObjQuery = (DBObject) JSON.parse( parts[ 0 ] );
     DBObject[] remainder = parts.length > 1
       ? new DBObject[] { (DBObject) JSON.parse( parts[ 1 ] ) }
       : new DBObject[ 0 ];
-    when( mongoCollectionWrapper.aggregate( dbObjQuery, remainder ) ).thenReturn( cursor );
+    when( mongoCollectionWrapper.aggregate( dbObjQuery, remainder, stepMetaInterface.isAllowDiskUse() ) ).thenReturn( cursor );
 
     dbInput.init( stepMetaInterface, stepDataInterface );
     dbInput.processRow( stepMetaInterface, stepDataInterface );
 
     verify( stepDataInterface ).init();
-    verify( mongoCollectionWrapper ).aggregate( dbObjQuery, remainder );
+    verify( mongoCollectionWrapper ).aggregate( dbObjQuery, remainder, stepMetaInterface.isAllowDiskUse() );
+    assertEquals( cursor, stepDataInterface.m_pipelineResult );
+  }
+
+  @Test public void processRowMultipartAggPipelineQueryWithAllowDiskUse() throws MongoDbException, KettleException {
+    processRowWithQueryAllowDiskUse( "{$match : { foo : 'bar'}}, { $sort : 1 }" );
+  }
+
+  private void processRowWithQueryAllowDiskUse( String query ) throws MongoDbException, KettleException {
+    setupReturns();
+    when( stepMetaInterface.getJsonQuery() ).thenReturn( query );
+    when( stepMetaInterface.getQueryIsPipeline() ).thenReturn( true );
+    when( stepMetaInterface.isAllowDiskUse() ).thenReturn( true );
+    String[] parts = query.split( "," );
+    DBObject dbObjQuery = (DBObject) JSON.parse( parts[ 0 ] );
+    DBObject[] remainder = parts.length > 1
+      ? new DBObject[] { (DBObject) JSON.parse( parts[ 1 ] ) }
+      : new DBObject[ 0 ];
+    when( mongoCollectionWrapper.aggregate( dbObjQuery, remainder, stepMetaInterface.isAllowDiskUse() ) ).thenReturn( cursor );
+
+    dbInput.init( stepMetaInterface, stepDataInterface );
+    dbInput.processRow( stepMetaInterface, stepDataInterface );
+
+    verify( stepDataInterface ).init();
+    verify( mongoCollectionWrapper ).aggregate( dbObjQuery, remainder, stepMetaInterface.isAllowDiskUse() );
     assertEquals( cursor, stepDataInterface.m_pipelineResult );
   }
 

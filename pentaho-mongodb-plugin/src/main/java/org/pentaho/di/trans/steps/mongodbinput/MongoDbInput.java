@@ -1,5 +1,5 @@
 /*!
-* Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
+* Copyright 2010 - 2022 Hitachi Vantara.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -215,8 +215,8 @@ public class MongoDbInput extends BaseStep implements StepInterface {
         }
 
         // Utilize MongoDB cursor class
-        Cursor cursor = data.collection.aggregate( firstP, remainder );
-        data.m_pipelineResult = cursor;
+        data.m_pipelineResult = data.collection.aggregate( firstP, remainder, meta.isAllowDiskUse() );
+
       } else {
         if ( meta.getExecuteForEachIncomingRow() && m_currentInputRowDrivingQuery != null ) {
           // do field value substitution
