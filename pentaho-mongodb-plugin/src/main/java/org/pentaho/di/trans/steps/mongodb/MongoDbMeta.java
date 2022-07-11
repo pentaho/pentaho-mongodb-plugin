@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2022 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,25 @@
 
 package org.pentaho.di.trans.steps.mongodb;
 
-import java.util.List;
-
 import org.pentaho.di.core.injection.Injection;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.mongo.NamedReadPreference;
 
+import java.util.List;
+
 public abstract class MongoDbMeta extends BaseStepMeta implements StepMetaInterface {
   protected static Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes
+  private static final String INPUT_DATABASE = "INPUT_DATABASE";
+  private static final String INPUT_COLLECTION = "INPUT_COLLECTION";
 
-  @Injection( name = "HOSTNAME" )
+   @Injection( name = "HOSTNAME" )
   private String hostname = "localhost"; //$NON-NLS-1$
+
   @Injection( name = "PORT" )
   private String port = "27017"; //$NON-NLS-1$
+
   @Injection( name = "DATABASE_NAME" )
   private String dbName;
   @Injection( name = "COLLECTION" )
