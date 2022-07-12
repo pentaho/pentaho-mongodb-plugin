@@ -34,6 +34,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.pentaho.di.core.Const;
+import org.pentaho.di.core.encryption.Encr;
+import org.pentaho.di.core.encryption.TwoWayPasswordEncoderPluginType;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.plugins.PluginRegistry;
@@ -43,6 +46,7 @@ import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaInteger;
 import org.pentaho.di.core.row.value.ValueMetaPluginType;
 import org.pentaho.di.core.row.value.ValueMetaString;
+import org.pentaho.di.core.util.EnvUtil;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.i18n.BaseMessages;
@@ -124,7 +128,10 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
   @BeforeClass public static void beforeClass() throws Exception {
     PluginRegistry.addPluginType( ValueMetaPluginType.getInstance() );
+    PluginRegistry.addPluginType( TwoWayPasswordEncoderPluginType.getInstance() );
     PluginRegistry.init();
+    String passwordEncoderPluginID = Const.NVL( EnvUtil.getSystemProperty( Const.KETTLE_PASSWORD_ENCODER_PLUGIN ), "Kettle" );
+    Encr.init( passwordEncoderPluginID );
   }
 
   @Test public void testCheckTopLevelConsistencyPathsAreConsistentRecord() throws Exception {
