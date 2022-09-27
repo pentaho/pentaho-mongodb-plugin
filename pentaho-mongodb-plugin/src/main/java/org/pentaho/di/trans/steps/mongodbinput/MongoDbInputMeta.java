@@ -280,7 +280,8 @@ public class MongoDbInputMeta extends MongoDbMeta {
 
     retval.append( "    " ).append( XMLHandler.addTagValue( "use_connection_string", isUseConnectionString() ) );
     retval.append( "    " ).append( XMLHandler.addTagValue( "use_legacy_options", isUseLegacyOptions() ) );
-    retval.append( "    " ).append( XMLHandler.addTagValue( "connection_string", getConnectionString() ) );
+    retval.append( "    " ).append( XMLHandler.addTagValue( "connection_string",
+            Encr.encryptPasswordIfNotUsingVariables( getConnectionString() ) ) );
     retval.append( "    " ).append( XMLHandler.addTagValue( "hostname", getHostnames() ) ); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append( "    " ).append( XMLHandler.addTagValue( "port", getPort() ) ); //$NON-NLS-1$ //$NON-NLS-2$
     retval.append( "    " ).append( XMLHandler.addTagValue( "use_all_replica_members", getUseAllReplicaSetMembers() ) ); //$NON-NLS-1$ //$NON-NLS-2$
@@ -420,7 +421,8 @@ public class MongoDbInputMeta extends MongoDbMeta {
     try {
       rep.saveStepAttribute( id_transformation, id_step, "use_connection_string", isUseConnectionString() );
       rep.saveStepAttribute( id_transformation, id_step, "use_legacy_options", isUseLegacyOptions() );
-      rep.saveStepAttribute( id_transformation, id_step, "connection_string", getConnectionString() );
+      rep.saveStepAttribute( id_transformation, id_step, "connection_string",
+              Encr.encryptPasswordIfNotUsingVariables( getConnectionString() ) );
       rep.saveStepAttribute( id_transformation, id_step, "hostname", getHostnames() ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, "port", getPort() ); //$NON-NLS-1$
       rep.saveStepAttribute( id_transformation, id_step, "use_all_replica_members", getUseAllReplicaSetMembers() ); //$NON-NLS-1$

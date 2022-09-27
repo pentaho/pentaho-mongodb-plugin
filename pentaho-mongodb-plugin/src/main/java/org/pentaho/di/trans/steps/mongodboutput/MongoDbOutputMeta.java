@@ -539,7 +539,8 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
     StringBuffer retval = new StringBuffer();
     retval.append( "    " ).append( XMLHandler.addTagValue( "use_connection_string", isUseConnectionString() ) );
     retval.append( "    " ).append( XMLHandler.addTagValue( "use_legacy_options", isUseLegacyOptions() ) );
-    retval.append( "    " ).append( XMLHandler.addTagValue( "connection_string", getConnectionString() ) );
+    retval.append( "    " ).append( XMLHandler.addTagValue( "connection_string",
+            Encr.encryptPasswordIfNotUsingVariables( getConnectionString() ) ) );
     if ( !Const.isEmpty( getHostnames() ) ) {
       retval.append( "\n    " ).append( //$NON-NLS-1$
           XMLHandler.addTagValue( "mongo_host", getHostnames() ) ); //$NON-NLS-1$
@@ -896,7 +897,8 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
   @Override public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step ) throws KettleException {
     rep.saveStepAttribute( id_transformation, id_step, "use_connection_string", isUseConnectionString() );
     rep.saveStepAttribute( id_transformation, id_step, "use_legacy_options", isUseLegacyOptions() );
-    rep.saveStepAttribute( id_transformation, id_step, "connection_string", getConnectionString() );
+    rep.saveStepAttribute( id_transformation, id_step, "connection_string",
+            Encr.encryptPasswordIfNotUsingVariables( getConnectionString() ) );
     if ( !Const.isEmpty( getHostnames() ) ) {
       rep.saveStepAttribute( id_transformation, id_step, 0, "mongo_host", //$NON-NLS-1$
           getHostnames() );
