@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2022 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -472,7 +472,7 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     props.setLook( m_dbAuthMec );
     m_dbAuthMec.addModifyListener( new ModifyListener() {
         @Override public void modifyText( ModifyEvent e ) {
-          transMeta.setChanged();
+          m_currentMeta.setChanged();
           m_dbAuthMec.setToolTipText( m_dbAuthMec.getText()  );
         }
     } );
