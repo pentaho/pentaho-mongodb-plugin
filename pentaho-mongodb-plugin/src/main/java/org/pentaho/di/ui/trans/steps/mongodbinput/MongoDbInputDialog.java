@@ -413,7 +413,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
 
     m_dbAuthMec.addModifyListener( new ModifyListener() {
       @Override public void modifyText( ModifyEvent e ) {
-        transMeta.setChanged();
+        input.setChanged();
         m_dbAuthMec.setToolTipText( m_dbAuthMec.getText()  );
       }
     } );
