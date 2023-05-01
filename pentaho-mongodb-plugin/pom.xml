@@ -5,12 +5,12 @@
   <parent>
     <groupId>pentaho</groupId>
     <artifactId>pentaho-mongo-plugin-parent</artifactId>
-    <version>9.6.0.0-SNAPSHOT-15</version>
+    <version>9.6.0.0-SNAPSHOT-16</version>
   </parent>
 
   <groupId>pentaho</groupId>
   <artifactId>pentaho-mongodb-plugin</artifactId>
-  <version>9.6.0.0-SNAPSHOT-15</version>
+  <version>9.6.0.0-SNAPSHOT-16</version>
   <packaging>jar</packaging>
 
   <name>Pentaho Enterprise Edition Project: ${project.artifactId}</name>
