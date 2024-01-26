@@ -59,7 +59,7 @@ import java.util.List;
  */
 @Step( id = "MongoDbInput", image = "mongodb-input.svg", name = "MongoDB input",
         description = "Reads from a Mongo DB collection",
-        documentationUrl = "Products/MongoDB_Input",
+        documentationUrl = "mk-95pdia003/pdi-transformation-steps/mongodb-input",
         categoryDescription = "Big Data" )
 @InjectionSupported( localizationPrefix = "MongoDbInput.Injection.", groups = ( "FIELDS" ) )
 public class MongoDbInputMeta extends MongoDbMeta {
