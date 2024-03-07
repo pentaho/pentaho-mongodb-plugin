@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2024 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.encryption.TwoWayPasswordEncoderPluginType;
@@ -38,27 +40,22 @@ import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.MongoProp;
 import org.pentaho.mongo.MongoProperties;
 import org.pentaho.mongo.MongoUtilLogger;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by bryan on 8/22/14.
  */
-@RunWith( PowerMockRunner.class )
-@PowerMockIgnore( "jdk.internal.reflect.*" )
-@PrepareForTest( { Encr.class, MongoClientWrapperFactory.class } )
+@RunWith( MockitoJUnitRunner.StrictStubs.class )
 public class MongoWrapperUtilTest {
   private static final String SOCKET_TIMEOUT = "mongoDbSocketTimeout";
   private static final String CONNECTION_TIMEOUT = "mongoDbConnectionTimeout";
@@ -131,15 +128,16 @@ public class MongoWrapperUtilTest {
     MongoDbMeta mongoDbMeta = mock( MongoDbMeta.class );
     VariableSpace variableSpace = mock( VariableSpace.class );
     LogChannelInterface logChannelInterface = mock( LogChannelInterface.class );
-    mockStatic( Encr.class );
-    Mockito.when( Encr.decryptPasswordOptionallyEncrypted( anyString() ) ).thenReturn( "SimpleString" );
-    when( mongoDbMeta.isUseConnectionString() ).thenReturn( true );
-    when( mongoDbMeta.getConnectionString() ).thenReturn( "SimpleString" );
-    MongoClientWrapper wrapper = mock( ConnectionStringMongoClientWrapper.class );
-    doReturn( wrapper ).when( mockFactory ).createConnectionStringMongoClientWrapper( any( String.class ), any( KettleMongoUtilLogger.class ) );
-    assertEquals( wrapper,
-            MongoWrapperUtil.createMongoClientWrapper( mongoDbMeta, variableSpace, logChannelInterface ) );
-    verify( mongoDbMeta ).isUseConnectionString();
+    try ( MockedStatic<Encr> mockedEncr = mockStatic( Encr.class ) ) {
+      mockedEncr.when( () -> Encr.decryptPasswordOptionallyEncrypted( anyString() ) ).thenReturn( "SimpleString" );
+      when( mongoDbMeta.isUseConnectionString() ).thenReturn( true );
+      when( mongoDbMeta.getConnectionString() ).thenReturn( "SimpleString" );
+      MongoClientWrapper wrapper = mock( ConnectionStringMongoClientWrapper.class );
+      doReturn( wrapper ).when( mockFactory ).createConnectionStringMongoClientWrapper( Mockito.<String>any(), Mockito.<KettleMongoUtilLogger>any() );
+      assertEquals( wrapper,
+        MongoWrapperUtil.createMongoClientWrapper( mongoDbMeta, variableSpace, logChannelInterface ) );
+      verify( mongoDbMeta ).isUseConnectionString();
+    }
   }
 
   @Test public void testCreateConnStringMongoClientWrapperFactory() throws MongoDbException {
@@ -148,13 +146,15 @@ public class MongoWrapperUtilTest {
     LogChannelInterface logChannelInterface = mock( LogChannelInterface.class );
     doReturn( true ).when( mongoDbMeta ).isUseConnectionString();
     doReturn( "SimpleString" ).when( mongoDbMeta ).getConnectionString();
-    MongoClientWrapper wrapper = mock( ConnectionStringMongoClientWrapper.class );
-    mockStatic( MongoClientWrapperFactory.class );
-    mockStatic( Encr.class );
-    Mockito.when( Encr.decryptPasswordOptionallyEncrypted( anyString() ) ).thenReturn( "SimpleString" );
-    Mockito.when( MongoClientWrapperFactory.createConnectionStringMongoClientWrapper( anyString(), any( MongoUtilLogger.class ) ) ).thenReturn( wrapper );
-    assertEquals( wrapper, MongoWrapperUtil.createMongoClientWrapper( mongoDbMeta, variableSpace, logChannelInterface ) );
-    verify( mongoDbMeta ).isUseConnectionString();
+    try ( MockedStatic<Encr> mockedEncr = mockStatic( Encr.class );
+          MockedStatic<MongoClientWrapperFactory> mockedWrapper = mockStatic( MongoClientWrapperFactory.class )) {
+      MongoClientWrapper wrapper = mock( ConnectionStringMongoClientWrapper.class );
+      mockedEncr.when( () -> Encr.decryptPasswordOptionallyEncrypted( any() ) ).thenReturn( "SimpleString" );
+      mockedWrapper.when( () -> MongoClientWrapperFactory.createConnectionStringMongoClientWrapper( Mockito.<String>any(), Mockito.<MongoUtilLogger>any() ) ).thenReturn( wrapper );
+
+      assertEquals( wrapper, MongoWrapperUtil.createMongoClientWrapper( mongoDbMeta, variableSpace, logChannelInterface ) );
+      verify( mongoDbMeta ).isUseConnectionString();
+    }
   }
 
   private void testPropertiesBuilderForPassword( boolean isEncrypted, String password ) throws KettleException {

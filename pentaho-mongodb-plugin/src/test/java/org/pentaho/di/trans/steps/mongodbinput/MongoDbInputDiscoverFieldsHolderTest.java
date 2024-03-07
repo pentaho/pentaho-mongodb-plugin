@@ -26,7 +26,7 @@ import org.mockito.MockitoAnnotations;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class MongoDbInputDiscoverFieldsHolderTest {
 

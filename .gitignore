@@ -15,3 +15,4 @@ override.properties
 target/
 .idea
 pentaho-mongodb-plugin.iml
+pentaho-mongodb-plugin/logs/pdi.log
