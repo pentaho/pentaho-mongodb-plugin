@@ -17,12 +17,6 @@
 
 package org.pentaho.di.trans.steps.mongodbinput;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.pentaho.di.core.Const;
@@ -37,6 +31,12 @@ import org.pentaho.di.trans.steps.loadsave.validator.FieldLoadSaveValidatorFacto
 import org.pentaho.di.trans.steps.loadsave.validator.ListLoadSaveValidator;
 import org.pentaho.di.trans.steps.loadsave.validator.ObjectValidator;
 import org.pentaho.mongo.wrapper.field.MongoField;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class MongoDbInputMetaTest {
   @BeforeClass

@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2024 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import com.mongodb.CommandResult;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 import com.mongodb.WriteResult;
-import junit.framework.Assert;
 import com.mongodb.util.JSON;
+import junit.framework.Assert;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
@@ -32,8 +32,10 @@ import org.easymock.IAnswer;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.encryption.TwoWayPasswordEncoderPluginType;
@@ -69,20 +71,20 @@ import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputData.kettleRowToMongo;
 
 /**
@@ -90,6 +92,7 @@ import static org.pentaho.di.trans.steps.mongodboutput.MongoDbOutputData.kettleR
  *
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  */
+@RunWith( MockitoJUnitRunner.StrictStubs.class )
 public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
   private static final Class<?> PKG = MongoDbOutputMeta.class;
@@ -842,7 +845,6 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     when( stepMetaInterface.getCollection() ).thenReturn( "collection" );
     when( stepMetaInterface.getAuthenticationUser() ).thenReturn( "joe" );
     when( stepDataInterace.getCollection() ).thenReturn( mongoCollectionWrapper );
-    when( trans.isRunning() ).thenReturn( true );
     mongoFields = asList( mongoField( "foo" ), mongoField( "bar" ), mongoField( "baz" ) );
     when( stepMetaInterface.getMongoFields() ).thenReturn( mongoFields );
     when( stepDataInterace.getMongoFields() ).thenReturn( mongoFields );
@@ -898,7 +900,6 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     setupReturns();
     WriteResult result = mock( WriteResult.class );
     CommandResult commandResult = mock( CommandResult.class );
-    when( commandResult.ok() ).thenReturn( true );
     when( mongoCollectionWrapper.update( any( DBObject.class ), any( DBObject.class ), anyBoolean(), anyBoolean() ) )
       .thenReturn( result );
     when( stepMetaInterface.getUpdate() ).thenReturn( true );
@@ -962,7 +963,6 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
     when( stepMetaInterface.getWriteRetryDelay() ).thenReturn( "0" );
     WriteResult result = mock( WriteResult.class );
     CommandResult commandResult = mock( CommandResult.class );
-    when( commandResult.ok() ).thenReturn( true );
     when( mongoCollectionWrapper.save( dbOutput.m_batch.get( 0 ) ) ).thenReturn( result );
 
     doThrow( mock( MongoException.class ) ).when( mongoCollectionWrapper ).insert( anyList() );
@@ -979,7 +979,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
   }
 
   @Test public void testDisposeFailureLogged() throws MongoDbException {
-    doThrow( new MongoDbException() ).when( mongoClientWrapper ).dispose();
+    doThrow( new MongoDbException("test message!") ).when( mongoClientWrapper ).dispose();
     dbOutput.init( stepMetaInterface, stepDataInterace );
     dbOutput.dispose( stepMetaInterface, stepDataInterace );
     verify( mockLog ).logError( anyString() );
@@ -996,7 +996,7 @@ public class MongoDbOutputTest extends BaseMongoDbStepTest {
 
     final String[] metaNames = new String[] { "a1", "a2", "a3" };
     String[] mongoNames = new String[] { "a1", "a2" };
-    Capture<String> loggerCapture = new Capture<String>( CaptureType.ALL );
+    Capture<String> loggerCapture = Capture.<String>newInstance( CaptureType.ALL );
     output.logBasic( EasyMock.capture( loggerCapture ) );
     EasyMock.replay( output );
     RowMetaInterface rmi = getStubRowMetaInterface( metaNames );

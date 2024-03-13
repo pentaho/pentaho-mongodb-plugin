@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -28,7 +28,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.encryption.TwoWayPasswordEncoderPluginType;
 import org.pentaho.di.core.plugins.PluginRegistry;
@@ -63,8 +63,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -73,7 +71,7 @@ import static org.mockito.Mockito.when;
 /**
  * User: RFellows Date: 3/6/15
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class )
 public class MongoDbInputStepAnalyzerTest {
   MongoDbInputStepAnalyzer analyzer;
 
@@ -111,14 +109,10 @@ public class MongoDbInputStepAnalyzerTest {
     analyzer.setParentTransMeta( mockTransMeta );
     analyzer.setParentStepMeta( parentStepMeta );
 
-    when( mockNamespace.getParentNamespace() ).thenReturn( mockNamespace );
     descriptor = new MetaverseComponentDescriptor( "test", DictionaryConst.NODE_TYPE_TRANS_STEP, mockNamespace );
     analyzer.setDescriptor( descriptor );
 
     when( meta.getParentStepMeta() ).thenReturn( parentStepMeta );
-    when( parentStepMeta.getParentTransMeta() ).thenReturn( mockTransMeta );
-    when( parentStepMeta.getName() ).thenReturn( "test" );
-    when( parentStepMeta.getStepID() ).thenReturn( "MongoDbInput" );
 
   }
 
@@ -155,9 +149,7 @@ public class MongoDbInputStepAnalyzerTest {
   public void testCreateTableNode() throws Exception {
     IConnectionAnalyzer connectionAnalyzer = mock( IConnectionAnalyzer.class );
 
-    doReturn( connectionAnalyzer ).when( analyzer ).getConnectionAnalyzer();
     IMetaverseNode connNode = mock( IMetaverseNode.class );
-    when( connectionAnalyzer.analyze( any( IComponentDescriptor.class ), anyObject() ) ).thenReturn( connNode );
 
     MongoDbResourceInfo resourceInfo = mock( MongoDbResourceInfo.class );
     when( resourceInfo.getCollection() ).thenReturn( "myCollection" );
@@ -189,7 +181,6 @@ public class MongoDbInputStepAnalyzerTest {
     List<MongoField> mongoFields = Arrays.asList( mongoField1 );
     when( meta.getMongoFields() ).thenReturn( mongoFields );
 
-    doReturn( "thisStepName" ).when( analyzer ).getStepName();
     when( node.getLogicalId() ).thenReturn( "logical id" );
 
     IMetaverseNode node = analyzer.createOutputFieldNode(
@@ -215,7 +206,6 @@ public class MongoDbInputStepAnalyzerTest {
     IAnalysisContext context = mock( IAnalysisContext.class );
     when( meta.getMongoFields() ).thenReturn( null );
 
-    doReturn( "thisStepName" ).when( analyzer ).getStepName();
     when( node.getLogicalId() ).thenReturn( "logical id" );
 
     IMetaverseNode node = analyzer.createOutputFieldNode(
