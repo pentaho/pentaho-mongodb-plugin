@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2020 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2024 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -822,7 +822,11 @@ public class MongoDbOutputData extends BaseStepData implements StepDataInterface
     }
     if ( kettleType.isInteger() ) {
       Long val = kettleType.getInteger( kettleValue );
-      mongoObject.put( lookup.toString(), val.longValue() );
+      if(val > Integer.MAX_VALUE || val < Integer.MIN_VALUE) {
+        mongoObject.put(lookup.toString(), val.longValue());
+      } else {
+        mongoObject.put(lookup.toString(),val.intValue());
+      }
       return true;
     }
     if ( kettleType.isDate() ) {
