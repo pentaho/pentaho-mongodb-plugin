@@ -5,12 +5,12 @@
   <parent>
     <groupId>pentaho</groupId>
     <artifactId>pentaho-mongo-plugin-parent</artifactId>
-    <version>10.2.0.0-SNAPSHOT</version>
+    <version>10.2.0.0-114</version>
   </parent>
 
   <groupId>pentaho</groupId>
   <artifactId>pentaho-mongodb-plugin</artifactId>
-  <version>10.2.0.0-SNAPSHOT</version>
+  <version>10.2.0.0-114</version>
   <packaging>jar</packaging>
 
   <name>Pentaho Enterprise Edition Project: ${project.artifactId}</name>
@@ -36,7 +36,7 @@
     <mongo-driver.version>3.12.10</mongo-driver.version>
     <powermock-module-junit4.version>1.7.3</powermock-module-junit4.version>
     <powermock-api-mockito.version>1.7.3</powermock-api-mockito.version>
-    <platform.version>10.2.0.0-SNAPSHOT</platform.version>
+    <platform.version>10.2.0.0-114</platform.version>
   </properties>
 
   <dependencies>
