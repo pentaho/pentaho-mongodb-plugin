@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2022 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2024 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,11 @@ import com.mongodb.util.JSON;
 import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -44,9 +47,14 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@RunWith( MockitoJUnitRunner.StrictStubs.class )
 public class MongoDbInputTest extends BaseMongoDbStepTest {
   @Mock private MongoDbInputData stepDataInterface;
   @Mock private MongoDbInputMeta stepMetaInterface;
@@ -76,6 +84,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     };
   }
 
+
   @Test public void testInitNoDbSpecified() {
     assertFalse( dbInput.init( stepMetaInterface, stepDataInterface ) );
     verify( mockLog ).logError( anyString(), throwableCaptor.capture() );
@@ -102,7 +111,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     when( mongoClientWrapper.getCollection( "dbname", "collection" ) ).thenReturn( mongoCollectionWrapper );
     when( mongoClientWrapper.getCollection( "dbname", "collection" ) ).thenReturn( mongoCollectionWrapper );
     when( mongoCollectionWrapper.find() ).thenReturn( mockCursor );
-    when( mongoCollectionWrapper.find( any( DBObject.class ), any( DBObject.class ) ) ).thenReturn( mockCursor );
+    when( mongoCollectionWrapper.find( Mockito.<DBObject>any(), Mockito.<DBObject>any() ) ).thenReturn( mockCursor );
   }
 
   @Test public void processRowSinglePartAggPipelineQuery() throws KettleException, MongoDbException {
@@ -213,7 +222,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     dbInput.init( stepMetaInterface, stepDataInterface );
     assertFalse( "should return false as there are no more results",
       dbInput.processRow( stepMetaInterface, stepDataInterface ) );
-    verify( mongoCollectionWrapper ).find( dbObjectCaptor.capture(), any( DBObject.class ) );
+    verify( mongoCollectionWrapper ).find( dbObjectCaptor.capture(), Mockito.<DBObject>any() );
     assertThat( stepDataInterface.cursor, equalTo( mockCursor ) );
     assertThat( dbObjectCaptor.getValue(), equalTo( (DBObject) JSON.parse( query ) ) );
   }
@@ -237,7 +246,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     rowMeta.addValueMeta( new ValueMetaString( "param" ) );
     dbInput.init( stepMetaInterface, stepDataInterface );
     assertTrue( dbInput.processRow( stepMetaInterface, stepDataInterface ) );
-    verify( mongoCollectionWrapper ).find( dbObjectCaptor.capture(), any( DBObject.class ) );
+    verify( mongoCollectionWrapper ).find( dbObjectCaptor.capture(), Mockito.<DBObject>any() );
     assertThat( dbObjectCaptor.getValue(),
       equalTo( (DBObject) JSON.parse( "{foo : 'bar'}" ) ) );
   }
@@ -254,7 +263,6 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
 
     rowData = new Object[] { "'HC'", "jeevan" };
     when( stepMetaInterface.getOutputJson() ).thenReturn( true );
-    when( stepMetaInterface.getJsonFieldName() ).thenReturn( "json" );
     ValueMetaInterface rowValueMeta1 = new ValueMetaString( "input" );
     ValueMetaInterface rowValueMeta2 = new ValueMeta( "input company", ValueMetaInterface.TYPE_STRING );
 
@@ -273,7 +281,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
 
     assertTrue( dbInput.processRow( stepMetaInterface, stepDataInterface ) );
 
-    verify( mongoCollectionWrapper ).find( dbObjectCaptor.capture(), any( DBObject.class ) );
+    verify( mongoCollectionWrapper ).find( dbObjectCaptor.capture(), Mockito.<DBObject>any() );
     verify( mockCursor ).next();
     assertThat( stepDataInterface.cursor, equalTo( mockCursor ) );
 
@@ -296,7 +304,6 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
 
     rowData = new Object[] { "HC", "jeevan" };
     when( stepMetaInterface.getOutputJson() ).thenReturn( true );
-    when( stepMetaInterface.getJsonFieldName() ).thenReturn( "json" );
     ValueMetaInterface rowValueMeta1 = new ValueMetaString( "input" );
     ValueMetaInterface rowValueMeta2 = new ValueMeta( "input company", ValueMetaInterface.TYPE_STRING );
 
@@ -370,7 +377,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
       }
     };
 
-    doAnswer( mongoFieldsAnswer ).when( stepMetaInterface ).getFields( rowMeta, "MongoDB Input", null, stepMeta, dbInput );
+    Mockito.lenient().doAnswer( mongoFieldsAnswer ).when( stepMetaInterface ).getFields( rowMeta, "MongoDB Input", null, stepMeta, dbInput );
     rowData = new Object[] { "HC", "john" };
 
     dbInput.setStopped( false );

@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2024 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package org.pentaho.mongo.wrapper;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.variables.VariableSpace;
@@ -45,7 +46,8 @@ public class MongoWrapperUtil {
     MongoWrapperUtil.mongoWrapperClientFactory = mongoWrapperClientFactory;
   }
 
-  protected static MongoWrapperClientFactory getMongoWrapperClientFactory() {
+  @VisibleForTesting
+  public static MongoWrapperClientFactory getMongoWrapperClientFactory() {
     return mongoWrapperClientFactory;
   }
 
