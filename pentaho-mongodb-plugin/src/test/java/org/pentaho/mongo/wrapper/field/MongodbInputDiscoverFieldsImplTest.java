@@ -1,7 +1,7 @@
 /*!
  * HITACHI VANTARA PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2021 Hitachi Vantara. All rights reserved.
+ * Copyright 2002 - 2024 Hitachi Vantara. All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Hitachi Vantara and its licensors. The intellectual
@@ -30,6 +30,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -63,12 +64,12 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class MongodbInputDiscoverFieldsImplTest {
 
@@ -85,8 +86,11 @@ public class MongodbInputDiscoverFieldsImplTest {
   private final MongodbInputDiscoverFieldsImpl discoverFields = new MongodbInputDiscoverFieldsImpl();
   private final int NUM_DOCS_TO_SAMPLE = 2;
 
+  private MongoWrapperClientFactory cachedFactory;
+
   @Before public void before() throws MongoDbException, KettlePluginException {
     MockitoAnnotations.initMocks( this );
+    cachedFactory = MongoWrapperUtil.getMongoWrapperClientFactory();
     MongoWrapperUtil.setMongoWrapperClientFactory( clientFactory );
     when( clientFactory.createMongoClientWrapper( any( MongoProperties.class ), any( MongoUtilLogger.class ) ) )
         .thenReturn( clientWrapper );
@@ -95,6 +99,10 @@ public class MongodbInputDiscoverFieldsImplTest {
     when( cursor.limit( anyInt() ) ).thenReturn( cursor );
     PluginRegistry.addPluginType( ValueMetaPluginType.getInstance() );
     PluginRegistry.init();
+  }
+
+  @After public void tearDown() {
+    MongoWrapperUtil.setMongoWrapperClientFactory( cachedFactory );
   }
 
   @Test public void testDiscoverFieldsSimpleDoc() throws Exception {

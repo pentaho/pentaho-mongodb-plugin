@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2024 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -26,9 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.di.trans.steps.mongodb.MongoDbMeta;
 import org.pentaho.dictionary.DictionaryConst;
 import org.pentaho.metaverse.api.IAnalysisContext;
@@ -43,14 +41,13 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
  * User: RFellows Date: 3/6/15
  */
-@RunWith( MockitoJUnitRunner.class )
+@RunWith( MockitoJUnitRunner.StrictStubs.class )
 public class MongoDbConnectionAnalyzerTest {
 
   MongoDbConnectionAnalyzer analyzer;
@@ -74,22 +71,11 @@ public class MongoDbConnectionAnalyzerTest {
     when( mongoDbMeta.getDbName() ).thenReturn( "db" );
     when( mongoDbMeta.getAuthenticationUser() ).thenReturn( "user" );
     when( mongoDbMeta.getPort() ).thenReturn( "12345" );
-    when( mongoDbMeta.isUseConnectionString() ).thenReturn( false );
     when( mongoDbMeta.isUseLegacyOptions() ).thenReturn( true );
   }
 
   @Test
   public void testAnalyze() throws Exception {
-    when( mockBuilder.addNode( any( IMetaverseNode.class ) ) ).thenAnswer( new Answer<Object>() {
-      @Override public Object answer( InvocationOnMock invocation ) throws Throwable {
-        Object[] args = invocation.getArguments();
-        // add the logicalId to the node like it does in the real builder
-        IMetaverseNode node = (IMetaverseNode)args[0];
-        node.setProperty( DictionaryConst.PROPERTY_LOGICAL_ID, node.getLogicalId() );
-        return mockBuilder;
-      }
-    } );
-
     IMetaverseNode node = analyzer.analyze( mockDescriptor, mongoDbMeta );
     assertNotNull( node );
     assertEquals( "localhost", node.getProperty( MongoDbConnectionAnalyzer.HOST_NAMES ) );

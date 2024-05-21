@@ -1,7 +1,7 @@
 /*!
  * HITACHI VANTARA PROPRIETARY AND CONFIDENTIAL
  *
- * Copyright 2002 - 2018 Hitachi Vantara. All rights reserved.
+ * Copyright 2002 - 2024 Hitachi Vantara. All rights reserved.
  *
  * NOTICE: All information including source code contained herein is, and
  * remains the sole property of Hitachi Vantara and its licensors. The intellectual
@@ -24,10 +24,12 @@ package org.pentaho.di.trans.steps.mongodbinput;
 
 import com.mongodb.Cursor;
 import com.mongodb.DBObject;
+import org.junit.After;
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.pentaho.di.core.logging.KettleLogStore;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -45,8 +47,8 @@ import org.pentaho.mongo.wrapper.MongoWrapperClientFactory;
 import org.pentaho.mongo.wrapper.MongoWrapperUtil;
 import org.pentaho.mongo.wrapper.collection.MongoCollectionWrapper;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.when;
 
 /**
@@ -70,11 +72,14 @@ public class BaseMongoDbStepTest {
   protected RowMeta rowMeta = new RowMeta();
   protected Object[] rowData;
 
+  private MongoWrapperClientFactory cachedFactory;
+
   @Before public void before() throws MongoDbException {
-    MockitoAnnotations.initMocks( this );
+    MockitoAnnotations.openMocks( BaseMongoDbStepTest.class );
+    cachedFactory = MongoWrapperUtil.getMongoWrapperClientFactory();
     MongoWrapperUtil.setMongoWrapperClientFactory( mongoClientWrapperFactory );
     when( mongoClientWrapperFactory
-        .createMongoClientWrapper( any( MongoProperties.class ), any( MongoUtilLogger.class ) ) )
+        .createMongoClientWrapper( Mockito.<MongoProperties>any(), Mockito.<MongoUtilLogger>any() ) )
         .thenReturn( mongoClientWrapper );
 
     when( stepMeta.getName() ).thenReturn( "stepMetaName" );
@@ -83,5 +88,7 @@ public class BaseMongoDbStepTest {
     KettleLogStore.setLogChannelInterfaceFactory( logChannelFactory );
   }
 
-
+  @After public void tearDown() {
+    MongoWrapperUtil.setMongoWrapperClientFactory( cachedFactory );
+  }
 }
