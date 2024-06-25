@@ -56,7 +56,7 @@ import java.util.List;
  */
 @Step( id = "MongoDbOutput", image = "MongoDB.svg", name = "MongoDB output",
   description = "Writes to a Mongo DB collection",
-  documentationUrl = "Products/MongoDB_Output",
+  documentationUrl = "mk-95pdia003/pdi-transformation-steps/mongodb-output",
   categoryDescription = "Big Data" )
 @InjectionSupported( localizationPrefix = "MongoDbOutput.Injection.", groups = { "FIELDS", "INDEXES" } )
 public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface {
