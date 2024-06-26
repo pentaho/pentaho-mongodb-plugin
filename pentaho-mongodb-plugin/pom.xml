@@ -5,12 +5,12 @@
   <parent>
     <groupId>pentaho</groupId>
     <artifactId>pentaho-mongo-plugin-parent</artifactId>
-    <version>10.2.0.0-SNAPSHOT</version>
+    <version>10.2.0.0-192</version>
   </parent>
 
   <groupId>pentaho</groupId>
   <artifactId>pentaho-mongodb-plugin</artifactId>
-  <version>10.2.0.0-SNAPSHOT</version>
+  <version>10.2.0.0-192</version>
   <packaging>jar</packaging>
 
   <name>Pentaho Enterprise Edition Project: ${project.artifactId}</name>
@@ -35,7 +35,7 @@
     <byte-buddy.version>1.12.16</byte-buddy.version>
     <junit.version>4.13.2</junit.version>
     <mongo-driver.version>3.12.10</mongo-driver.version>
-    <platform.version>10.2.0.0-SNAPSHOT</platform.version>
+    <platform.version>10.2.0.0-192</platform.version>
   </properties>
 
   <dependencies>
