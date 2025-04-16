@@ -13,10 +13,12 @@
 
 package org.pentaho.di.trans.steps.mongodbinput;
 
-import com.mongodb.Cursor;
 import com.mongodb.DBObject;
 import com.mongodb.ServerAddress;
 import com.mongodb.util.JSON;
+import org.apache.commons.collections.CollectionUtils;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
@@ -31,12 +33,24 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.mongo.MongoDbException;
+import org.pentaho.mongo.MongoProperties;
+import org.pentaho.mongo.NamedReadPreference;
+import org.pentaho.mongo.wrapper.MongoClientWrapper;
 import org.pentaho.mongo.wrapper.MongoWrapperUtil;
+import org.pentaho.mongo.wrapper.field.MongoField;
 import org.pentaho.mongo.wrapper.field.MongodbInputDiscoverFieldsImpl;
+import org.pentaho.reporting.libraries.base.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 
 public class MongoDbInput extends BaseStep implements StepInterface {
+  private static final String ERROR_MESSAGE = "errorMessage";
+  private static final String ERROR_LABEL = "errorLabel";
+  private static final String MISSING_CONN_DETAILS = "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails";
   private static final Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes,
   // needed by
   // Translator2!!
@@ -301,5 +315,398 @@ public class MongoDbInput extends BaseStep implements StepInterface {
     }
 
     super.dispose( smi, sdi );
+  }
+
+  @Override
+  public JSONObject doAction( String fieldName, StepMetaInterface stepMetaInterface, TransMeta transMeta,
+                              Trans trans, Map<String, String> queryParamToValues ) {
+    JSONObject response = new JSONObject();
+    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+    try {
+      this.setStepMetaInterface( stepMetaInterface );
+      switch ( fieldName ) {
+        case "testConnection":
+          response = testConnectionAction();
+          break;
+        case "getDBNames":
+          response = getDBNamesAction();
+          break;
+        case "getCollectionNames":
+          response = getCollectionNamesAction();
+          break;
+        case "getPreferences":
+          response = getPreferencesAction();
+          break;
+        case "getTagSet":
+          response = getTagSetAction();
+          break;
+        case "testTagSet":
+          response = testTagSetAction();
+          break;
+        case "getFields":
+          response = getFieldsAction( queryParamToValues );
+          break;
+        default:
+          response.put( StepInterface.ACTION_STATUS, StepInterface.FAILURE_METHOD_NOT_RESPONSE );
+          break;
+      }
+    } catch ( Exception e ) {
+      log.logError( e.getMessage() );
+      response.put( StepInterface.ACTION_STATUS, StepInterface.FAILURE_METHOD_NOT_RESPONSE );
+    }
+
+    return response;
+  }
+
+  private JSONObject testConnectionAction() {
+    JSONObject response = new JSONObject();
+
+    MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
+    TransMeta transMeta = getTransMeta();
+    if ( StringUtils.isEmpty( mongoDbInputMeta.getConnectionString() ) ) {
+      return sendResponseWithMessage( response, BaseMessages.getString( PKG, MISSING_CONN_DETAILS, "Connection String" ) );
+    }
+
+    try {
+      MongoClientWrapper wrapper = MongoWrapperUtil.createMongoClientWrapper( mongoDbInputMeta, transMeta, transMeta.getLogChannel() );
+      try {
+        wrapper.getDatabaseNames();
+      } finally {
+        wrapper.dispose();
+      }
+    } catch ( Exception ex ) {
+      errorResponse( response, ex );
+      response.put( "isValidConnection", false );
+      return response;
+    }
+
+    response.put( "isValidConnection", true );
+    response.put( "title", BaseMessages.getString( PKG, "MongoDbInputDialog.SuccessMessage.SuccessConnectionDetails.Title" ) );
+    response.put( "message", BaseMessages.getString( PKG, "MongoDbInputDialog.SuccessMessage.SuccessConnectionDetails" ) );
+    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+    return response;
+  }
+
+  private JSONObject getDBNamesAction() {
+    JSONObject response = new JSONObject();
+    List<String> dbNames;
+
+    TransMeta transMeta = getTransMeta();
+    MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
+    boolean isValidRequest = validateRequest( response, mongoDbInputMeta );
+    if ( !isValidRequest ) {
+      return response;
+    }
+
+    try {
+      MongoClientWrapper wrapper = MongoWrapperUtil.createMongoClientWrapper( mongoDbInputMeta, transMeta, transMeta.getLogChannel() );
+      try {
+        dbNames = wrapper.getDatabaseNames();
+      } finally {
+        wrapper.dispose();
+      }
+    } catch ( Exception ex ) {
+      return errorResponse( response, ex );
+    }
+
+    response.put( "dbNames", dbNames );
+    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+    return response;
+  }
+
+  private JSONObject getCollectionNamesAction() {
+    JSONObject response = new JSONObject();
+    Set<String> collectionNames;
+
+    MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
+    TransMeta transMeta = getTransMeta();
+    boolean isValidRequest = validateRequest( response, mongoDbInputMeta );
+    if ( !isValidRequest ) {
+      return response;
+    }
+
+    try {
+      MongoClientWrapper wrapper = MongoWrapperUtil.createMongoClientWrapper( mongoDbInputMeta, transMeta, transMeta.getLogChannel() );
+      try {
+        collectionNames = wrapper.getCollectionsNames( transMeta.environmentSubstitute( mongoDbInputMeta.getDbName() ) );
+      } finally {
+        wrapper.dispose();
+      }
+    } catch ( Exception ex ) {
+      return errorResponse( response, ex );
+    }
+
+    response.put( "collectionNames", new ArrayList<>( collectionNames ) );
+    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+    return response;
+  }
+
+  private JSONObject getPreferencesAction() {
+    JSONObject response = new JSONObject();
+    List<String> preferences = new ArrayList<>();
+    for ( NamedReadPreference preference : NamedReadPreference.values() ) {
+      preferences.add( preference.getName() );
+    }
+
+    response.put( "preferences", preferences );
+    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+    return response;
+  }
+
+  private JSONObject getTagSetAction() {
+    JSONObject response = new JSONObject();
+    List<String> tags;
+
+    MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
+    TransMeta transMeta = getTransMeta();
+    if ( StringUtils.isEmpty( mongoDbInputMeta.getHostnames() ) ) {
+      return sendResponseWithMessage( response,  BaseMessages.getString( PKG, MISSING_CONN_DETAILS, "host name(s)" ) );
+    }
+
+    try {
+      MongoClientWrapper wrapper = MongoWrapperUtil.createMongoClientWrapper( mongoDbInputMeta, transMeta, transMeta.getLogChannel() );
+      try {
+        tags = wrapper.getAllTags();
+      } finally {
+        wrapper.dispose();
+      }
+    } catch ( Exception ex ) {
+      return errorResponse( response, ex );
+    }
+
+    if ( CollectionUtils.isEmpty( tags ) ) {
+      return sendResponseWithMessage( response, BaseMessages.getString( PKG, "MongoDbInputDialog.Info.Message.NoTagSetsDefinedOnServer" ) );
+    } else {
+      JSONArray jsonArray = new JSONArray();
+      for ( String tag : tags ) {
+        JSONObject jsonObject = new JSONObject();
+        if ( !tag.startsWith( "{" ) ) {
+          tag = "{" + tag;
+        }
+        if ( !tag.endsWith( "}" ) ) {
+          tag += "}";
+        }
+
+        jsonObject.put( "tag_set", tag );
+        jsonArray.add( jsonObject );
+      }
+
+      response.put( "tag_sets", jsonArray );
+      response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+      return response;
+    }
+  }
+
+  private JSONObject testTagSetAction() throws MongoDbException {
+    JSONObject response = new JSONObject();
+    List<DBObject> tagSets = new ArrayList<>();
+
+    MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
+    TransMeta transMeta = getTransMeta();
+    if ( StringUtils.isEmpty( mongoDbInputMeta.getHostnames() ) ) {
+      return sendResponseWithMessage( response, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoConnectionDetailsSupplied" ) );
+    }
+
+    if ( CollectionUtils.isEmpty( mongoDbInputMeta.getReadPrefTagSets() ) ) {
+      return sendResponseWithMessage( response, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoTagSetsDefined" ) );
+    }
+
+    MongoClientWrapper wrapper = null;
+    try {
+      for ( String tagSet : mongoDbInputMeta.getReadPrefTagSets() ) {
+        setupDBObjects( tagSets, tagSet );
+      }
+
+      if ( CollectionUtils.isEmpty( tagSets ) ) {
+        return sendResponseWithMessage( response, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoParseableTagSets" ) );
+      }
+
+      wrapper = MongoWrapperUtil.createMongoClientWrapper( mongoDbInputMeta, transMeta, transMeta.getLogChannel() );
+      List<String> replicaSetTags = getReplicaMemberBasedOnTagSet( tagSets, wrapper );
+      if ( CollectionUtils.isEmpty( replicaSetTags ) ) {
+        return sendResponseWithMessage( response, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage..NoReplicaSetMembersMatchTagSets" ) );
+      }
+
+      StringBuilder builder = new StringBuilder();
+      builder.append( "\n" );
+      for ( String replicaSetTag : replicaSetTags ) {
+        builder.append( replicaSetTag ).append( "\n" );
+      }
+
+      response.put( "replicaSetTag", builder.toString() );
+    } catch ( Exception ex ) {
+      errorResponse( response, ex );
+      return response;
+    } finally {
+      if ( wrapper != null ) {
+        wrapper.dispose();
+      }
+    }
+
+    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+    return response;
+  }
+
+  private JSONObject getFieldsAction( Map<String, String> queryParams ) {
+    JSONObject response = new JSONObject();
+
+    MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
+    TransMeta transMeta = getTransMeta();
+
+    String missingConDetails = validateRequestForFields( mongoDbInputMeta );
+    if ( !StringUtils.isEmpty( missingConDetails ) ) {
+      return sendResponseWithMessage( response, BaseMessages.getString( PKG, MISSING_CONN_DETAILS, missingConDetails ) );
+    }
+
+    boolean current = mongoDbInputMeta.getExecuteForEachIncomingRow();
+    mongoDbInputMeta.setExecuteForEachIncomingRow( false );
+    if ( !checkForUnresolved( mongoDbInputMeta, transMeta, response ) ) {
+      return response;
+    }
+
+    try {
+      int numDocsToSample = Integer.parseInt( queryParams.get( "sampleSize" ) );
+      MongoProperties.Builder propertiesBuilder = MongoWrapperUtil.createPropertiesBuilder( mongoDbInputMeta, transMeta );
+      MongoDbInputData.getMongoDbInputDiscoverFieldsHolder().getMongoDbInputDiscoverFields().discoverFields( propertiesBuilder, mongoDbInputMeta.getDbName(),
+          mongoDbInputMeta.getCollection(), mongoDbInputMeta.getJsonQuery(), mongoDbInputMeta.getFieldsName(), mongoDbInputMeta.getQueryIsPipeline(), numDocsToSample,
+          mongoDbInputMeta, transMeta, new DiscoverFieldsCallback() {
+            @Override
+            public void notifyFields( final List<MongoField> fields ) {
+              if ( !fields.isEmpty() ) {
+                response.put( "fields", setFieldResponse( fields ) );
+                response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+              } else {
+                response.put( ERROR_MESSAGE, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoFieldsFound" ) );
+                response.put( StepInterface.ACTION_STATUS, StepInterface.FAILURE_RESPONSE );
+              }
+            }
+            @Override
+            public void notifyException( Exception exception ) {
+              errorResponse( response, exception );
+            }
+          } );
+    } catch ( KettleException e ) {
+      return errorResponse( response, e );
+    } finally {
+      mongoDbInputMeta.setExecuteForEachIncomingRow( current );
+    }
+
+    return response;
+  }
+
+  public List<String> getReplicaMemberBasedOnTagSet( List<DBObject> tagSets, MongoClientWrapper wrapper ) throws KettleException {
+    List<String> satisfy;
+    try {
+      try {
+        satisfy = wrapper.getReplicaSetMembersThatSatisfyTagSets( tagSets );
+      } catch ( MongoDbException e ) {
+        throw new KettleException( e );
+      }
+    } finally {
+      try {
+        wrapper.dispose();
+      } catch ( MongoDbException e ) {
+        //Ignore
+      }
+    }
+    return satisfy;
+  }
+
+  public void setupDBObjects( List<DBObject> tagSets, String tagSet ) {
+    String set = tagSet;
+    if ( !tagSet.startsWith( "{" ) ) {
+      set = "{" + tagSet;
+    }
+
+    if ( !tagSet.endsWith( "}" ) ) {
+      set = set + "}";
+    }
+
+    DBObject setO = (DBObject) JSON.parse( set );
+    if ( setO != null ) {
+      tagSets.add( setO );
+    }
+  }
+
+  private JSONArray setFieldResponse( List<MongoField> mongoFields ) {
+    JSONArray jsonArray = new JSONArray();
+    for ( MongoField mongoField : mongoFields ) {
+      JSONObject jsonObject = new JSONObject();
+      jsonObject.put( "field_name", mongoField.m_fieldName );
+      jsonObject.put( "field_path", mongoField.m_fieldPath );
+      jsonObject.put( "field_type", mongoField.m_kettleType );
+      jsonObject.put( "indexed_vals", mongoField.m_indexedVals );
+      jsonObject.put( "field_array_index", mongoField.m_arrayIndexInfo );
+      jsonObject.put( "occurrence_fraction", mongoField.m_occurenceFraction );
+      jsonObject.put( "field_disparate_types", mongoField.m_disparateTypes );
+      jsonArray.add( jsonObject );
+    }
+
+    return jsonArray;
+  }
+
+  private boolean checkForUnresolved( MongoDbInputMeta meta, TransMeta transMeta, JSONObject response ) {
+    String jsonQuery = meta.getJsonQuery() != null ? meta.getJsonQuery() : "";
+    String query = transMeta.environmentSubstitute( jsonQuery );
+
+    boolean notOk = ( query.contains( "${" ) || query.contains( "?{" ) ); //$NON-NLS-1$ //$NON-NLS-2$
+
+    if ( notOk ) {
+      sendResponseWithMessage( response, BaseMessages.getString( PKG,
+          "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs" ) );
+    }
+
+    return !notOk;
+  }
+
+  private String validateRequestForFields( MongoDbInputMeta mongoDbInputMeta ) {
+    String missingConDetails = "";
+    if ( !mongoDbInputMeta.isUseConnectionString() ) {
+      if ( StringUtils.isEmpty( mongoDbInputMeta.getHostnames() ) ) {
+        missingConDetails += " host name(s)";
+      }
+
+      if ( StringUtils.isEmpty( mongoDbInputMeta.getDbName() ) ) {
+        missingConDetails += " database";
+      }
+
+      if ( StringUtils.isEmpty( mongoDbInputMeta.getCollection() ) ) {
+        missingConDetails += " collection";
+      }
+    } else {
+      if ( StringUtils.isEmpty( mongoDbInputMeta.getConnectionString() ) ) {
+        missingConDetails += " Connection string";
+      }
+    }
+
+    return missingConDetails;
+  }
+
+  private boolean validateRequest( JSONObject response, MongoDbInputMeta mongoDbInputMeta ) {
+    if ( mongoDbInputMeta != null ) {
+      boolean isConnectionDetailsEmpty = StringUtils.isEmpty( mongoDbInputMeta.getHostnames() ) && StringUtils.isEmpty( mongoDbInputMeta.getConnectionString() );
+      if ( isConnectionDetailsEmpty ) {
+        String errorString = mongoDbInputMeta.isUseConnectionString() ? "Connection String" : "Hostname";
+        response.put( ERROR_MESSAGE, BaseMessages.getString( PKG, MISSING_CONN_DETAILS, errorString ) );
+        response.put( StepInterface.ACTION_STATUS, StepInterface.FAILURE_RESPONSE );
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private JSONObject sendResponseWithMessage( JSONObject response, String message ) {
+    response.put( ERROR_LABEL, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage." + "UnableToConnect" ) );
+    response.put( ERROR_MESSAGE, message );
+    response.put( StepInterface.ACTION_STATUS, StepInterface.FAILURE_RESPONSE );
+    return response;
+  }
+
+  private JSONObject errorResponse( JSONObject response, Exception ex ) {
+    response.put( ERROR_LABEL, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage." + "UnableToConnect" ) );
+    response.put( ERROR_MESSAGE, ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage() );
+    response.put( StepInterface.ACTION_STATUS, StepInterface.FAILURE_RESPONSE );
+    return response;
   }
 }

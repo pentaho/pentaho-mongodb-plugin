@@ -14,9 +14,15 @@
 package org.pentaho.di.trans.steps.mongodbinput;
 
 import com.mongodb.DBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCursor;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
 import com.mongodb.ServerAddress;
 import com.mongodb.util.JSON;
 import org.hamcrest.CoreMatchers;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,19 +36,28 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaString;
+import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.mongo.MongoDbException;
+import org.pentaho.mongo.MongoProperties;
+import org.pentaho.mongo.MongoUtilLogger;
+import org.pentaho.mongo.wrapper.MongoDBAction;
 import org.pentaho.mongo.wrapper.cursor.MongoCursorWrapper;
 import org.pentaho.mongo.wrapper.field.MongoField;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -389,5 +404,300 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     assertThat( putRow[ 1 ], equalTo( row[ 1 ] ) );
     assertThat( putRow[ 2 ], equalTo( row[ 2 ] ) );
     assertThat( putRow[ 3 ], equalTo( row[ 3 ] ) );
+  }
+
+  @Test
+  public void testConnection_withValidCredentials() {
+    when( stepMetaInterface.getConnectionString() ).thenReturn( "mongodb://testUser:password@localhost:2730/testDb" );
+
+    JSONObject jsonObject = dbInput.doAction( "testConnection", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject.get( "isValidConnection" ) );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.SUCCESS_RESPONSE ) );
+    assertTrue( (boolean) jsonObject.get( "isValidConnection" ) );
+  }
+
+  @Test
+  public void testConnection_withInvalidCredentials() throws MongoDbException {
+    when( stepMetaInterface.getConnectionString() ).thenReturn( "mongodb://invalidUser:password@localhost:2730/invalidDB" );
+
+
+    when( mongoClientWrapperFactory
+        .createMongoClientWrapper( Mockito.<MongoProperties>any(), Mockito.<MongoUtilLogger>any() ) )
+        .thenThrow( new MongoDbException() );
+
+    JSONObject jsonObject = dbInput.doAction( "testConnection", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject.get( "isValidConnection" ) );
+    assertFalse( (boolean) jsonObject.get( "isValidConnection" ) );
+  }
+
+  @Test
+  public void testConnection_withEmptyConnectionString() {
+
+    JSONObject jsonObject = dbInput.doAction( "testConnection", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+  }
+
+  @Test
+  public void getDBNamesTest() throws MongoDbException {
+    when( mongoClientWrapper.getDatabaseNames() ).thenReturn( Collections.singletonList( "mockDB" ) );
+
+    JSONObject jsonObject = dbInput.doAction( "getDBNames", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject.get( "dbNames" ) );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.SUCCESS_RESPONSE ) );
+  }
+
+  @Test
+  public void getDBNamesTest_throwsException() throws MongoDbException {
+    when( mongoClientWrapper.getDatabaseNames() ).thenThrow( new MongoDbException( "error" ) );
+
+    JSONObject jsonObject = dbInput.doAction( "getDBNames", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+  }
+
+  @Test
+  public void getDBNamesTest_withHostNameAndConnStringMissing() {
+    when( stepMetaInterface.getHostnames() ).thenReturn( "" );
+    when( stepMetaInterface.getConnectionString() ).thenReturn( "" );
+
+    JSONObject jsonObject = dbInput.doAction( "getDBNames", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    assertEquals( jsonObject.get( "errorMessage" ), "Some connection/configuration details are missing: Hostname" );
+  }
+
+  @Test
+  public void getCollectionNamesTest() throws MongoDbException {
+    setupReturns();
+
+    JSONObject jsonObject = dbInput.doAction( "getCollectionNames", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject.get( "collectionNames" ) );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.SUCCESS_RESPONSE ) );
+  }
+
+  @Test
+  public void getCollectionNamesTest_throwsException() throws MongoDbException {
+    when( mongoClientWrapper.getCollectionsNames( any() ) ).thenThrow( new MongoDbException( "error" ) );
+
+    JSONObject jsonObject = dbInput.doAction( "getCollectionNames", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+  }
+
+  @Test
+  public void getCollectionNamesTest_WithHostNameAndConnStringMissing() {
+    when( stepMetaInterface.getHostnames() ).thenReturn( "" );
+    when( stepMetaInterface.getConnectionString() ).thenReturn( "" );
+
+    JSONObject jsonObject = dbInput.doAction( "getCollectionNames", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    assertEquals( jsonObject.get( "errorMessage" ), "Some connection/configuration details are missing: Hostname" );
+  }
+
+  @Test
+  public void getPreferencesTest() {
+
+    JSONObject jsonObject = dbInput.doAction( "getPreferences", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject );
+    List<String> preferences = (List<String>) jsonObject.get( "preferences" );
+    assertNotNull( preferences );
+    assertTrue( preferences.size() > 0 );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.SUCCESS_RESPONSE ) );
+  }
+
+  @Test
+  public void getTagsSetTest() throws MongoDbException {
+    setupReturns();
+
+    when( mongoClientWrapper.getAllTags() ).thenReturn( Collections.singletonList( "testTag" ) );
+    JSONObject jsonObject = dbInput.doAction( "getTagSet", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject.get( "tag_sets" ) );
+    JSONArray tagSets = (JSONArray) jsonObject.get( "tag_sets" );
+    assertNotNull( tagSets.get( 0 ) );
+    JSONObject tagSet = (JSONObject) tagSets.get( 0 );
+    assertNotNull( tagSet.get( "tag_set" ) );
+    assertThat( tagSet.get( "tag_set" ), equalTo( "{testTag}" ) );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.SUCCESS_RESPONSE ) );
+  }
+
+  @Test
+  public void getTagSet_withHostNameMissing() {
+    when( stepMetaInterface.getHostnames() ).thenReturn( "" );
+
+    JSONObject jsonObject = dbInput.doAction( "getTagSet", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+  }
+
+  @Test
+  public void getTagSetAction_forEmptyTags() throws MongoDbException {
+
+    when( mongoClientWrapper.getAllTags() ).thenReturn( new ArrayList<>() );
+    JSONObject jsonObject = dbInput.doAction( "getTagSet", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+  }
+
+  @Test
+  public void getTagSet_throwsException() throws MongoDbException {
+    when( mongoClientWrapper.getAllTags() ).thenThrow( new MongoDbException( "error" ) );
+
+    JSONObject jsonObject = dbInput.doAction( "getTagSet", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+  }
+
+  @Test
+  public void testTagSetAction() throws MongoDbException {
+    setupReturns();
+    String tagSet = "{\"testTag\": \"testTagValue\"}";
+    when( stepMetaInterface.getReadPrefTagSets() ).thenReturn( Collections.singletonList( tagSet ) );
+    when( mongoClientWrapper.getReplicaSetMembersThatSatisfyTagSets( any() ) ).thenReturn( Collections.singletonList( tagSet ) );
+
+    JSONObject jsonObject = dbInput.doAction( "testTagSet", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject.get( "replicaSetTag" ) );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.SUCCESS_RESPONSE ) );
+  }
+
+  @Test
+  public void testTagSetAction_withStringTagSet() throws MongoDbException {
+    setupReturns();
+    String tagSet = "\"testTag\": \"testTagValue\"";
+    when( stepMetaInterface.getReadPrefTagSets() ).thenReturn( Collections.singletonList( tagSet ) );
+    when( mongoClientWrapper.getReplicaSetMembersThatSatisfyTagSets( any() ) ).thenReturn( Collections.singletonList( tagSet ) );
+
+
+    JSONObject jsonObject = dbInput.doAction( "testTagSet", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject.get( "replicaSetTag" ) );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.SUCCESS_RESPONSE ) );
+  }
+
+  @Test
+  public void testTagSetAction_forEmptyTags() {
+    when( stepMetaInterface.getReadPrefTagSets() ).thenReturn( new ArrayList<>() );
+
+    JSONObject jsonObject = dbInput.doAction( "testTagSet", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+  }
+
+  @Test
+  public void testTagSetAction_forEmptyHostName() {
+    when( stepMetaInterface.getHostnames() ).thenReturn( "" );
+
+    JSONObject jsonObject = dbInput.doAction( "testTagSet", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+  }
+
+  @Test
+  public void testTagSetAction_withEmptyReplicaSetTags() throws MongoDbException {
+    setupReturns();
+    String tagSet = "{\"testTag\": \"testTagValue\"}";
+    when( stepMetaInterface.getReadPrefTagSets() ).thenReturn( Collections.singletonList( tagSet ) );
+    when( mongoClientWrapper.getReplicaSetMembersThatSatisfyTagSets( any() ) ).thenReturn( new ArrayList<>() );
+
+
+    JSONObject jsonObject = dbInput.doAction( "testTagSet", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+  }
+
+  @Test
+  public void testTagSetAction_throwsExceptionForInvalidJSON() throws MongoDbException {
+    setupReturns();
+    String tagSet = "{testTag: testTagValue}";
+    when( stepMetaInterface.getReadPrefTagSets() ).thenReturn( Collections.singletonList( tagSet ) );
+
+
+    JSONObject jsonObject = dbInput.doAction( "testTagSet", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+  }
+
+  @Test
+  public void testTagSetAction_throwsMongoDbException() throws MongoDbException {
+    String tagSet = "{\"testTag\": \"testTagValue\"}";
+    when( stepMetaInterface.getReadPrefTagSets() ).thenReturn( Collections.singletonList( tagSet ) );
+    when( mongoClientWrapper.getReplicaSetMembersThatSatisfyTagSets( any() ) ).thenThrow( new MongoDbException( "error" ) );
+
+
+    JSONObject jsonObject = dbInput.doAction( "testTagSet", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+  }
+
+  @Test
+  public void getFieldsActionTest() throws MongoDbException {
+    setupReturns();
+    when( transMeta.environmentSubstitute( any( String.class ) ) ).thenReturn( "testQuery" );
+
+    Map<String, String> queryParams = new HashMap<>();
+    queryParams.put( "sampleSize", "1" );
+
+    DB db = mock( DB.class );
+    DBCollection dbCollection = mock( DBCollection.class );
+    DBCursor dbCursor = mock( DBCursor.class );
+    BasicDBObject dbObject = (BasicDBObject) JSON.parse( "{ '_id' : 'ObjectId(60e433324a1cb8ec4ccd9758)', 'Company' : 'Portugal','Name': 'steve' ,'gender' : 'Male' }" );
+    when( dbCursor.next() ).thenReturn( dbObject );
+    when( dbCursor.limit( 1 ) ).thenReturn( dbCursor );
+    when( dbCollection.find() ).thenReturn( dbCursor );
+    when( dbCursor.hasNext() ).thenReturn( true ).thenReturn( false );
+    when( db.getCollection( any() ) ).thenReturn( dbCollection );
+
+    when( mongoClientWrapper.perform( any(), any() ) )
+      .thenAnswer( invocationOnMock -> {
+        MongoDBAction<DBObject> action = (MongoDBAction<DBObject>) invocationOnMock.getArguments()[ 1 ];
+        return action.perform( db );
+      } );
+
+    JSONObject jsonObject = dbInput.doAction( "getFields", stepMetaInterface, transMeta, trans, queryParams );
+    assertNotNull( jsonObject.get( "fields" ) );
+    JSONArray jsonArray = (JSONArray) jsonObject.get( "fields" );
+    assertEquals( jsonArray.size(), 4 );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.SUCCESS_RESPONSE ) );
+  }
+
+  @Test
+  public void getFieldsActionTest_withNoFieldsFound() throws MongoDbException {
+    setupReturns();
+    when( transMeta.environmentSubstitute( any( String.class ) ) ).thenReturn( "testQuery" );
+
+    Map<String, String> queryParams = new HashMap<>();
+    queryParams.put( "sampleSize", "1" );
+
+    DB db = mock( DB.class );
+    DBCollection dbCollection = mock( DBCollection.class );
+    DBCursor dbCursor = mock( DBCursor.class );
+    when( dbCursor.limit( 1 ) ).thenReturn( dbCursor );
+    when( dbCollection.find() ).thenReturn( dbCursor );
+    when( db.getCollection( any() ) ).thenReturn( dbCollection );
+
+    when( mongoClientWrapper.perform( any(), any() ) )
+        .thenAnswer( invocationOnMock -> {
+          MongoDBAction<DBObject> action = (MongoDBAction<DBObject>) invocationOnMock.getArguments()[ 1 ];
+          return action.perform( db );
+        } );
+
+    JSONObject jsonObject = dbInput.doAction( "getFields", stepMetaInterface, transMeta, trans, queryParams );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+  }
+
+  @Test
+  public void getFieldsActionTest_withMissingConnectionString() {
+    when( stepMetaInterface.isUseConnectionString() ).thenReturn( true );
+    when( stepMetaInterface.getConnectionString() ).thenReturn( "" );
+    JSONObject jsonObject = dbInput.doAction( "getFields", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+  }
+
+  @Test
+  public void getFieldsActionTest_withMissingHostName() {
+    when( stepMetaInterface.getHostnames() ).thenReturn( "" );
+    JSONObject jsonObject = dbInput.doAction( "getFields", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject.get( "errorMessage" ) );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
   }
 }
