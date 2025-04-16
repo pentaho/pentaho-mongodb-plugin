@@ -53,6 +53,7 @@ import org.pentaho.di.trans.TransPreviewFactory;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.trans.steps.mongodbinput.DiscoverFieldsCallback;
+import org.pentaho.di.trans.steps.mongodbinput.MongoDbInput;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.di.ui.core.FormDataBuilder;
@@ -1740,6 +1741,15 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
   }*/
 
   private void testUserSpecifiedTagSetsAgainstReplicaSet() {
+    MongoDbInputMeta meta = new MongoDbInputMeta();
+    getInfo( meta );
+
+    Trans trans = new Trans( transMeta, null );
+    trans.rowsets = new ArrayList<>();
+
+    MongoDbInput step = (MongoDbInput) meta.getStep( stepMeta, meta.getStepData(), 0, transMeta, trans );
+    step.setStepMetaInterface( meta );
+
     if ( m_tagsView.nrNonEmpty() > 0 ) {
       List<DBObject> tagSets = new ArrayList<DBObject>();
 
@@ -1747,46 +1757,21 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
         TableItem item = m_tagsView.getNonEmpty( i );
 
         String set = item.getText( 1 ).trim();
-        if ( !set.startsWith( "{" ) ) { //$NON-NLS-1$
-          set = "{" + set; //$NON-NLS-1$
-        }
-
-        if ( !set.endsWith( "}" ) ) { //$NON-NLS-1$
-          set = set + "}"; //$NON-NLS-1$
-        }
-
-        DBObject setO = (DBObject) JSON.parse( set );
-        if ( setO != null ) {
-          tagSets.add( setO );
-        }
+        step.setupDBObjects( tagSets, set );
       }
 
       if ( tagSets.size() > 0 ) {
         String hostname = transMeta.environmentSubstitute( wHostname.getText() );
         try {
           if ( !Const.isEmpty( hostname ) ) {
-            MongoDbInputMeta meta = new MongoDbInputMeta();
-            getInfo( meta );
             MongoClientWrapper wrapper = null;
             try {
               wrapper = MongoWrapperUtil.createMongoClientWrapper( meta, transMeta, log );
             } catch ( MongoDbException e ) {
               throw new KettleException( e );
             }
-            List<String> satisfy = new ArrayList<String>();
-            try {
-              try {
-                satisfy = wrapper.getReplicaSetMembersThatSatisfyTagSets( tagSets );
-              } catch ( MongoDbException e ) {
-                throw new KettleException( e );
-              }
-            } finally {
-              try {
-                wrapper.dispose();
-              } catch ( MongoDbException e ) {
-                //Ignore
-              }
-            }
+
+            List<String> satisfy = step.getReplicaMemberBasedOnTagSet( tagSets, wrapper );
 
             if ( satisfy.size() == 0 ) {
               logBasic( BaseMessages

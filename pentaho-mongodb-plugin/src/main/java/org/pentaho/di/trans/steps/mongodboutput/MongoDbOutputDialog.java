@@ -67,6 +67,7 @@ import java.security.PrivilegedActionException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -1613,217 +1614,31 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
     }
   }
 
-  private enum Element {
-    OPEN_BRACE, CLOSE_BRACE, OPEN_BRACKET, CLOSE_BRACKET, COMMA
-  }
-
-  private static void pad( StringBuffer toPad, int numBlanks ) {
-    for ( int i = 0; i < numBlanks; i++ ) {
-      toPad.append( ' ' );
-    }
-  }
-
-  /**
-   * Format JSON document structure for printing to the preview dialog
-   *
-   * @param toFormat the document to format
-   * @return a String containing the formatted document structure
-   */
-  public static String prettyPrintDocStructure( String toFormat ) {
-    StringBuffer result = new StringBuffer();
-    int indent = 0;
-    String source = toFormat.replaceAll( "[ ]*,", "," ); //$NON-NLS-1$ //$NON-NLS-2$
-    Element next = Element.OPEN_BRACE;
-
-    while ( source.length() > 0 ) {
-      source = source.trim();
-      String toIndent = ""; //$NON-NLS-1$
-      int minIndex = Integer.MAX_VALUE;
-      char targetChar = '{';
-      if ( source.indexOf( '{' ) > -1 && source.indexOf( '{' ) < minIndex ) {
-        next = Element.OPEN_BRACE;
-        minIndex = source.indexOf( '{' );
-        targetChar = '{';
-      }
-      if ( source.indexOf( '}' ) > -1 && source.indexOf( '}' ) < minIndex ) {
-        next = Element.CLOSE_BRACE;
-        minIndex = source.indexOf( '}' );
-        targetChar = '}';
-      }
-      if ( source.indexOf( '[' ) > -1 && source.indexOf( '[' ) < minIndex ) {
-        next = Element.OPEN_BRACKET;
-        minIndex = source.indexOf( '[' );
-        targetChar = '[';
-      }
-      if ( source.indexOf( ']' ) > -1 && source.indexOf( ']' ) < minIndex ) {
-        next = Element.CLOSE_BRACKET;
-        minIndex = source.indexOf( ']' );
-        targetChar = ']';
-      }
-      if ( source.indexOf( ',' ) > -1 && source.indexOf( ',' ) < minIndex ) {
-        next = Element.COMMA;
-        minIndex = source.indexOf( ',' );
-        targetChar = ',';
-      }
-
-      if ( minIndex == 0 ) {
-        if ( next == Element.CLOSE_BRACE || next == Element.CLOSE_BRACKET ) {
-          indent -= 2;
-        }
-        pad( result, indent );
-        String comma = ""; //$NON-NLS-1$
-        int offset = 1;
-        if ( source.length() >= 2 && source.charAt( 1 ) == ',' ) {
-          comma = ","; //$NON-NLS-1$
-          offset = 2;
-        }
-        result.append( targetChar ).append( comma ).append( "\n" ); //$NON-NLS-1$
-        source = source.substring( offset );
-      } else {
-        pad( result, indent );
-        if ( next == Element.CLOSE_BRACE || next == Element.CLOSE_BRACKET ) {
-          toIndent = source.substring( 0, minIndex );
-          source = source.substring( minIndex );
-        } else {
-          toIndent = source.substring( 0, minIndex + 1 );
-          source = source.substring( minIndex + 1 );
-        }
-        result.append( toIndent.trim() ).append( "\n" ); //$NON-NLS-1$
-      }
-
-      if ( next == Element.OPEN_BRACE || next == Element.OPEN_BRACKET ) {
-        indent += 2;
-      }
-    }
-
-    return result.toString();
-  }
-
   private void previewDocStruct() {
-    List<MongoDbOutputMeta.MongoField> mongoFields = tableToMongoFieldList();
-
-    if ( mongoFields == null || mongoFields.size() == 0 ) {
-      return;
-    }
-
-    // Try and get meta data on incoming fields
-    RowMetaInterface actualR = null;
-    RowMetaInterface r;
-    boolean gotGenuineRowMeta = false;
     try {
-      actualR = transMeta.getPrevStepFields( stepname );
-      gotGenuineRowMeta = true;
-    } catch ( KettleException e ) {
-      // don't complain if we can't
-    }
-    r = new RowMeta();
+      List<MongoDbOutputMeta.MongoField> mongoFields = tableToMongoFieldList();
 
-    Object[] dummyRow = new Object[ mongoFields.size() ];
-    int i = 0;
-    try {
-      // Initialize Variable space to allow for environment substitution during doc preview.
-      VariableSpace vs = new Variables();
-      vs.initializeVariablesFrom( transMeta );
-      boolean hasTopLevelJSONDocInsert = MongoDbOutputData.scanForInsertTopLevelJSONDoc( mongoFields );
-
-      for ( MongoDbOutputMeta.MongoField field : mongoFields ) {
-        field.init( vs );
-        // set up dummy row meta
-        ValueMetaInterface vm = ValueMetaFactory.createValueMeta( ValueMetaInterface.TYPE_STRING );
-        vm.setName( field.environUpdatedFieldName );
-        r.addValueMeta( vm );
-
-        String val = ""; //$NON-NLS-1$
-        if ( gotGenuineRowMeta && actualR.indexOfValue( field.environUpdatedFieldName ) >= 0 ) {
-          int index = actualR.indexOfValue( field.environUpdatedFieldName );
-          switch ( actualR.getValueMeta( index ).getType() ) {
-            case ValueMetaInterface.TYPE_STRING:
-              if ( field.m_JSON ) {
-                if ( !field.m_useIncomingFieldNameAsMongoFieldName && Const.isEmpty( field.environUpdateMongoDocPath ) ) {
-                  // we will actually have to parse some kind of JSON doc
-                  // here in the case where the matching doc/doc to be inserted is
-                  // a full top-level incoming JSON doc
-                  val = "{\"IncomingJSONDoc\" : \"<document content>\"}"; //$NON-NLS-1$
-                } else {
-                  val = "<JSON sub document>"; //$NON-NLS-1$
-                  // turn this off for the purpose of doc structure
-                  // visualization so that we don't screw up for the
-                  // lack of a real JSON doc to parse :-)
-                  field.m_JSON = false;
-                }
-              } else {
-                val = "<string val>"; //$NON-NLS-1$
-              }
-              break;
-            case ValueMetaInterface.TYPE_INTEGER:
-              val = "<integer val>"; //$NON-NLS-1$
-              break;
-            case ValueMetaInterface.TYPE_NUMBER:
-              val = "<number val>"; //$NON-NLS-1$
-              break;
-            case ValueMetaInterface.TYPE_BOOLEAN:
-              val = "<bool val>"; //$NON-NLS-1$
-              break;
-            case ValueMetaInterface.TYPE_DATE:
-              val = "<date val>"; //$NON-NLS-1$
-              break;
-            case ValueMetaInterface.TYPE_BINARY:
-              val = "<binary val>"; //$NON-NLS-1$
-              break;
-            default:
-              val = "<unsupported value type>"; //$NON-NLS-1$
-          }
-        } else {
-          val = "<value>"; //$NON-NLS-1$
-        }
-
-        dummyRow[ i++ ] = val;
+      if ( mongoFields == null || mongoFields.isEmpty() ) {
+        return;
       }
 
-
-      MongoDbOutputData.MongoTopLevel topLevelStruct = MongoDbOutputData.checkTopLevelConsistency( mongoFields, vs );
-      for ( MongoDbOutputMeta.MongoField m : mongoFields ) {
-        m.m_modifierOperationApplyPolicy = "Insert&Update"; //$NON-NLS-1$
-      }
-
-      String toDisplay = ""; //$NON-NLS-1$
-      String windowTitle = getString( "MongoDbOutputDialog.PreviewDocStructure.Title" ); //$NON-NLS-1$
-
-      if ( !m_modifierUpdateBut.getSelection() ) {
-        DBObject
-          result =
-          MongoDbOutputData
-            .kettleRowToMongo( mongoFields, r, dummyRow, topLevelStruct, hasTopLevelJSONDocInsert );
-        toDisplay = prettyPrintDocStructure( result.toString() );
-      } else {
-        DBObject query = MongoDbOutputData.getQueryObject( mongoFields, r, dummyRow, vs, topLevelStruct );
-        DBObject
-          modifier =
-          new MongoDbOutputData().getModifierUpdateObject( mongoFields, r, dummyRow, vs, topLevelStruct );
-        toDisplay = getString( "MongoDbOutputDialog.PreviewModifierUpdate.Heading1" ) //$NON-NLS-1$
-          + ":\n\n" //$NON-NLS-1$
-          + prettyPrintDocStructure( query.toString() )
-          + getString( "MongoDbOutputDialog.PreviewModifierUpdate.Heading2" ) //$NON-NLS-1$
-          + ":\n\n" //$NON-NLS-1$
-          + prettyPrintDocStructure( modifier.toString() );
-        windowTitle = getString( "MongoDbOutputDialog.PreviewModifierUpdate.Title" ); //$NON-NLS-1$
-      }
-
+      boolean updateSelection = m_modifierUpdateBut.getSelection();
+      MongoDbOutputHelper mongoDbOutputHelper = new MongoDbOutputHelper();
+      Map<String, String> displayDetails = mongoDbOutputHelper.previewDocStructure( transMeta, stepname, mongoFields, updateSelection );
       ShowMessageDialog
-        smd =
-        new ShowMessageDialog( shell, SWT.ICON_INFORMATION | SWT.OK, windowTitle, toDisplay, true );
+          smd =
+          new ShowMessageDialog( shell, SWT.ICON_INFORMATION | SWT.OK, displayDetails.get( "windowTitle" ), displayDetails.get( "toDisplay" ), true );
       smd.open();
     } catch ( Exception ex ) {
       logError( getString( "MongoDbOutputDialog.ErrorMessage.ProblemPreviewingDocStructure.Message" )
-        //$NON-NLS-1$
-        + ":\n\n" + ex.getMessage(), ex ); //$NON-NLS-1$
-      new ErrorDialog( shell,
-        getString( "MongoDbOutputDialog.ErrorMessage.ProblemPreviewingDocStructure.Title" ),
-        //$NON-NLS-1$
-        getString( "MongoDbOutputDialog.ErrorMessage.ProblemPreviewingDocStructure.Message" )
           //$NON-NLS-1$
           + ":\n\n" + ex.getMessage(), ex ); //$NON-NLS-1$
-      return;
+      new ErrorDialog( shell,
+          getString( "MongoDbOutputDialog.ErrorMessage.ProblemPreviewingDocStructure.Title" ),
+          //$NON-NLS-1$
+          getString( "MongoDbOutputDialog.ErrorMessage.ProblemPreviewingDocStructure.Message" )
+              //$NON-NLS-1$
+              + ":\n\n" + ex.getMessage(), ex ); //$NON-NLS-1$
     }
   }
 
