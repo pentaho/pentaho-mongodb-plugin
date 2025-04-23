@@ -14,10 +14,6 @@
 package org.pentaho.di.trans.steps.mongodbinput;
 
 import com.mongodb.DBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCursor;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
 import com.mongodb.ServerAddress;
 import com.mongodb.util.JSON;
 import org.hamcrest.CoreMatchers;
@@ -27,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -40,7 +37,6 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.MongoProperties;
 import org.pentaho.mongo.MongoUtilLogger;
-import org.pentaho.mongo.wrapper.MongoDBAction;
 import org.pentaho.mongo.wrapper.cursor.MongoCursorWrapper;
 import org.pentaho.mongo.wrapper.field.MongoField;
 
@@ -58,7 +54,11 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -628,60 +628,75 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
   }
 
   @Test
-  public void getFieldsActionTest() throws MongoDbException {
+  public void getFieldsActionTest() throws MongoDbException, KettleException {
     setupReturns();
     when( transMeta.environmentSubstitute( any( String.class ) ) ).thenReturn( "testQuery" );
+    when( stepMetaInterface.getQueryIsPipeline() ).thenReturn( false );
+    when( stepMetaInterface.getDbName() ).thenReturn( "testDb" );
+    when( stepMetaInterface.getCollection() ).thenReturn( "testCollection" );
+    when( stepMetaInterface.getJsonQuery() ).thenReturn( "jsonQuery" );
+    when( stepMetaInterface.getFieldsName() ).thenReturn( "fieldsName" );
 
     Map<String, String> queryParams = new HashMap<>();
     queryParams.put( "sampleSize", "1" );
 
-    DB db = mock( DB.class );
-    DBCollection dbCollection = mock( DBCollection.class );
-    DBCursor dbCursor = mock( DBCursor.class );
-    BasicDBObject dbObject = (BasicDBObject) JSON.parse( "{ '_id' : 'ObjectId(60e433324a1cb8ec4ccd9758)', 'Company' : 'Portugal','Name': 'steve' ,'gender' : 'Male' }" );
-    when( dbCursor.next() ).thenReturn( dbObject );
-    when( dbCursor.limit( 1 ) ).thenReturn( dbCursor );
-    when( dbCollection.find() ).thenReturn( dbCursor );
-    when( dbCursor.hasNext() ).thenReturn( true ).thenReturn( false );
-    when( db.getCollection( any() ) ).thenReturn( dbCollection );
+    MongoDbInputDiscoverFieldsHolder holder = mock( MongoDbInputDiscoverFieldsHolder.class );
+    MongoDbInputDiscoverFields mongoDbInputDiscoverFields = mock( MongoDbInputDiscoverFields.class );
+    final List<MongoField> mongoFields = new ArrayList<>();
+    MongoField mongoField = new MongoField();
+    mongoField.m_fieldName = "fieldName";
+    mongoFields.add( mongoField );
 
-    when( mongoClientWrapper.perform( any(), any() ) )
-      .thenAnswer( invocationOnMock -> {
-        MongoDBAction<DBObject> action = (MongoDBAction<DBObject>) invocationOnMock.getArguments()[ 1 ];
-        return action.perform( db );
-      } );
+    try ( MockedStatic<MongoDbInputData> mongoDbInputDataMockedStatic = mockStatic( MongoDbInputData.class ) ) {
+      doAnswer( invocationOnMock -> {
+        ( (DiscoverFieldsCallback) invocationOnMock.getArguments()[9] ).notifyFields( mongoFields );
+        return null;
+      } ).when( mongoDbInputDiscoverFields )
+          .discoverFields( any(), anyString(), anyString(), anyString(), anyString(),
+              anyBoolean(), anyInt(), any(), any(), any() );
 
-    JSONObject jsonObject = dbInput.doAction( "getFields", stepMetaInterface, transMeta, trans, queryParams );
-    assertNotNull( jsonObject.get( "fields" ) );
-    JSONArray jsonArray = (JSONArray) jsonObject.get( "fields" );
-    assertEquals( jsonArray.size(), 4 );
-    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.SUCCESS_RESPONSE ) );
+      when( holder.getMongoDbInputDiscoverFields() ).thenReturn( mongoDbInputDiscoverFields );
+      mongoDbInputDataMockedStatic.when( MongoDbInputData::getMongoDbInputDiscoverFieldsHolder ).thenReturn( holder );
+
+      JSONObject jsonObject = dbInput.doAction( "getFields", stepMetaInterface, transMeta, trans, queryParams );
+      assertNotNull( jsonObject.get( "fields" ) );
+      JSONArray jsonArray = (JSONArray) jsonObject.get( "fields" );
+      assertEquals( jsonArray.size(), 1 );
+      assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.SUCCESS_RESPONSE ) );
+    }
   }
 
   @Test
-  public void getFieldsActionTest_withNoFieldsFound() throws MongoDbException {
+  public void getFieldsActionTest_withNoFieldsFound() throws MongoDbException, KettleException {
     setupReturns();
     when( transMeta.environmentSubstitute( any( String.class ) ) ).thenReturn( "testQuery" );
+    when( stepMetaInterface.getQueryIsPipeline() ).thenReturn( false );
+    when( stepMetaInterface.getDbName() ).thenReturn( "testDb" );
+    when( stepMetaInterface.getCollection() ).thenReturn( "testCollection" );
+    when( stepMetaInterface.getJsonQuery() ).thenReturn( "jsonQuery" );
+    when( stepMetaInterface.getFieldsName() ).thenReturn( "fieldsName" );
 
     Map<String, String> queryParams = new HashMap<>();
     queryParams.put( "sampleSize", "1" );
 
-    DB db = mock( DB.class );
-    DBCollection dbCollection = mock( DBCollection.class );
-    DBCursor dbCursor = mock( DBCursor.class );
-    when( dbCursor.limit( 1 ) ).thenReturn( dbCursor );
-    when( dbCollection.find() ).thenReturn( dbCursor );
-    when( db.getCollection( any() ) ).thenReturn( dbCollection );
+    MongoDbInputDiscoverFieldsHolder holder = mock( MongoDbInputDiscoverFieldsHolder.class );
+    MongoDbInputDiscoverFields mongoDbInputDiscoverFields = mock( MongoDbInputDiscoverFields.class );
 
-    when( mongoClientWrapper.perform( any(), any() ) )
-        .thenAnswer( invocationOnMock -> {
-          MongoDBAction<DBObject> action = (MongoDBAction<DBObject>) invocationOnMock.getArguments()[ 1 ];
-          return action.perform( db );
-        } );
+    try ( MockedStatic<MongoDbInputData> mongoDbInputDataMockedStatic = mockStatic( MongoDbInputData.class ) ) {
+      doAnswer( invocationOnMock -> {
+        ( (DiscoverFieldsCallback) invocationOnMock.getArguments()[9] ).notifyFields( new ArrayList<>() );
+        return null;
+      } ).when( mongoDbInputDiscoverFields )
+          .discoverFields( any(), anyString(), anyString(), anyString(), anyString(),
+              anyBoolean(), anyInt(), any(), any(), any() );
 
-    JSONObject jsonObject = dbInput.doAction( "getFields", stepMetaInterface, transMeta, trans, queryParams );
-    assertNotNull( jsonObject.get( "errorMessage" ) );
-    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+      when( holder.getMongoDbInputDiscoverFields() ).thenReturn( mongoDbInputDiscoverFields );
+      mongoDbInputDataMockedStatic.when( MongoDbInputData::getMongoDbInputDiscoverFieldsHolder ).thenReturn( holder );
+
+      JSONObject jsonObject = dbInput.doAction( "getFields", stepMetaInterface, transMeta, trans, queryParams );
+      assertNotNull( jsonObject.get( "errorMessage" ) );
+      assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    }
   }
 
   @Test
