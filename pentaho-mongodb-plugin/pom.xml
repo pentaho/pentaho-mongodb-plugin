@@ -32,7 +32,6 @@
 
   <properties>
     <mockito.version>5.10.0</mockito.version>
-    <byte-buddy.version>1.12.16</byte-buddy.version>
     <junit.version>4.13.2</junit.version>
     <mongo-driver.version>3.12.10</mongo-driver.version>
     <platform.version>10.3.0.0-SNAPSHOT</platform.version>
