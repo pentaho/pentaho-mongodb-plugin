@@ -32,7 +32,6 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
-import org.pentaho.di.trans.steps.mongodb.MongoDbMeta;
 import org.pentaho.di.trans.steps.mongodb.MongoDBHelper;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.wrapper.MongoClientWrapper;
@@ -547,17 +546,17 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       this.setStepMetaInterface( stepMetaInterface );
 
       MongoDBHelper mongoDBHelper = new MongoDBHelper();
-      MongoDbMeta mongoDbMeta = (MongoDbMeta) getStepMetaInterface();
+      MongoDbOutputMeta mongoDbOutputMeta = (MongoDbOutputMeta) getStepMetaInterface();
       
       switch ( fieldName ) {
         case "testConnection":
-          response = mongoDBHelper.testConnectionAction( transMeta, mongoDbMeta );
+          response = mongoDBHelper.testConnectionAction( transMeta, mongoDbOutputMeta );
           break;
         case "getDBNames":
-          response = mongoDBHelper.getDBNamesAction( transMeta, mongoDbMeta );
+          response = mongoDBHelper.getDBNamesAction( transMeta, mongoDbOutputMeta );
           break;
         case "getCollectionNames":
-          response = mongoDBHelper.getCollectionNamesAction( transMeta, mongoDbMeta );
+          response = mongoDBHelper.getCollectionNamesAction( transMeta, mongoDbOutputMeta );
           break;
         case "getPreferences":
           response = mongoDBHelper.getPreferencesAction();

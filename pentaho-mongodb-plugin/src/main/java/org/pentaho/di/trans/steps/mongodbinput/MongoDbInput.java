@@ -13,6 +13,7 @@
 
 package org.pentaho.di.trans.steps.mongodbinput;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.ServerAddress;
 import com.mongodb.util.JSON;
@@ -32,7 +33,6 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
-import org.pentaho.di.trans.steps.mongodb.MongoDbMeta;
 import org.pentaho.di.trans.steps.mongodb.MongoDBHelper;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.MongoProperties;
@@ -326,17 +326,17 @@ public class MongoDbInput extends BaseStep implements StepInterface {
       this.setStepMetaInterface( stepMetaInterface );
 
       MongoDBHelper mongoDBHelper = new MongoDBHelper();
-      MongoDbMeta mongoDbMeta = (MongoDbMeta) getStepMetaInterface();
+      MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
 
       switch ( fieldName ) {
         case "testConnection":
-          response = mongoDBHelper.testConnectionAction( transMeta, mongoDbMeta );
+          response = mongoDBHelper.testConnectionAction( transMeta, mongoDbInputMeta );
           break;
         case "getDBNames":
-          response = mongoDBHelper.getDBNamesAction( transMeta, mongoDbMeta );
+          response = mongoDBHelper.getDBNamesAction( transMeta, mongoDbInputMeta );
           break;
         case "getCollectionNames":
-          response = mongoDBHelper.getCollectionNamesAction( transMeta, mongoDbMeta );
+          response = mongoDBHelper.getCollectionNamesAction( transMeta, mongoDbInputMeta );
           break;
         case "getPreferences":
           response = mongoDBHelper.getPreferencesAction();
@@ -546,10 +546,8 @@ public class MongoDbInput extends BaseStep implements StepInterface {
       set = set + "}";
     }
 
-    DBObject setO = (DBObject) JSON.parse( set );
-    if ( setO != null ) {
-      tagSets.add( setO );
-    }
+    DBObject setO = BasicDBObject.parse( set );
+    tagSets.add( setO );
   }
 
   private JSONArray setFieldResponse( List<MongoField> mongoFields ) {

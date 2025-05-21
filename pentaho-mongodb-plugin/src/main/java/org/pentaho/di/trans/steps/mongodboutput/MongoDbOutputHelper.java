@@ -109,9 +109,9 @@ public class MongoDbOutputHelper {
    * @return a String containing the formatted document structure
    */
   public String prettyPrintDocStructure( String toFormat ) {
-    StringBuffer result = new StringBuffer();
+    StringBuilder result = new StringBuilder();
     int indent = 0;
-    String source = toFormat.replaceAll( "\\s*,\\s*", "," ); //$NON-NLS-1$ //$NON-NLS-2$
+    String source = removeWhiteSpacesAroundCommas( toFormat );
     Element next = Element.OPEN_BRACE;
 
     while ( !source.isEmpty() ) {
@@ -152,6 +152,23 @@ public class MongoDbOutputHelper {
     }
 
     return result.toString();
+  }
+
+  private String removeWhiteSpacesAroundCommas( String toFormat ) {
+    StringBuilder sourceBuilder = new StringBuilder();
+    boolean lastWasComma = false;
+    for ( char c : toFormat.toCharArray() ) {
+      if ( c == ',' ) {
+        if ( !lastWasComma ) {
+          sourceBuilder.append( c );
+        }
+        lastWasComma = true;
+      } else if ( !Character.isWhitespace( c ) ) {
+        sourceBuilder.append( c );
+        lastWasComma = false;
+      }
+    }
+    return sourceBuilder.toString();
   }
 
   private Map<String, String> getSourceAndToIndentForNonMinIndex( Element next, String source, int minIndex ) {
@@ -262,7 +279,7 @@ public class MongoDbOutputHelper {
     return val;
   }
 
-  private void pad( StringBuffer toPad, int numBlanks ) {
+  private void pad( StringBuilder toPad, int numBlanks ) {
     toPad.append( " ".repeat( Math.max( 0, numBlanks ) ) );
   }
 
