@@ -32,9 +32,10 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.steps.mongodb.MongoDbMeta;
+import org.pentaho.di.trans.steps.mongodb.MongoDBHelper;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.MongoProperties;
-import org.pentaho.mongo.NamedReadPreference;
 import org.pentaho.mongo.wrapper.MongoClientWrapper;
 import org.pentaho.mongo.wrapper.MongoWrapperUtil;
 import org.pentaho.mongo.wrapper.field.MongoField;
@@ -44,13 +45,12 @@ import org.pentaho.reporting.libraries.base.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 
 public class MongoDbInput extends BaseStep implements StepInterface {
   private static final String ERROR_MESSAGE = "errorMessage";
-  private static final String ERROR_LABEL = "errorLabel";
   private static final String MISSING_CONN_DETAILS = "MongoDbInputDialog.ErrorMessage.MissingConnectionDetails";
+  private static final String UNABLE_TO_CONNECT_LABEL = "MongoDbInputDialog.ErrorMessage.UnableToConnect";
   private static final Class<?> PKG = MongoDbInputMeta.class; // for i18n purposes,
   // needed by
   // Translator2!!
@@ -324,18 +324,22 @@ public class MongoDbInput extends BaseStep implements StepInterface {
     response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
     try {
       this.setStepMetaInterface( stepMetaInterface );
+
+      MongoDBHelper mongoDBHelper = new MongoDBHelper();
+      MongoDbMeta mongoDbMeta = (MongoDbMeta) getStepMetaInterface();
+
       switch ( fieldName ) {
         case "testConnection":
-          response = testConnectionAction();
+          response = mongoDBHelper.testConnectionAction( transMeta, mongoDbMeta );
           break;
         case "getDBNames":
-          response = getDBNamesAction();
+          response = mongoDBHelper.getDBNamesAction( transMeta, mongoDbMeta );
           break;
         case "getCollectionNames":
-          response = getCollectionNamesAction();
+          response = mongoDBHelper.getCollectionNamesAction( transMeta, mongoDbMeta );
           break;
         case "getPreferences":
-          response = getPreferencesAction();
+          response = mongoDBHelper.getPreferencesAction();
           break;
         case "getTagSet":
           response = getTagSetAction();
@@ -358,101 +362,6 @@ public class MongoDbInput extends BaseStep implements StepInterface {
     return response;
   }
 
-  private JSONObject testConnectionAction() {
-    JSONObject response = new JSONObject();
-
-    MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
-    TransMeta transMeta = getTransMeta();
-    if ( StringUtils.isEmpty( mongoDbInputMeta.getConnectionString() ) ) {
-      return sendResponseWithMessage( response, BaseMessages.getString( PKG, MISSING_CONN_DETAILS, "Connection String" ) );
-    }
-
-    try {
-      MongoClientWrapper wrapper = MongoWrapperUtil.createMongoClientWrapper( mongoDbInputMeta, transMeta, transMeta.getLogChannel() );
-      try {
-        wrapper.getDatabaseNames();
-      } finally {
-        wrapper.dispose();
-      }
-    } catch ( Exception ex ) {
-      errorResponse( response, ex );
-      response.put( "isValidConnection", false );
-      return response;
-    }
-
-    response.put( "isValidConnection", true );
-    response.put( "title", BaseMessages.getString( PKG, "MongoDbInputDialog.SuccessMessage.SuccessConnectionDetails.Title" ) );
-    response.put( "message", BaseMessages.getString( PKG, "MongoDbInputDialog.SuccessMessage.SuccessConnectionDetails" ) );
-    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
-    return response;
-  }
-
-  private JSONObject getDBNamesAction() {
-    JSONObject response = new JSONObject();
-    List<String> dbNames;
-
-    TransMeta transMeta = getTransMeta();
-    MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
-    boolean isValidRequest = validateRequest( response, mongoDbInputMeta );
-    if ( !isValidRequest ) {
-      return response;
-    }
-
-    try {
-      MongoClientWrapper wrapper = MongoWrapperUtil.createMongoClientWrapper( mongoDbInputMeta, transMeta, transMeta.getLogChannel() );
-      try {
-        dbNames = wrapper.getDatabaseNames();
-      } finally {
-        wrapper.dispose();
-      }
-    } catch ( Exception ex ) {
-      return errorResponse( response, ex );
-    }
-
-    response.put( "dbNames", dbNames );
-    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
-    return response;
-  }
-
-  private JSONObject getCollectionNamesAction() {
-    JSONObject response = new JSONObject();
-    Set<String> collectionNames;
-
-    MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
-    TransMeta transMeta = getTransMeta();
-    boolean isValidRequest = validateRequest( response, mongoDbInputMeta );
-    if ( !isValidRequest ) {
-      return response;
-    }
-
-    try {
-      MongoClientWrapper wrapper = MongoWrapperUtil.createMongoClientWrapper( mongoDbInputMeta, transMeta, transMeta.getLogChannel() );
-      try {
-        collectionNames = wrapper.getCollectionsNames( transMeta.environmentSubstitute( mongoDbInputMeta.getDbName() ) );
-      } finally {
-        wrapper.dispose();
-      }
-    } catch ( Exception ex ) {
-      return errorResponse( response, ex );
-    }
-
-    response.put( "collectionNames", new ArrayList<>( collectionNames ) );
-    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
-    return response;
-  }
-
-  private JSONObject getPreferencesAction() {
-    JSONObject response = new JSONObject();
-    List<String> preferences = new ArrayList<>();
-    for ( NamedReadPreference preference : NamedReadPreference.values() ) {
-      preferences.add( preference.getName() );
-    }
-
-    response.put( "preferences", preferences );
-    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
-    return response;
-  }
-
   private JSONObject getTagSetAction() {
     JSONObject response = new JSONObject();
     List<String> tags;
@@ -460,7 +369,10 @@ public class MongoDbInput extends BaseStep implements StepInterface {
     MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
     TransMeta transMeta = getTransMeta();
     if ( StringUtils.isEmpty( mongoDbInputMeta.getHostnames() ) ) {
-      return sendResponseWithMessage( response,  BaseMessages.getString( PKG, MISSING_CONN_DETAILS, "host name(s)" ) );
+      return MongoDBHelper.errorResponse(
+          response,
+          BaseMessages.getString( PKG, UNABLE_TO_CONNECT_LABEL ),
+          BaseMessages.getString( PKG, MISSING_CONN_DETAILS, "host name(s)" ) );
     }
 
     try {
@@ -470,12 +382,14 @@ public class MongoDbInput extends BaseStep implements StepInterface {
       } finally {
         wrapper.dispose();
       }
-    } catch ( Exception ex ) {
-      return errorResponse( response, ex );
+    } catch ( Exception exception ) {
+      return MongoDBHelper.errorResponse( response,
+          BaseMessages.getString( PKG, UNABLE_TO_CONNECT_LABEL ),
+          exception );
     }
 
     if ( CollectionUtils.isEmpty( tags ) ) {
-      return sendResponseWithMessage( response, BaseMessages.getString( PKG, "MongoDbInputDialog.Info.Message.NoTagSetsDefinedOnServer" ) );
+      return MongoDBHelper.errorResponse( response, BaseMessages.getString( PKG, UNABLE_TO_CONNECT_LABEL ), BaseMessages.getString( PKG, "MongoDbInputDialog.Info.Message.NoTagSetsDefinedOnServer" ) );
     } else {
       JSONArray jsonArray = new JSONArray();
       for ( String tag : tags ) {
@@ -504,11 +418,15 @@ public class MongoDbInput extends BaseStep implements StepInterface {
     MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
     TransMeta transMeta = getTransMeta();
     if ( StringUtils.isEmpty( mongoDbInputMeta.getHostnames() ) ) {
-      return sendResponseWithMessage( response, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoConnectionDetailsSupplied" ) );
+      return MongoDBHelper.errorResponse( response,
+          BaseMessages.getString( PKG, UNABLE_TO_CONNECT_LABEL ),
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoConnectionDetailsSupplied" ) );
     }
 
     if ( CollectionUtils.isEmpty( mongoDbInputMeta.getReadPrefTagSets() ) ) {
-      return sendResponseWithMessage( response, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoTagSetsDefined" ) );
+      return MongoDBHelper.errorResponse( response,
+          BaseMessages.getString( PKG, UNABLE_TO_CONNECT_LABEL ),
+          BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoTagSetsDefined" ) );
     }
 
     MongoClientWrapper wrapper = null;
@@ -518,13 +436,17 @@ public class MongoDbInput extends BaseStep implements StepInterface {
       }
 
       if ( CollectionUtils.isEmpty( tagSets ) ) {
-        return sendResponseWithMessage( response, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoParseableTagSets" ) );
+        return MongoDBHelper.errorResponse( response,
+            BaseMessages.getString( PKG, UNABLE_TO_CONNECT_LABEL ),
+            BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage.NoParseableTagSets" ) );
       }
 
       wrapper = MongoWrapperUtil.createMongoClientWrapper( mongoDbInputMeta, transMeta, transMeta.getLogChannel() );
       List<String> replicaSetTags = getReplicaMemberBasedOnTagSet( tagSets, wrapper );
       if ( CollectionUtils.isEmpty( replicaSetTags ) ) {
-        return sendResponseWithMessage( response, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage..NoReplicaSetMembersMatchTagSets" ) );
+        return MongoDBHelper.errorResponse( response,
+            BaseMessages.getString( PKG, UNABLE_TO_CONNECT_LABEL ),
+            BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage..NoReplicaSetMembersMatchTagSets" ) );
       }
 
       StringBuilder builder = new StringBuilder();
@@ -535,7 +457,7 @@ public class MongoDbInput extends BaseStep implements StepInterface {
 
       response.put( "replicaSetTag", builder.toString() );
     } catch ( Exception ex ) {
-      errorResponse( response, ex );
+      MongoDBHelper.errorResponse( response, BaseMessages.getString( PKG, UNABLE_TO_CONNECT_LABEL ), ex );
       return response;
     } finally {
       if ( wrapper != null ) {
@@ -553,9 +475,11 @@ public class MongoDbInput extends BaseStep implements StepInterface {
     MongoDbInputMeta mongoDbInputMeta = (MongoDbInputMeta) getStepMetaInterface();
     TransMeta transMeta = getTransMeta();
 
-    String missingConDetails = validateRequestForFields( mongoDbInputMeta );
+    String missingConDetails = MongoDBHelper.validateRequestForFields( mongoDbInputMeta );
     if ( !StringUtils.isEmpty( missingConDetails ) ) {
-      return sendResponseWithMessage( response, BaseMessages.getString( PKG, MISSING_CONN_DETAILS, missingConDetails ) );
+      return MongoDBHelper.errorResponse( response,
+          BaseMessages.getString( PKG, UNABLE_TO_CONNECT_LABEL ),
+          BaseMessages.getString( PKG, MISSING_CONN_DETAILS, missingConDetails ) );
     }
 
     boolean current = mongoDbInputMeta.getExecuteForEachIncomingRow();
@@ -582,11 +506,11 @@ public class MongoDbInput extends BaseStep implements StepInterface {
             }
             @Override
             public void notifyException( Exception exception ) {
-              errorResponse( response, exception );
+              MongoDBHelper.errorResponse( response, BaseMessages.getString( PKG, UNABLE_TO_CONNECT_LABEL ), exception );
             }
           } );
     } catch ( KettleException e ) {
-      return errorResponse( response, e );
+      return MongoDBHelper.errorResponse( response, BaseMessages.getString( PKG, UNABLE_TO_CONNECT_LABEL ), e );
     } finally {
       mongoDbInputMeta.setExecuteForEachIncomingRow( current );
     }
@@ -652,61 +576,12 @@ public class MongoDbInput extends BaseStep implements StepInterface {
     boolean notOk = ( query.contains( "${" ) || query.contains( "?{" ) ); //$NON-NLS-1$ //$NON-NLS-2$
 
     if ( notOk ) {
-      sendResponseWithMessage( response, BaseMessages.getString( PKG,
+      MongoDBHelper.errorResponse( response,
+          BaseMessages.getString( PKG, UNABLE_TO_CONNECT_LABEL ),
+          BaseMessages.getString( PKG,
           "MongoDbInputDialog.Warning.Message.MongoQueryContainsUnresolvedVarsFieldSubs" ) );
     }
 
     return !notOk;
-  }
-
-  private String validateRequestForFields( MongoDbInputMeta mongoDbInputMeta ) {
-    String missingConDetails = "";
-    if ( !mongoDbInputMeta.isUseConnectionString() ) {
-      if ( StringUtils.isEmpty( mongoDbInputMeta.getHostnames() ) ) {
-        missingConDetails += " host name(s)";
-      }
-
-      if ( StringUtils.isEmpty( mongoDbInputMeta.getDbName() ) ) {
-        missingConDetails += " database";
-      }
-
-      if ( StringUtils.isEmpty( mongoDbInputMeta.getCollection() ) ) {
-        missingConDetails += " collection";
-      }
-    } else {
-      if ( StringUtils.isEmpty( mongoDbInputMeta.getConnectionString() ) ) {
-        missingConDetails += " Connection string";
-      }
-    }
-
-    return missingConDetails;
-  }
-
-  private boolean validateRequest( JSONObject response, MongoDbInputMeta mongoDbInputMeta ) {
-    if ( mongoDbInputMeta != null ) {
-      boolean isConnectionDetailsEmpty = StringUtils.isEmpty( mongoDbInputMeta.getHostnames() ) && StringUtils.isEmpty( mongoDbInputMeta.getConnectionString() );
-      if ( isConnectionDetailsEmpty ) {
-        String errorString = mongoDbInputMeta.isUseConnectionString() ? "Connection String" : "Hostname";
-        response.put( ERROR_MESSAGE, BaseMessages.getString( PKG, MISSING_CONN_DETAILS, errorString ) );
-        response.put( StepInterface.ACTION_STATUS, StepInterface.FAILURE_RESPONSE );
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  private JSONObject sendResponseWithMessage( JSONObject response, String message ) {
-    response.put( ERROR_LABEL, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage." + "UnableToConnect" ) );
-    response.put( ERROR_MESSAGE, message );
-    response.put( StepInterface.ACTION_STATUS, StepInterface.FAILURE_RESPONSE );
-    return response;
-  }
-
-  private JSONObject errorResponse( JSONObject response, Exception ex ) {
-    response.put( ERROR_LABEL, BaseMessages.getString( PKG, "MongoDbInputDialog.ErrorMessage." + "UnableToConnect" ) );
-    response.put( ERROR_MESSAGE, ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage() );
-    response.put( StepInterface.ACTION_STATUS, StepInterface.FAILURE_RESPONSE );
-    return response;
   }
 }

@@ -17,9 +17,13 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 import com.mongodb.MongoExecutionTimeoutException;
 import com.mongodb.WriteResult;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.util.Utils;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -28,14 +32,19 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.steps.mongodb.MongoDbMeta;
+import org.pentaho.di.trans.steps.mongodb.MongoDBHelper;
 import org.pentaho.mongo.MongoDbException;
+import org.pentaho.mongo.wrapper.MongoClientWrapper;
 import org.pentaho.mongo.wrapper.MongoWrapperUtil;
+import org.pentaho.reporting.libraries.base.util.StringUtils;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 
 /**
  * Class providing an output step for writing data to a MongoDB collection. Supports insert, truncate, upsert,
@@ -46,6 +55,8 @@ import java.util.Set;
  */
 public class MongoDbOutput extends BaseStep implements StepInterface {
   private static final Class<?> PKG = MongoDbOutputMeta.class;
+  private static final String MISSING_CONN_DETAILS = "MongoDbOutputDialog.ErrorMessage.MissingConnectionDetails";
+  private static final String MISSING_CONN_DETAILS_TITLE = "MongoDbOutputDialog.ErrorMessage.MissingConnectionDetails.title";
 
   protected MongoDbOutputMeta m_meta;
   protected MongoDbOutputData m_data;
@@ -525,5 +536,182 @@ public class MongoDbOutput extends BaseStep implements StepInterface {
       // just put a log record on it
       logBasic( BaseMessages.getString( PKG, "MongoDbOutput.Messages.FieldsNotToBeInserted", b.toString() ) );
     }
+  }
+
+  @Override
+  public JSONObject doAction( String fieldName, StepMetaInterface stepMetaInterface, TransMeta transMeta,
+                             Trans trans, Map<String, String> queryParamToValues ) {
+    JSONObject response = new JSONObject();
+    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+    try {
+      this.setStepMetaInterface( stepMetaInterface );
+
+      MongoDBHelper mongoDBHelper = new MongoDBHelper();
+      MongoDbMeta mongoDbMeta = (MongoDbMeta) getStepMetaInterface();
+      
+      switch ( fieldName ) {
+        case "testConnection":
+          response = mongoDBHelper.testConnectionAction( transMeta, mongoDbMeta );
+          break;
+        case "getDBNames":
+          response = mongoDBHelper.getDBNamesAction( transMeta, mongoDbMeta );
+          break;
+        case "getCollectionNames":
+          response = mongoDBHelper.getCollectionNamesAction( transMeta, mongoDbMeta );
+          break;
+        case "getPreferences":
+          response = mongoDBHelper.getPreferencesAction();
+          break;
+        case "writeConcerns":
+          response = getWriteConcernsAction();
+          break;
+        case "getDocumentFields":
+          response = getDocumentFieldsAction();
+          break;
+        case "previewDocumentStructure":
+          response = previewDocumentStructureAction();
+          break;
+        case "showIndexes":
+          response = showIndexesAction();
+          break;
+        default:
+          response.put( StepInterface.ACTION_STATUS, StepInterface.FAILURE_METHOD_NOT_RESPONSE );
+          break;
+      }
+    } catch ( Exception e ) {
+      log.logError( e.getMessage() );
+      response.put( StepInterface.ACTION_STATUS, StepInterface.FAILURE_METHOD_NOT_RESPONSE );
+    }
+
+    return response;
+  }
+
+  private JSONObject getWriteConcernsAction() {
+    MongoDbOutputMeta mongoDbOutputMeta = (MongoDbOutputMeta) getStepMetaInterface();
+    TransMeta transMeta = getTransMeta();
+    JSONObject response = new JSONObject();
+    String hostname = transMeta.environmentSubstitute( mongoDbOutputMeta.getHostnames() );
+
+    if ( !Utils.isEmpty( hostname ) ) {
+      try {
+        MongoClientWrapper wrapper = MongoWrapperUtil.createMongoClientWrapper( mongoDbOutputMeta, transMeta, transMeta.getLogChannel() );
+        List<String> writeConcerns;
+        try {
+          writeConcerns = wrapper.getLastErrorModes();
+          response.put( "writeConcerns", writeConcerns );
+        } finally {
+          wrapper.dispose();
+        }
+      } catch ( Exception exception ) {
+        MongoDBHelper.errorResponse( response,
+            BaseMessages.getString( PKG, "MongoDbOutputDialog.ErrorMessage.UnableToConnect" ),
+            exception );
+        return response;
+      }
+    } else {
+      MongoDBHelper.errorResponse( response,
+          BaseMessages.getString( PKG, MISSING_CONN_DETAILS_TITLE ),
+          BaseMessages.getString( PKG, MISSING_CONN_DETAILS, "host name(s)" ) );
+      return response;
+    }
+
+    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+    return response;
+  }
+
+  private JSONObject getDocumentFieldsAction() {
+    MongoDbOutputMeta mongoDbOutputMeta = (MongoDbOutputMeta) getStepMetaInterface();
+    TransMeta transMeta = getTransMeta();
+    JSONObject response = new JSONObject();
+
+    String missingConDetails = MongoDBHelper.validateRequestForFields( mongoDbOutputMeta );
+    if ( !StringUtils.isEmpty( missingConDetails ) ) {
+      return MongoDBHelper.errorResponse( response,
+          BaseMessages.getString( PKG, MISSING_CONN_DETAILS_TITLE ),
+          BaseMessages.getString( PKG, MISSING_CONN_DETAILS, missingConDetails ) );
+    }
+
+    try {
+      RowMetaInterface rowMetaInterface = transMeta.getPrevStepFields( mongoDbOutputMeta.getParentStepMeta().getName() );
+      response.put( "fields", setFieldResponse( rowMetaInterface.getValueMetaList() ) );
+    } catch ( Exception ex ) {
+      MongoDBHelper.errorResponse( response, BaseMessages.getString( PKG, "System.Dialog.GetFieldsFailed.Message" ), ex );
+      return response;
+    }
+
+    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+    return response;
+  }
+
+  private JSONObject previewDocumentStructureAction() {
+    JSONObject response = new JSONObject();
+
+    MongoDbOutputMeta mongoDbOutputMeta = (MongoDbOutputMeta) getStepMetaInterface();
+    TransMeta transMeta = getTransMeta();
+    String missingConDetails = MongoDBHelper.validateRequestForFields( mongoDbOutputMeta );
+    if ( !StringUtils.isEmpty( missingConDetails ) ) {
+      return MongoDBHelper.errorResponse( response,
+          BaseMessages.getString( PKG, MISSING_CONN_DETAILS_TITLE ),
+          BaseMessages.getString( PKG, MISSING_CONN_DETAILS, missingConDetails ) );
+    }
+
+    try {
+      MongoDbOutputHelper mongoDbOutputHelper = new MongoDbOutputHelper();
+      List<MongoDbOutputMeta.MongoField> mongoFields = mongoDbOutputMeta.getMongoFields();
+      Map<String, String> displayDetails = mongoDbOutputHelper.previewDocStructure( transMeta, mongoDbOutputMeta.getParentStepMeta().getName(), mongoFields, mongoDbOutputMeta.m_modifierUpdate );
+      response.put( "windowTitle", displayDetails.get( "windowTitle" ) );
+      response.put( "toDisplay", displayDetails.get( "toDisplay" )  );
+    } catch ( Exception ex ) {
+      MongoDBHelper.errorResponse( response, BaseMessages.getString( PKG, "MongoDbOutputDialog.ErrorMessage.ProblemPreviewingDocStructure.Message" ), ex );
+      return response;
+    }
+
+    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+    return response;
+  }
+
+  private JSONObject showIndexesAction() {
+    TransMeta transMeta = getTransMeta();
+    MongoDbOutputMeta mongoDbOutputMeta = (MongoDbOutputMeta) getStepMetaInterface();
+
+    JSONObject response = new JSONObject();
+    String missingConDetails = MongoDBHelper.validateRequestForFields( mongoDbOutputMeta );
+    if ( !StringUtils.isEmpty( missingConDetails ) ) {
+      return MongoDBHelper.errorResponse( response,
+          BaseMessages.getString( PKG, MISSING_CONN_DETAILS_TITLE ),
+          BaseMessages.getString( PKG, MISSING_CONN_DETAILS, missingConDetails ) );
+    }
+
+    String hostname = transMeta.environmentSubstitute( mongoDbOutputMeta.getHostnames() );
+    String dbName = transMeta.environmentSubstitute( mongoDbOutputMeta.getDbName() );
+    String collection = transMeta.environmentSubstitute( mongoDbOutputMeta.getCollection() );
+    if ( !Utils.isEmpty( hostname ) ) {
+      try {
+        MongoClientWrapper wrapper = MongoWrapperUtil.createMongoClientWrapper( mongoDbOutputMeta, transMeta, log );
+        StringBuilder result = new StringBuilder();
+        for ( String index : wrapper.getIndexInfo( dbName, collection ) ) {
+          result.append( index ).append( "\n\n" );
+        }
+
+        response.put( "indexes", result.toString() );
+      } catch ( Exception e ) {
+        MongoDBHelper.errorResponse( response, BaseMessages.getString( PKG, "MongoDbOutputDialog.ErrorMessage.IndexPreview.Title" ), e );
+        return response;
+      }
+    }
+
+    response.put( StepInterface.ACTION_STATUS, StepInterface.SUCCESS_RESPONSE );
+    return response;
+  }
+  
+  private JSONArray setFieldResponse( List<ValueMetaInterface> fields ) {
+    JSONArray jsonArray = new JSONArray();
+    for ( ValueMetaInterface field : fields ) {
+      JSONObject jsonObject = new JSONObject();
+      jsonObject.put( "name", field.getName() );
+      jsonArray.add( jsonObject );
+    }
+
+    return jsonArray;
   }
 }
