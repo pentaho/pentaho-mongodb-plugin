@@ -1617,6 +1617,11 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
   private void previewDocStruct() {
     try {
       List<MongoDbOutputMeta.MongoField> mongoFields = tableToMongoFieldList();
+
+      if ( mongoFields == null || mongoFields.isEmpty() ) {
+        return;
+      }
+
       boolean updateSelection = m_modifierUpdateBut.getSelection();
       MongoDbOutputHelper mongoDbOutputHelper = new MongoDbOutputHelper();
       Map<String, String> displayDetails = mongoDbOutputHelper.previewDocStructure( transMeta, stepname, mongoFields, updateSelection );
