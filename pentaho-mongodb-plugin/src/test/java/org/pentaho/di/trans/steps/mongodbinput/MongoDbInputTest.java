@@ -560,6 +560,22 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
   }
 
   @Test
+  public void testTagSetAction_withJSONObjectHavingJSONArray() throws MongoDbException {
+    setupReturns();
+    String tagSet = "{\n" +
+        "  \"name\": \"John Doe\",\n" +
+        "  \"age\": 30,\n" +
+        "  \"hobbies\": [\"reading\", \"cycling\", \"photography\"]\n" +
+        "}";
+    when( stepMetaInterface.getReadPrefTagSets() ).thenReturn( Collections.singletonList( tagSet ) );
+    when( mongoClientWrapper.getReplicaSetMembersThatSatisfyTagSets( any() ) ).thenReturn( Collections.singletonList( tagSet ) );
+
+    JSONObject jsonObject = dbInput.doAction( "testTagSet", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertNotNull( jsonObject.get( "replicaSetTag" ) );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.SUCCESS_RESPONSE ) );
+  }
+
+  @Test
   public void testTagSetAction_withStringTagSet() throws MongoDbException {
     setupReturns();
     String tagSet = "\"testTag\": \"testTagValue\"";

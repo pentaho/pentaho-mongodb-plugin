@@ -40,10 +40,6 @@ public class MongoDbOutputHelper {
     String windowTitle = getString( "MongoDbOutputDialog.PreviewDocStructure.Title" );
     String toDisplay = "";
 
-    if ( mongoFields == null || mongoFields.isEmpty() ) {
-      return displayDetails;
-    }
-
     // Try and get metadata on incoming fields
     RowMetaInterface actualR = null;
     RowMetaInterface r;
@@ -54,6 +50,7 @@ public class MongoDbOutputHelper {
     } catch ( KettleException e ) {
       // don't complain if we can't
     }
+
     r = new RowMeta();
 
     Object[] dummyRow = new Object[mongoFields.size()];
@@ -109,9 +106,9 @@ public class MongoDbOutputHelper {
    * @return a String containing the formatted document structure
    */
   public String prettyPrintDocStructure( String toFormat ) {
-    StringBuffer result = new StringBuffer();
+    StringBuilder result = new StringBuilder();
     int indent = 0;
-    String source = toFormat.replaceAll( "\\s*,\\s*", "," ); //$NON-NLS-1$ //$NON-NLS-2$
+    String source = formatSource( toFormat );
     Element next = Element.OPEN_BRACE;
 
     while ( !source.isEmpty() ) {
@@ -152,6 +149,18 @@ public class MongoDbOutputHelper {
     }
 
     return result.toString();
+  }
+
+  private String formatSource( String input ) {
+    if (input == null || input.isEmpty()) {
+      return input;
+    }
+
+    String[] parts = input.split( "," );
+    for (int i = 0; i < parts.length; i++) {
+      parts[i] = parts[i].trim();
+    }
+    return String.join( ",", parts );
   }
 
   private Map<String, String> getSourceAndToIndentForNonMinIndex( Element next, String source, int minIndex ) {
@@ -262,7 +271,7 @@ public class MongoDbOutputHelper {
     return val;
   }
 
-  private void pad( StringBuffer toPad, int numBlanks ) {
+  private void pad( StringBuilder toPad, int numBlanks ) {
     toPad.append( " ".repeat( Math.max( 0, numBlanks ) ) );
   }
 
