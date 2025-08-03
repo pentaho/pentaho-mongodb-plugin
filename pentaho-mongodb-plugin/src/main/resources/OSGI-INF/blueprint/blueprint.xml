@@ -32,7 +32,7 @@
         <property name="description" value="Reads from a Mongo DB collection"/>
         <property name="pluginTypeInterface" value="org.pentaho.di.core.plugins.StepPluginType"/>
         <property name="category" value="Big Data"/>
-        <property name="documentationUrl" value="mk-95pdia003/pdi-transformation-steps/mongodb-input"/>
+        <property name="documentationUrl" value="pdi-transformation-steps-reference-overview/mongodb-input"/>
         <property name="classToBeanMap">
             <map>
                 <entry key="org.pentaho.di.trans.step.StepMetaInterface" value="inputMeta"/>
@@ -56,7 +56,7 @@
         <property name="description" value="Writes to a Mongo DB collection"/>
         <property name="pluginTypeInterface" value="org.pentaho.di.core.plugins.StepPluginType"/>
         <property name="category" value="Big Data"/>
-        <property name="documentationUrl" value="mk-95pdia003/pdi-transformation-steps/mongodb-output"/>
+        <property name="documentationUrl" value="pdi-transformation-steps-reference-overview/mongodb-output"/>
         <property name="classToBeanMap">
             <map>
                 <entry key="org.pentaho.di.trans.step.StepMetaInterface" value="outputMeta"/>
