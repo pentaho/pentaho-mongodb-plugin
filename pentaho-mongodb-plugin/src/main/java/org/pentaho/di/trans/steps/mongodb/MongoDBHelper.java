@@ -26,7 +26,7 @@ import java.util.Set;
 public class MongoDBHelper {
 
   private static final Class<?> PKG = MongoDBHelper.class;
-  private static final String ERROR_MESSAGE = "errorMessage";
+  public static final String ERROR_MESSAGE = "errorMessage";
   private static final String ERROR_LABEL = "errorLabel";
   private static final String MISSING_CONN_DETAILS = "MongoDb.ErrorMessage.MissingConnectionDetails";
   private static final String MISSING_CONN_DETAILS_TITLE = "MongoDb.ErrorMessage.MissingConnectionDetails.Title";
@@ -92,6 +92,13 @@ public class MongoDBHelper {
 
     boolean isValidRequest = validateRequestForDbNamesAndCollections( response, mongoDbMeta );
     if ( !isValidRequest ) {
+      return response;
+    }
+
+    if ( StringUtils.isEmpty( mongoDbMeta.getDbName() ) ) {
+      errorResponse( response,
+          BaseMessages.getString( PKG, MISSING_CONN_DETAILS_TITLE ),
+          BaseMessages.getString( PKG, MISSING_CONN_DETAILS, "database" ) );
       return response;
     }
 
@@ -162,8 +169,9 @@ public class MongoDBHelper {
       boolean isConnectionDetailsEmpty = StringUtils.isEmpty( mongoDbMeta.getHostnames() ) && StringUtils.isEmpty( mongoDbMeta.getConnectionString() );
       if ( isConnectionDetailsEmpty ) {
         String errorString = mongoDbMeta.isUseConnectionString() ? "Connection String" : "Hostname";
-        response.put( ERROR_MESSAGE, BaseMessages.getString( PKG, MISSING_CONN_DETAILS, errorString ) );
-        response.put( StepInterface.ACTION_STATUS, StepInterface.FAILURE_RESPONSE );
+        errorResponse( response,
+            BaseMessages.getString( PKG, MISSING_CONN_DETAILS_TITLE ),
+            BaseMessages.getString( PKG, MISSING_CONN_DETAILS, errorString ) );
         return false;
       }
     }

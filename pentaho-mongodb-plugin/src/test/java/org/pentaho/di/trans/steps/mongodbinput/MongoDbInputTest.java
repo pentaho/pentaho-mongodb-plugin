@@ -64,6 +64,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.pentaho.di.trans.steps.mongodb.MongoDBHelper.ERROR_MESSAGE;
 
 @RunWith( MockitoJUnitRunner.StrictStubs.class )
 public class MongoDbInputTest extends BaseMongoDbStepTest {
@@ -476,9 +477,7 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
   }
 
   @Test
-  public void getCollectionNamesTest_throwsException() throws MongoDbException {
-    when( mongoClientWrapper.getCollectionsNames( any() ) ).thenThrow( new MongoDbException( "error" ) );
-
+  public void getCollectionNamesTest_throwsException() {
     JSONObject jsonObject = dbInput.doAction( "getCollectionNames", stepMetaInterface, transMeta, trans, new HashMap<>() );
     assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
     assertNotNull( jsonObject.get( "errorMessage" ) );
@@ -492,6 +491,15 @@ public class MongoDbInputTest extends BaseMongoDbStepTest {
     JSONObject jsonObject = dbInput.doAction( "getCollectionNames", stepMetaInterface, transMeta, trans, new HashMap<>() );
     assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
     assertEquals( jsonObject.get( "errorMessage" ), "Some connection/configuration details are missing: Hostname" );
+  }
+
+  @Test
+  public void getCollectionNamesTest_WithDBNameMissing() {
+    when( stepMetaInterface.getDbName() ).thenReturn( "" );
+
+    JSONObject jsonObject = dbInput.doAction( "getCollectionNames", stepMetaInterface, transMeta, trans, new HashMap<>() );
+    assertThat( jsonObject.get( StepInterface.ACTION_STATUS ), equalTo( StepInterface.FAILURE_RESPONSE ) );
+    assertNotNull( jsonObject.get( ERROR_MESSAGE ) );
   }
 
   @Test
