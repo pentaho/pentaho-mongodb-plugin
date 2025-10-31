@@ -10,10 +10,14 @@
  ******************************************************************************/
 package org.pentaho.di.trans.steps.mongodb;
 
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import org.json.simple.JSONObject;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.NamedReadPreference;
 import org.pentaho.mongo.wrapper.MongoClientWrapper;
 import org.pentaho.mongo.wrapper.MongoWrapperUtil;
@@ -177,5 +181,37 @@ public class MongoDBHelper {
     }
 
     return true;
+  }
+
+  public static void setupDBObjects( List<DBObject> tagSets, String tagSet ) {
+    String set = tagSet;
+    if ( !tagSet.startsWith( "{" ) ) {
+      set = "{" + tagSet;
+    }
+
+    if ( !tagSet.endsWith( "}" ) ) {
+      set = set + "}";
+    }
+
+    DBObject setO = BasicDBObject.parse( set );
+    tagSets.add( setO );
+  }
+
+  public static List<String> getReplicaMemberBasedOnTagSet( List<DBObject> tagSets, MongoClientWrapper wrapper ) throws KettleException {
+    List<String> satisfy;
+    try {
+      try {
+        satisfy = wrapper.getReplicaSetMembersThatSatisfyTagSets( tagSets );
+      } catch ( MongoDbException e ) {
+        throw new KettleException( e );
+      }
+    } finally {
+      try {
+        wrapper.dispose();
+      } catch ( MongoDbException e ) {
+                //Ignore
+      }
+    }
+    return satisfy;
   }
 }
