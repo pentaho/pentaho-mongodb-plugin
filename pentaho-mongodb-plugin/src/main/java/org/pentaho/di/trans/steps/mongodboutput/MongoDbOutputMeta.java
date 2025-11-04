@@ -42,6 +42,7 @@ import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 import java.util.ArrayList;
 import java.util.List;
+import org.pentaho.di.trans.step.StepHelperInterface;
 
 /**
  * Class providing an output step for writing data to a MongoDB collection. Supports insert, truncate, upsert,
@@ -996,6 +997,11 @@ public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface 
             mongoIndex.m_sparse );
       }
     }
+  }
+
+  @Override
+  public StepHelperInterface getStepHelperInterface() {
+    return new MongoDbOutputHelper( this );
   }
 
   /*
