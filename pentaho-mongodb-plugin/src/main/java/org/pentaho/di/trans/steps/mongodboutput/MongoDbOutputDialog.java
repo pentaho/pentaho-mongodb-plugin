@@ -13,7 +13,6 @@
 
 package org.pentaho.di.trans.steps.mongodboutput;
 
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
@@ -41,12 +40,7 @@ import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.row.ValueMetaInterface;
-import org.pentaho.di.core.row.value.ValueMetaFactory;
-import org.pentaho.di.core.variables.VariableSpace;
-import org.pentaho.di.core.variables.Variables;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
@@ -1623,8 +1617,8 @@ public class MongoDbOutputDialog extends BaseStepDialog implements StepDialogInt
       }
 
       boolean updateSelection = m_modifierUpdateBut.getSelection();
-      MongoDbOutputHelper mongoDbOutputHelper = new MongoDbOutputHelper();
-      Map<String, String> displayDetails = mongoDbOutputHelper.previewDocStructure( transMeta, stepname, mongoFields, updateSelection );
+      MongoDbOutputUtilHelper mongoDbOutputUtilHelper = new MongoDbOutputUtilHelper();
+      Map<String, String> displayDetails = mongoDbOutputUtilHelper.previewDocStructure( transMeta, stepname, mongoFields, updateSelection );
       ShowMessageDialog
           smd =
           new ShowMessageDialog( shell, SWT.ICON_INFORMATION | SWT.OK, displayDetails.get( "windowTitle" ), displayDetails.get( "toDisplay" ), true );

@@ -38,9 +38,7 @@ import org.pentaho.mongo.wrapper.MongoWrapperClientFactory;
 import org.pentaho.mongo.wrapper.MongoWrapperUtil;
 import org.pentaho.mongo.wrapper.collection.MongoCollectionWrapper;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Common mock setup for MongoDbOutputTest and MongoDbInput
@@ -73,9 +71,9 @@ public class BaseMongoDbStepTest {
         .createMongoClientWrapper( Mockito.<MongoProperties>any(), Mockito.<MongoUtilLogger>any() ) )
         .thenReturn( mongoClientWrapper );
 
-    when( stepMeta.getName() ).thenReturn( "stepMetaName" );
-    when( transMeta.findStep( anyString() ) ).thenReturn( stepMeta );
-    when( logChannelFactory.create( any( BaseStep.class ), any( Trans.class ) ) ).thenReturn( mockLog );
+      lenient().when( stepMeta.getName() ).thenReturn( "stepMetaName" );
+      lenient().when( transMeta.findStep( anyString() ) ).thenReturn( stepMeta );
+      lenient().when( logChannelFactory.create( any( BaseStep.class ), any( Trans.class ) ) ).thenReturn( mockLog );
     KettleLogStore.setLogChannelInterfaceFactory( logChannelFactory );
   }
 
