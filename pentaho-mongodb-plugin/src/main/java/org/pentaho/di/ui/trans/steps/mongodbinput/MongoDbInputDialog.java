@@ -52,6 +52,7 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.TransPreviewFactory;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
+import org.pentaho.di.trans.steps.mongodb.MongoDBHelper;
 import org.pentaho.di.trans.steps.mongodbinput.DiscoverFieldsCallback;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInput;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
@@ -1757,7 +1758,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
         TableItem item = m_tagsView.getNonEmpty( i );
 
         String set = item.getText( 1 ).trim();
-        step.setupDBObjects( tagSets, set );
+        MongoDBHelper.setupDBObjects( tagSets, set );
       }
 
       if ( tagSets.size() > 0 ) {
@@ -1771,7 +1772,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
               throw new KettleException( e );
             }
 
-            List<String> satisfy = step.getReplicaMemberBasedOnTagSet( tagSets, wrapper );
+            List<String> satisfy = MongoDBHelper.getReplicaMemberBasedOnTagSet( tagSets, wrapper );
 
             if ( satisfy.size() == 0 ) {
               logBasic( BaseMessages
