@@ -53,7 +53,7 @@ import org.pentaho.di.trans.step.StepHelperInterface;
  */
 @Step( id = "MongoDbOutput", image = "MongoDB.svg", name = "MongoDB output",
   description = "Writes to a Mongo DB collection",
-  documentationUrl = "mk-95pdia003/pdi-transformation-steps/mongodb-output",
+  documentationUrl = "pdi-transformation-steps-reference-overview/mongodb-output",
   categoryDescription = "Big Data" )
 @InjectionSupported( localizationPrefix = "MongoDbOutput.Injection.", groups = { "FIELDS", "INDEXES" } )
 public class MongoDbOutputMeta extends MongoDbMeta implements StepMetaInterface {
